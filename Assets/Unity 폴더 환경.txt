@@ -1,0 +1,45 @@
+<Fps_Engine> 폴더
+
+
+<Plugins> 폴더 하위
+예시 : DOTween등의 fps엔진 외 추가로 가져온 외부 플러그인
+
+
+<Project> 폴더 하위
+<Art> 폴더
+Animations : 애니메이션
+Materials : 머터리얼
+Models : 플레이어, 몬스터, 환경 등 3D 모델
+Sprites : 2D 스프라이트
+Textures : 텍스쳐
+UI : UI 애셋
+
+<Audio> 폴더
+BGM : BGM 
+SFX : 사운드 이펙트
+
+<Core> 폴더
+Bootstrap : 게임 시작 시 자동으로 생성되거나 항상 파괴되지 않고 유지되는 시스템 핵심 오브젝트 프리팹
+Managers : 게임 루프를 총괄하는 GameManager.cs, 사운드를 제어하는 SoundManager.cs 등 전역 시스템 스크립트
+Utilities : 싱글톤(Singleton) 베이스 클래스, 수학 연산 확장 메서드 등 프로젝트 전역에서 돌려쓰는 공통 C# 유틸리티 코드
+
+<Data> 폴더 : 설정 수치 등 밸런싱과 게임에 직접적으로 반영될 데이터값을 scriptableobject로 저장
+Audio :
+Monsters :
+Player :
+Stages :
+Weapons :
+
+<Features> 폴더 : 각 기능에 해당하는 Script와 Prefab이 들어감. 
+Interactions : 
+Monsters :
+Player :
+Stages :
+UI :
+Weapons :
+
+
+<SystemSettings> 폴더 하위
+<ProjectSettings> 폴더
+<Settings> 폴더
+<TextMeshPro> 폴더

@@ -6,9 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Cowsins/Demo/MovementShowroom.unity
+    path: Assets/FPS_Engine/Demo/MovementShowroom.unity
     guid: 613fba616958bec418ee718b8e414d39
   - enabled: 1
-    path: Assets/Cowsins/Demo/Showroom.unity
+    path: Assets/FPS_Engine/Demo/Showroom.unity
     guid: c65d245ca63349e40af89661df799c04
   m_configObjects: {}
