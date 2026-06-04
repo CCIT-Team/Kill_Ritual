@@ -30,13 +30,7 @@ Player :
 Stages :
 Weapons :
 
-<Features> 폴더 : 각 기능에 해당하는 Script와 Prefab이 들어감. 
-Interactions : 
-Monsters :
-Player :
-Stages :
-UI :
-Weapons :
+<Features> 폴더 하위 설명 참조
 
 
 <SystemSettings> 폴더 하위
