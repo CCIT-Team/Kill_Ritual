@@ -11,4 +11,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/FPS_Engine/Demo/Showroom.unity
     guid: c65d245ca63349e40af89661df799c04
+  - enabled: 1
+    path: Assets/Project/Scenes/MainMenu.unity
+    guid: 2fe88cf2187c18b429d435f1d9b95e42
+  - enabled: 1
+    path: Assets/Project/Scenes/LoadingScene.unity
+    guid: 1795d1701ff2d12458e494d82407ef37
+  - enabled: 1
+    path: Assets/Project/Scenes/Temple.unity
+    guid: 631fae6b26ce64a428d1364955140c62
   m_configObjects: {}
