@@ -100,9 +100,7 @@ public class PlayerManager : MonoBehaviour
 
     // 공유 상태 데이터 객체
     // [HideInInspector]: Inspector에 표시하지 않음 (코드 전용)
-    [HideInInspector] public PlayerState state;
 
-    // 기능 모듈들 (MonoBehaviour 아님 — 일반 클래스)
     private PlayerGroundChecker groundChecker;
     private BasicMove basicMove;
     private Jump jump;
@@ -114,7 +112,6 @@ public class PlayerManager : MonoBehaviour
 
     void Awake()
     {
-        // 1. 공유 상태 객체 생성 및 컴포넌트 연결
         state = new PlayerState();
         state.rb = GetComponent<Rigidbody>();
         state.col = GetComponent<Collider>();
