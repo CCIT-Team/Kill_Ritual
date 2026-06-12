@@ -266,7 +266,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleDashInput()
     {
-        if (Input.GetKeyDown(KeyCode.LeftAlt) && currentDashCount > 0 && !isDashing)
+        if (Input.GetKeyDown(KeyCode.LeftControl) && currentDashCount > 0 && !isDashing)
             StartDash();
     }
 
