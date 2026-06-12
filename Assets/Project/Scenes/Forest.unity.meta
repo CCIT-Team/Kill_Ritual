@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Project/Scenes/Forest.unity.meta
 guid: b0ab193be514f444c9b3bb892d00bb17
+========
+guid: 9c17a75a3a9120c4e8c6b8b79470d033
+>>>>>>>> features_hs:Assets/Project/Scenes/DemoLevel.unity.meta
 DefaultImporter:
   externalObjects: {}
   userData: 
