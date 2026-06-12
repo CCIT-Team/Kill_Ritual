@@ -137,6 +137,8 @@ GameObject:
   - component: {fileID: 225621265}
   - component: {fileID: 225621271}
   - component: {fileID: 225621270}
+  - component: {fileID: 225621273}
+  - component: {fileID: 225621272}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -316,6 +318,43 @@ MonoBehaviour:
   OnDamageTaken:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &225621272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 225621264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68b25363518785a4bbb61a550a5d2024, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chainsawKey: 99
+  maxEnergy: 100
+  energyCostPerUse: 50
+  chainsawRange: 4
+  chainsawDuration: 0.8
+  energyGainPerKill: 30
+  energyGainRatioPerDamage: 0.3
+  chainsawDamage: 99999
+--- !u!114 &225621273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 225621264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86a8182725103f249ace223e6644a321, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  takeoverKey: 101
+  takeoverRange: 3
+  hpRestoreOnTakeover: 30
+  takeoverDuration: 0.6
+  cameraHolder: {fileID: 1979687452}
 --- !u!1 &330669775
 GameObject:
   m_ObjectHideFlags: 0
@@ -1430,6 +1469,7 @@ GameObject:
   - component: {fileID: 1561026833}
   - component: {fileID: 1561026832}
   - component: {fileID: 1561026835}
+  - component: {fileID: 1561026836}
   m_Layer: 0
   m_Name: MeleeEnemy
   m_TagString: Untagged
@@ -1543,7 +1583,7 @@ MonoBehaviour:
   chaseRange: 15
   attackRange: 2
   stopDistance: 1.5
-  bodyRenderer: {fileID: 0}
+  bodyRenderer: {fileID: 1561026833}
   hitFlashColor: {r: 1, g: 0, b: 0, a: 1}
   hitFlashDuration: 0.1
   chargeSpeed: 6
@@ -1554,6 +1594,27 @@ MonoBehaviour:
   attackColor: {r: 1, g: 0, b: 0, a: 1}
   idleColor: {r: 0.3, g: 0.8, b: 0.3, a: 1}
   chargeColor: {r: 1, g: 0.2, b: 0, a: 1}
+--- !u!114 &1561026836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561026830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 867ddbf584d512848a614cda3ff31432, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  staggerThreshold: 0.3
+  staggerDuration: 3
+  staggerColor: {r: 1, g: 0.9, b: 0, a: 1}
+  OnStaggerBegin:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStaggerEnd:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1645033468
 GameObject:
   m_ObjectHideFlags: 0
