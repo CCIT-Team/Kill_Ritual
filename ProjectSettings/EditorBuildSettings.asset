@@ -12,7 +12,7 @@ EditorBuildSettings:
     path: Assets/FPS_Engine/Demo/Showroom.unity
     guid: c65d245ca63349e40af89661df799c04
   - enabled: 1
-    path: Assets/Project/Scenes/MainMenu.unity
+    path: Assets/Project/Scenes/2.unity
     guid: 2fe88cf2187c18b429d435f1d9b95e42
   - enabled: 1
     path: Assets/Project/Scenes/LoadingScene.unity
