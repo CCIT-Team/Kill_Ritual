@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76ad85d07e58942498e8f94691e1a7e9, type: 3}
+  m_Name: Metal_weapon
+  m_EditorClassIdentifier: 
+  Element: 0
+  Icon: {fileID: 0}
+  HasSecondMode: 1
+  Mode1:
+    ModeName: Mode
+    AttackType: 0
+    GizmoShape: 0
+    Damage: 10
+    Range: 50
+    Cooldown: 0.2
+    ResourceCost: 5
+    PelletCount: 1
+    SpreadAngleDegrees: 0
+    ProjectileSpeed: 40
+    GravityScale: 0
+    PierceCount: 0
+    ExplosionRadius: 0
+    BoxHeight: 1.5
+  Mode2:
+    ModeName: Mode
+    AttackType: 0
+    GizmoShape: 0
+    Damage: 10
+    Range: 50
+    Cooldown: 0.2
+    ResourceCost: 5
+    PelletCount: 1
+    SpreadAngleDegrees: 0
+    ProjectileSpeed: 40
+    GravityScale: 0
+    PierceCount: 0
+    ExplosionRadius: 0
+    BoxHeight: 1.5
