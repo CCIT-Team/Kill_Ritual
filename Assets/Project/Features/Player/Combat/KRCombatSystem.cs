@@ -46,6 +46,10 @@ namespace KillRitual.Player.Combat
 
         [SerializeField] private LayerMask _damageableLayerMask = ~0;
 
+        [Tooltip("광역 폭발 판정 전용 마스크. Damageable 레이어만 포함하고 Environment(벽/바닥)는 제외합니다. " +
+                 "브로드페이즈 후보 수를 줄여 Explode() 내로우페이즈 비용을 감소시킵니다.")]
+        [SerializeField] private LayerMask _explosionLayerMask = ~0;
+
         [Header("공용 자원 지갑")]
         [Tooltip("속성별 자원 주머니의 최대치. 모든 오행 속성이 동일한 최대치를 공유합니다.")]
         [SerializeField] private float _maxResourcePerElement = 100f;
@@ -102,6 +106,20 @@ namespace KillRitual.Player.Combat
         // IDamageable 구현부 (플레이어 자신이 데미지를 받는 경우)
         // ------------------------------------------------------------------
         public bool IsDead => _health <= 0f;
+
+        // ------------------------------------------------------------------
+        // [DEBUG] KRCombatDebugOverlay 전용 공개 API
+        // ------------------------------------------------------------------
+
+        /// <summary>지정 속성 자원의 현재 잔량 비율(0~1). 오버레이 바 그래프에 사용됩니다.</summary>
+        public float GetResourceRatio(KRDamageType element)
+        {
+            if (_resourceWallet == null || _maxResourcePerElement <= 0f) return 0f;
+            return _resourceWallet.Get(element) / _maxResourcePerElement;
+        }
+
+        /// <summary>현재 프레임 기준 시야 콘+사거리 안에 처형 가능한 대상이 존재하면 true.</summary>
+        public bool HasExecutableTargetNearby => FindNearestExecutableTarget() != null;
 
         // 플레이어는 별도의 그로기 시스템을 사용하지 않으므로 항상 false를 반환합니다(05_Enemies 전용 상태).
         public bool IsGroggy => false;
@@ -390,16 +408,17 @@ namespace KillRitual.Player.Combat
             }
 
             projectile.Initialize(
-                elementType: _currentElement,
-                damage: damage,
-                speed: mode.ProjectileSpeed,
-                gravityScale: mode.GravityScale,
-                pierceCount: mode.PierceCount,
-                explodesOnImpact: explodesOnImpact,
-                explosionRadius: mode.ExplosionRadius,
-                maxRange: mode.Range,
-                owner: this,
-                damageableLayerMask: _damageableLayerMask);
+                elementType:        _currentElement,
+                damage:             damage,
+                speed:              mode.ProjectileSpeed,
+                gravityScale:       mode.GravityScale,
+                pierceCount:        mode.PierceCount,
+                explodesOnImpact:   explodesOnImpact,
+                explosionRadius:    mode.ExplosionRadius,
+                maxRange:           mode.Range,
+                owner:              this,
+                hitscanLayerMask:   _damageableLayerMask,
+                explosionLayerMask: _explosionLayerMask);
         }
 
         // ------------------------------------------------------------------

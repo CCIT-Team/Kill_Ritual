@@ -2,19 +2,17 @@
 using UnityEngine;
 using KillRitual.Core.Interfaces;
 using KillRitual.Core.Damage;
-
+using KillRitual.Core.Managers;
 namespace KillRitual.Weapons
 {
     /// <summary>
     /// 물리 투사체(Projectile / ExplosiveBurst 계열)의 비행 궤적과 충돌 판정을 전담하는 컴포넌트입니다.
-    /// 현재 수(水) 속성 두 모드(등속 플라즈마 소총 / 관통형 플라즈마)와 금(金) 속성 BFG가 이 클래스를
-    /// 공유해서 사용하며, GravityScale 파라미터 하나로 "등속 직선" ↔ "포물선" 운동을 모두 표현할 수
-    /// 있도록 범용적으로 설계했습니다(필요 시 화(火) 계열에도 동일하게 재사용 가능).
     ///
-    /// Rigidbody/PhysX의 내장 Continuous Collision Detection에 의존하지 않고, 매 프레임 직접
-    /// 위치를 적분(수동 운동학적 이동)한 뒤 이전 위치→다음 위치 구간을 RaycastNonAlloc으로
-    /// 스윕(Sweep)하는 "수동 CCD"를 구현하여, 고속 비행 시 얇은 콜라이더를 관통해버리는
-    /// 터널링 현상을 원천 차단합니다.
+    /// [디버그 통계 구조]
+    /// 이 클래스는 #if UNITY_EDITOR || DEVELOPMENT_BUILD 블록 안에서만 컴파일되는
+    /// KRExplosionStats 구조체를 통해 폭발 1회당 연산 지표를 수집합니다.
+    /// 수집된 데이터는 KRCombatDebugOverlay가 OnGUI로 화면에 렌더링하며,
+    /// 릴리즈 빌드에서는 관련 코드 전체가 제거되어 런타임 비용이 0입니다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRPhysicsProjectile : MonoBehaviour
@@ -22,11 +20,12 @@ namespace KillRitual.Weapons
         [Tooltip("충돌 판정 없이 자동 소멸되기까지의 최대 생존 시간(초). 사거리 소진 전에 안전망 역할을 합니다.")]
         [SerializeField] private float _maxLifetimeSeconds = 6f;
 
-        // NonAlloc 공용 버퍼. Unity 메인 스레드는 단일 스레드 순차 실행이므로, 여러 투사체 인스턴스가
-        // 동시에(같은 프레임 내에서) Update를 호출받아도 한 인스턴스의 버퍼 사용이 완전히 끝난 뒤
-        // 다음 인스턴스의 Update가 실행되기 때문에 static 공유 버퍼가 안전합니다.
-        private static readonly RaycastHit[] _raycastBuffer = new RaycastHit[8];
-        private static readonly Collider[] _overlapBuffer = new Collider[32];
+        private static readonly RaycastHit[] _raycastBuffer      = new RaycastHit[8];
+        private static readonly Collider[]   _overlapBuffer      = new Collider[32];
+
+        // [최적화] 중복 제거용 인스턴스 ID 마킹 배열. O(n²) 이중 루프를 O(n) 단일 패스로 대체합니다.
+        // _overlapBuffer와 동일한 크기로 선언해 인덱스 초과를 원천 차단합니다.
+        private static readonly int[]        _handledInstanceIds = new int[32];
 
         private KRDamageType _elementType;
         private float _damage;
@@ -35,7 +34,12 @@ namespace KillRitual.Weapons
         private bool _explodesOnImpact;
         private float _explosionRadius;
         private IDamageable _owner;
-        private LayerMask _damageableLayerMask;
+
+        // [최적화] 사격 판정(벽 포함)과 폭발 판정(피격 가능 개체만)을 분리합니다.
+        // Hitscan은 벽을 감지해야 하므로 Environment 레이어를 포함하고,
+        // 폭발 판정은 Damageable 레이어만 사용해 브로드페이즈 후보 수 자체를 줄입니다.
+        private LayerMask _hitscanLayerMask;
+        private LayerMask _explosionLayerMask;
 
         private Vector3 _velocity;
         private Vector3 _previousPosition;
@@ -43,19 +47,46 @@ namespace KillRitual.Weapons
         private float _elapsedLifetime;
         private bool _initialized;
 
+        // -----------------------------------------------------------------------
+        // [DEBUG] 폭발 통계 구조체.
+        // 릴리즈 빌드에서는 컴파일 자체가 되지 않으므로 런타임 비용 0.
+        // -----------------------------------------------------------------------
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
-        /// 발사 직후 KRCombatSystem이 호출하여 투사체의 모든 거동 파라미터를 주입합니다.
+        /// 폭발(Explode) 1회 실행 시 수집되는 연산 지표입니다.
+        /// KRCombatDebugOverlay가 이 구조체를 구독해 OnGUI로 시각화합니다.
         /// </summary>
-        /// <param name="elementType">데미지 속성 (오행 중 하나)</param>
-        /// <param name="damage">명중/폭발 1회당 기본 데미지 (폭발의 경우 거리 감쇠 적용 전 최대값)</param>
-        /// <param name="speed">초기 비행 속도 (미터/초)</param>
-        /// <param name="gravityScale">0 = 완전한 등속 직선 운동, 0보다 크면 포물선 운동</param>
-        /// <param name="pierceCount">관통 가능 횟수. 0이면 첫 명중에서 즉시 소멸</param>
-        /// <param name="explodesOnImpact">true면 충돌(또는 사거리 소진) 시 광역 폭발 데미지를 발생시킴</param>
-        /// <param name="explosionRadius">광역 폭발 반경</param>
-        /// <param name="maxRange">최대 비행 거리. 이 거리를 모두 소진하면 충돌이 없어도 폭발/소멸합니다.</param>
-        /// <param name="owner">발사 주체. 자기 자신에게는 데미지가 들어가지 않도록 비교에 사용됩니다.</param>
-        /// <param name="damageableLayerMask">충돌 판정 대상 레이어 마스크</param>
+        public struct KRExplosionStats
+        {
+            /// <summary>OverlapSphereNonAlloc이 반환한 원시 콜라이더 수 (브로드페이즈 통과 수)</summary>
+            public int RawColliderCount;
+
+            /// <summary>GetComponentInParent 호출 횟수. 현재 구조에서는 중복 검사 포함 최대 O(n²)번 호출됨</summary>
+            public int ComponentLookupCount;
+
+            /// <summary>중복 콜라이더로 판정되어 건너뛴 횟수</summary>
+            public int DuplicateSkipCount;
+
+            /// <summary>실제로 TakeDamage가 호출된 유효 피격 대상 수</summary>
+            public int ActualHitCount;
+
+            /// <summary>IsAlreadyHandled 내부의 이중 루프 총 반복 횟수. O(n²) 비용의 직접 지표</summary>
+            public int DeduplicationIterations;
+
+            /// <summary>폭발 발생 월드 좌표</summary>
+            public Vector3 Center;
+
+            /// <summary>폭발 반경</summary>
+            public float Radius;
+        }
+
+        /// <summary>
+        /// 폭발 1회 완료 시 발행되는 이벤트.
+        /// KRCombatDebugOverlay가 구독해 통계를 누적합니다.
+        /// </summary>
+        public static event System.Action<KRExplosionStats> OnExplosionDebugStats;
+#endif
+
         public void Initialize(
             KRDamageType elementType,
             float damage,
@@ -66,95 +97,78 @@ namespace KillRitual.Weapons
             float explosionRadius,
             float maxRange,
             IDamageable owner,
-            LayerMask damageableLayerMask)
+            LayerMask hitscanLayerMask,
+            LayerMask explosionLayerMask)
         {
-            _elementType = elementType;
-            _damage = damage;
-            _gravityScale = gravityScale;
-            _pierceRemaining = pierceCount;
-            _explodesOnImpact = explodesOnImpact;
-            _explosionRadius = explosionRadius;
-            _owner = owner;
-            _damageableLayerMask = damageableLayerMask;
+            _elementType       = elementType;
+            _damage            = damage;
+            _gravityScale      = gravityScale;
+            _pierceRemaining   = pierceCount;
+            _explodesOnImpact  = explodesOnImpact;
+            _explosionRadius   = explosionRadius;
+            _owner             = owner;
+            _hitscanLayerMask  = hitscanLayerMask;
+            _explosionLayerMask = explosionLayerMask;
 
-            _velocity = transform.forward * speed;
+            _velocity         = transform.forward * speed;
             _previousPosition = transform.position;
-            _remainingRange = maxRange;
-            _elapsedLifetime = 0f;
-            _initialized = true;
+            _remainingRange   = maxRange;
+            _elapsedLifetime  = 0f;
+            _initialized      = true;
         }
 
         private void Update()
         {
-            if (!_initialized)
-            {
-                return;
-            }
+            if (!_initialized) return;
 
             _elapsedLifetime += Time.deltaTime;
+            if (_elapsedLifetime >= _maxLifetimeSeconds) { Destroy(gameObject); return; }
 
-            if (_elapsedLifetime >= _maxLifetimeSeconds)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            // --- 1) 등가속도(중력) 적용: GravityScale이 0이면 속도 벡터가 전혀 변하지 않아 완전한 등속 직선 운동이 됩니다.
             _velocity += Physics.gravity * (_gravityScale * Time.deltaTime);
 
-            Vector3 displacement = _velocity * Time.deltaTime;
-            float travelDistance = displacement.magnitude;
-
-            if (travelDistance <= 0f)
-            {
-                return;
-            }
+            Vector3 displacement  = _velocity * Time.deltaTime;
+            float travelDistance  = displacement.magnitude;
+            if (travelDistance <= 0f) return;
 
             Vector3 direction = displacement / travelDistance;
 
-            // --- 2) 수동 CCD Swept Raycast: 이전 위치(P_prev)에서 다음 위치(P_next) 방향으로
-            // 변위 거리만큼 레이저 스캔을 수행하여, 한 프레임 안에서 발생할 수 있는 터널링을 방지합니다.
-            int hitCount = Physics.RaycastNonAlloc(_previousPosition, direction, _raycastBuffer, travelDistance, _damageableLayerMask);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // 비행 경로를 씬 뷰와 게임 뷰 모두에서 확인할 수 있도록 매 프레임 궤적 선을 그립니다.
+            // 색상: 수(水)=파랑, 금(金)=노랑, 나머지=흰색
+            Color trailColor = _elementType == KRDamageType.Water  ? Color.cyan  :
+                               _elementType == KRDamageType.Metal  ? Color.yellow : Color.white;
+            Debug.DrawLine(_previousPosition, _previousPosition + displacement, trailColor, 0.5f);
+#endif
+
+            int hitCount = Physics.RaycastNonAlloc(
+                _previousPosition, direction, _raycastBuffer, travelDistance, _hitscanLayerMask);
 
             if (hitCount > 0)
             {
                 int closestIndex = FindClosestHitIndex(hitCount);
-
                 if (closestIndex >= 0)
                 {
                     RaycastHit hit = _raycastBuffer[closestIndex];
                     bool destroyed = HandleImpact(hit.point, hit.collider);
-
-                    if (destroyed)
-                    {
-                        // 이번 프레임의 위치 갱신 없이 즉시 종료 (충돌 지점에서 폭발/소멸 처리가 이미 완료됨).
-                        return;
-                    }
+                    if (destroyed) return;
                 }
             }
 
             Vector3 nextPosition = _previousPosition + displacement;
-            transform.position = nextPosition;
-            _previousPosition = nextPosition;
-            _remainingRange -= travelDistance;
+            transform.position   = nextPosition;
+            _previousPosition    = nextPosition;
+            _remainingRange     -= travelDistance;
 
-            // --- 3) 사거리 소진: 아무것도 맞추지 못한 채 최대 사거리에 도달하면, 폭발형은 그 자리에서 터지고
-            // 비폭발형은 조용히 소멸합니다.
             if (_remainingRange <= 0f)
             {
-                if (_explodesOnImpact)
-                {
-                    Explode(nextPosition);
-                }
-
+                if (_explodesOnImpact) Explode(nextPosition);
                 Destroy(gameObject);
             }
         }
 
-        /// <summary>NonAlloc 버퍼 안에서 가장 가까운(거리값이 가장 작은) 충돌의 인덱스를 찾습니다.</summary>
         private int FindClosestHitIndex(int hitCount)
         {
-            int closestIndex = -1;
+            int   closestIndex    = -1;
             float closestDistance = float.MaxValue;
 
             for (int i = 0; i < hitCount; i++)
@@ -162,113 +176,157 @@ namespace KillRitual.Weapons
                 if (_raycastBuffer[i].distance < closestDistance)
                 {
                     closestDistance = _raycastBuffer[i].distance;
-                    closestIndex = i;
+                    closestIndex    = i;
                 }
             }
-
             return closestIndex;
         }
 
-        /// <summary>
-        /// 충돌 지점에서의 처리를 수행합니다.
-        /// 반환값이 true이면 이 투사체는 이번 프레임에 파괴(소멸)되었다는 뜻이며,
-        /// false이면 관통이 성공하여 비행을 계속한다는 뜻입니다.
-        /// </summary>
         private bool HandleImpact(Vector3 hitPoint, Collider hitCollider)
         {
             IDamageable target = hitCollider.GetComponentInParent<IDamageable>();
 
-            // 환경(벽 등 IDamageable이 없는 콜라이더)에 부딪힌 경우: 관통 불가, 즉시 폭발/소멸.
             if (target == null)
             {
-                if (_explodesOnImpact)
-                {
-                    Explode(hitPoint);
-                }
-
+                if (_explodesOnImpact) Explode(hitPoint);
                 Destroy(gameObject);
                 return true;
             }
 
-            // 발사 주체 자기 자신이거나 이미 사망한 대상은 충돌을 무시하고 그대로 통과시킵니다
-            // (이번 프레임 위치 갱신은 호출부의 Update가 정상적으로 이어서 진행합니다).
-            if (ReferenceEquals(target, _owner) || target.IsDead)
-            {
-                return false;
-            }
+            if (ReferenceEquals(target, _owner) || target.IsDead) return false;
 
             var context = new KRDamageContext(_damage, _elementType, hitPoint, _velocity.normalized);
             target.TakeDamage(context);
 
-            // 관통 가능 횟수가 남아있다면 소멸하지 않고 횟수만 차감한 뒤 비행을 계속합니다.
-            if (_pierceRemaining > 0)
-            {
-                _pierceRemaining--;
-                return false;
-            }
+            if (_pierceRemaining > 0) { _pierceRemaining--; return false; }
 
-            if (_explodesOnImpact)
-            {
-                Explode(hitPoint);
-            }
-
+            if (_explodesOnImpact) Explode(hitPoint);
             Destroy(gameObject);
             return true;
         }
 
         /// <summary>
-        /// OverlapSphereNonAlloc으로 폭발 반경 내 모든 IDamageable을 찾아, 중심으로부터의 거리에
-        /// 비례한 선형 감쇠 데미지(D = Dmax × (1 - d/R))를 적용합니다.
-        /// HashSet 등 힙 할당 없이, 작은 고정 크기 버퍼 내에서 단순 선형 중복 검사로 0 GC를 유지합니다.
+        /// [최적화 적용] OverlapSphereNonAlloc으로 폭발 반경 내 IDamageable을 수집하고
+        /// 선형 감쇠 데미지(D = Dmax × (1 - d/R))를 적용합니다.
+        ///
+        /// 개선 내용 (SAP 내로우페이즈 원칙 적용):
+        ///   ① GetComponentInParent 제거 → KRManagers.Combat.Lookup(collider) O(1) 조회
+        ///   ② O(n²) 이중 루프 중복 제거 → _handledInstanceIds[] 배열 마킹 O(n)
+        ///   ③ _explosionLayerMask 분리 → 브로드페이즈 후보 수 자체를 줄임 (환경 레이어 제외)
         /// </summary>
         private void Explode(Vector3 center)
         {
-            int count = Physics.OverlapSphereNonAlloc(center, _explosionRadius, _overlapBuffer, _damageableLayerMask);
+            // 브로드페이즈: Damageable 전용 마스크로 후보 수 선제 제한
+            int count = Physics.OverlapSphereNonAlloc(
+                center, _explosionRadius, _overlapBuffer, _explosionLayerMask);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DrawDebugSphere(center, _explosionRadius, Color.red, duration: 3f);
+            var stats = new KRExplosionStats
+            {
+                RawColliderCount = count,
+                Center           = center,
+                Radius           = _explosionRadius
+            };
+#endif
+
+            // 중복 제거용 인스턴스 ID 마킹 배열. O(n) 단일 패스로 중복을 식별합니다.
+            // static 배열이므로 힙 할당 없이 재사용됩니다(GC 0).
+            int handledCount = 0;
 
             for (int i = 0; i < count; i++)
             {
-                IDamageable target = _overlapBuffer[i].GetComponentInParent<IDamageable>();
+                // ① O(1) 캐시 조회 — GetComponentInParent 완전 제거
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                stats.ComponentLookupCount++;
+#endif
+                IDamageable target = KRManagers.Combat != null
+                    ? KRManagers.Combat.Lookup(_overlapBuffer[i])
+                    : _overlapBuffer[i].GetComponentInParent<IDamageable>(); // 캐시 미등록 폴백
 
-                if (target == null || ReferenceEquals(target, _owner) || target.IsDead)
+                if (target == null || ReferenceEquals(target, _owner) || target.IsDead) continue;
+
+                // ② O(n) 선형 마킹 중복 검사 — O(n²) 이중 루프 대체
+                int instanceId = target.GetHashCode();
+                bool isDuplicate = false;
+                for (int j = 0; j < handledCount; j++)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    stats.DeduplicationIterations++;
+#endif
+                    if (_handledInstanceIds[j] == instanceId) { isDuplicate = true; break; }
+                }
+
+                if (isDuplicate)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    stats.DuplicateSkipCount++;
+                    Debug.DrawLine(center, _overlapBuffer[i].bounds.center, Color.yellow, 3f);
+#endif
                     continue;
                 }
 
-                // 같은 대상이 여러 콜라이더(예: 신체 부위별 콜라이더)로 버퍼에 중복 등재되어
-                // 중복 피해를 입지 않도록, 자신보다 앞선 인덱스들 중 동일 대상이 있었는지 검사합니다.
-                if (IsAlreadyHandled(target, i))
-                {
-                    continue;
-                }
+                // 처리 완료 마킹 — 배열 범위 초과 방지
+                if (handledCount < _handledInstanceIds.Length)
+                    _handledInstanceIds[handledCount++] = instanceId;
 
-                float distance = Vector3.Distance(center, target.Position);
+                float distance     = Vector3.Distance(center, target.Position);
                 float clampedRatio = Mathf.Clamp01(distance / Mathf.Max(0.0001f, _explosionRadius));
-                float finalDamage = _damage * (1f - clampedRatio);
+                float finalDamage  = _damage * (1f - clampedRatio);
 
-                if (finalDamage <= 0f)
-                {
-                    continue;
-                }
+                if (finalDamage <= 0f) continue;
 
-                Vector3 direction = (target.Position - center).normalized;
-                var context = new KRDamageContext(finalDamage, _elementType, center, direction);
+                Vector3 dir = (target.Position - center).normalized;
+                var context = new KRDamageContext(finalDamage, _elementType, center, dir);
                 target.TakeDamage(context);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                stats.ActualHitCount++;
+                float alpha = 1f - clampedRatio;
+                Debug.DrawLine(center, target.Position,
+                    new Color(0f, 1f, 0f, Mathf.Max(0.3f, alpha)), 3f);
+#endif
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            OnExplosionDebugStats?.Invoke(stats);
+#endif
         }
 
-        private bool IsAlreadyHandled(IDamageable target, int currentIndex)
+        // -----------------------------------------------------------------------
+        // Debug.DrawLine 8선으로 구(球)를 근사하는 유틸리티.
+        // Physics.DrawWireSphere는 존재하지 않으므로 직접 구현합니다.
+        // -----------------------------------------------------------------------
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void DrawDebugSphere(Vector3 center, float radius, Color color, float duration)
         {
-            for (int j = 0; j < currentIndex; j++)
+            const int segments = 16;
+            float step = 360f / segments * Mathf.Deg2Rad;
+
+            for (int i = 0; i < segments; i++)
             {
-                IDamageable prior = _overlapBuffer[j].GetComponentInParent<IDamageable>();
+                float a0 = step * i;
+                float a1 = step * (i + 1);
 
-                if (ReferenceEquals(prior, target))
-                {
-                    return true;
-                }
+                // XZ 평면 (수평 링)
+                Debug.DrawLine(
+                    center + new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0)) * radius,
+                    center + new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1)) * radius,
+                    color, duration);
+
+                // XY 평면 (수직 링)
+                Debug.DrawLine(
+                    center + new Vector3(Mathf.Cos(a0), Mathf.Sin(a0), 0f) * radius,
+                    center + new Vector3(Mathf.Cos(a1), Mathf.Sin(a1), 0f) * radius,
+                    color, duration);
+
+                // YZ 평면 (수직 링 90도 회전)
+                Debug.DrawLine(
+                    center + new Vector3(0f, Mathf.Cos(a0), Mathf.Sin(a0)) * radius,
+                    center + new Vector3(0f, Mathf.Cos(a1), Mathf.Sin(a1)) * radius,
+                    color, duration);
             }
-
-            return false;
         }
+#endif
     }
 }

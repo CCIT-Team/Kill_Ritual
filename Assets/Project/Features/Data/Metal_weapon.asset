@@ -12,23 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76ad85d07e58942498e8f94691e1a7e9, type: 3}
   m_Name: Metal_weapon
   m_EditorClassIdentifier: 
-  Element: 0
+  Element: 4
   Icon: {fileID: 0}
-  HasSecondMode: 1
+  HasSecondMode: 0
   Mode1:
-    ModeName: Mode
-    AttackType: 0
-    GizmoShape: 0
-    Damage: 10
+    ModeName: BFG
+    AttackType: 3
+    GizmoShape: 1
+    Damage: 120
     Range: 50
-    Cooldown: 0.2
+    Cooldown: 4.5
     ResourceCost: 5
     PelletCount: 1
     SpreadAngleDegrees: 0
-    ProjectileSpeed: 40
+    ProjectileSpeed: 20
     GravityScale: 0
     PierceCount: 0
-    ExplosionRadius: 0
+    ExplosionRadius: 8
     BoxHeight: 1.5
   Mode2:
     ModeName: Mode

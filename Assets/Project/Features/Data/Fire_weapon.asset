@@ -16,30 +16,30 @@ MonoBehaviour:
   Icon: {fileID: 0}
   HasSecondMode: 1
   Mode1:
-    ModeName: Mode
-    AttackType: 0
+    ModeName: "\uC0F7\uAC74"
+    AttackType: 1
     GizmoShape: 0
-    Damage: 10
-    Range: 50
-    Cooldown: 0.2
-    ResourceCost: 5
-    PelletCount: 1
-    SpreadAngleDegrees: 0
+    Damage: 8
+    Range: 12
+    Cooldown: 0.8
+    ResourceCost: 2
+    PelletCount: 8
+    SpreadAngleDegrees: 20
     ProjectileSpeed: 40
     GravityScale: 0
     PierceCount: 0
     ExplosionRadius: 0
     BoxHeight: 1.5
   Mode2:
-    ModeName: Mode
-    AttackType: 0
+    ModeName: "\uC288\uD37C\uC0F7\uAC74"
+    AttackType: 1
     GizmoShape: 0
     Damage: 10
-    Range: 50
-    Cooldown: 0.2
-    ResourceCost: 5
-    PelletCount: 1
-    SpreadAngleDegrees: 0
+    Range: 12
+    Cooldown: 1.4
+    ResourceCost: 4
+    PelletCount: 14
+    SpreadAngleDegrees: 28
     ProjectileSpeed: 40
     GravityScale: 0
     PierceCount: 0

@@ -24,13 +24,21 @@ namespace KillRitual.Core.Managers
         public static KRPoolManager Pool { get; private set; }
 
         /// <summary>
+        /// [최적화] Collider → IDamageable 사전 매핑 캐시입니다.
+        /// KREnemyEntity가 OnEnable/OnDisable에서 자신의 콜라이더를 등록·해제하며,
+        /// KRPhysicsProjectile.Explode()가 GetComponentInParent 대신 이 캐시를 O(1) 조회합니다.
+        /// </summary>
+        public static KRCombatRegistry Combat { get; private set; }
+
+        /// <summary>
         /// Developer A 소관 코어 시스템들을 초기화합니다. KRManagers.Awake()에서 호출됩니다.
         /// </summary>
         private void InitCore()
         {
-            Event = new KREventBus();
-            File = new KRFileManager();
-            Pool = new KRPoolManager();
+            Event  = new KREventBus();
+            File   = new KRFileManager();
+            Pool   = new KRPoolManager();
+            Combat = new KRCombatRegistry();
         }
     }
 }
