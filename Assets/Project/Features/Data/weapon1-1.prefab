@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7308648408905227843
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2338248755814093448}
+  - component: {fileID: 6908782213974066792}
+  m_Layer: 0
+  m_Name: weapon1-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2338248755814093448
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7308648408905227843}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.39994, y: 5.5704074, z: 10.507796}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6908782213974066792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7308648408905227843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f29439d4e0f05b5489ca254e1c0d5cc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _element: 0
+  _weaponName: "\uD654_\uC0F7\uAC74"
+  _damage: 10
+  _range: 50
+  _cooldown: 0.2
+  _resourceCost: 5
+  _pelletCount: 5
+  _spreadAngleDegrees: 15
+  _boxHeight: 1.5
+  _tracerPrefab: {fileID: 0}
+  _tracerDuration: 0.05
+  _tracerColor: {r: 1, g: 0.6028177, b: 0, a: 1}
