@@ -225,7 +225,7 @@ GameObject:
   - component: {fileID: 4755460052612044462}
   - component: {fileID: 550800425906790879}
   m_Layer: 0
-  m_Name: PoplarTree001_pr
+  m_Name: PoplarTree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -268,15 +268,15 @@ LODGroup:
   - screenRelativeHeight: 0.95008934
     fadeTransitionWidth: 0
     renderers:
-    - renderer: {fileID: 7996880500377104151}
+    - renderer: {fileID: 3879547875419595091}
   - screenRelativeHeight: 0.8897967
     fadeTransitionWidth: 0
     renderers:
-    - renderer: {fileID: 2782603979061611917}
+    - renderer: {fileID: 1248069635864731315}
   - screenRelativeHeight: 0.82730454
     fadeTransitionWidth: 0
     renderers:
-    - renderer: {fileID: 3879547875419595091}
+    - renderer: {fileID: 1248069635864731315}
   - screenRelativeHeight: 0.7507604
     fadeTransitionWidth: 0
     renderers:

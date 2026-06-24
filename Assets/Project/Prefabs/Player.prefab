@@ -304,8 +304,8 @@ GameObject:
   - component: {fileID: 3944661975412032089}
   - component: {fileID: 357648394662124048}
   - component: {fileID: 3035604140740038902}
-  - component: {fileID: 5170085371073713213}
   - component: {fileID: 2182632133349552899}
+  - component: {fileID: 5170085371073713213}
   m_Layer: 20
   m_Name: Player
   m_TagString: Player
@@ -406,24 +406,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5170085371073713213
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7321832389281065598}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e55b4e78dd0b16c459d1c09bbad864b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cameraRoot: {fileID: 7287944024635400950}
-  mouseSensitivity: 2.5
-  minPitch: -80
-  maxPitch: 80
-  lockCursorOnStart: 1
-  allowEscapeUnlock: 1
 --- !u!114 &2182632133349552899
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -471,3 +453,21 @@ MonoBehaviour:
   softenFallingVelocityOnDash: 1
   showDebugLog: 1
   drawGroundCheckGizmo: 1
+--- !u!114 &5170085371073713213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7321832389281065598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e55b4e78dd0b16c459d1c09bbad864b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraRoot: {fileID: 7287944024635400950}
+  mouseSensitivity: 2.5
+  minPitch: -80
+  maxPitch: 80
+  lockCursorOnStart: 1
+  allowEscapeUnlock: 1
