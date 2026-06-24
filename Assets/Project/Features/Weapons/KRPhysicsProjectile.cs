@@ -3,10 +3,19 @@ using UnityEngine;
 using KillRitual.Core.Interfaces;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Managers;
+
 namespace KillRitual.Weapons
 {
     /// <summary>
     /// 물리 투사체(Projectile / ExplosiveBurst 계열)의 비행 궤적과 충돌 판정을 전담하는 컴포넌트입니다.
+    ///
+    /// [유도 추적탄(Homing Tracer) 기능 - BFG 전용 옵션]
+    /// ConfigureHomingTracers()를 호출해두면, 비행 중 일정 주기마다 자신을 중심으로 반경 내
+    /// 적을 탐지하고, 레이캐스트로 시야가 실제로 막혀있지 않은지(벽 뒤 적이 아닌지) 확인한 뒤,
+    /// 시야가 확보된 대상에게만 소량의 즉발 데미지를 자동으로 적용합니다. 이는 BFG가 비행하며
+    /// 주변 적을 자동 조준해 작은 탄을 계속 쏘는 고전적인 효과를 구현합니다.
+    /// 이 기능을 호출하지 않은 일반 투사체(플라즈마건, 그레네이드런처 등)는 기존과 동일하게
+    /// 충돌/폭발 시에만 데미지를 입힙니다.
     ///
     /// [디버그 통계 구조]
     /// 이 클래스는 #if UNITY_EDITOR || DEVELOPMENT_BUILD 블록 안에서만 컴파일되는
@@ -27,6 +36,9 @@ namespace KillRitual.Weapons
         // _overlapBuffer와 동일한 크기로 선언해 인덱스 초과를 원천 차단합니다.
         private static readonly int[]        _handledInstanceIds = new int[32];
 
+        // 유도 추적탄 전용 NonAlloc 버퍼. 폭발용 버퍼와 분리해 동시에 사용해도 안전합니다.
+        private static readonly Collider[]   _tracerOverlapBuffer = new Collider[8];
+
         private KRDamageType _elementType;
         private float _damage;
         private float _gravityScale;
@@ -46,6 +58,18 @@ namespace KillRitual.Weapons
         private float _remainingRange;
         private float _elapsedLifetime;
         private bool _initialized;
+
+        // ------------------------------------------------------------------
+        // [유도 추적탄] BFG 전용 옵션 상태. ConfigureHomingTracers()가 호출되지 않으면
+        // _hasHomingTracers가 false로 유지되어 일반 투사체와 동일하게 동작합니다.
+        // ------------------------------------------------------------------
+        private bool _hasHomingTracers;
+        private float _tracerRadius;
+        private float _tracerInterval;
+        private float _tracerDamage;
+        private float _tracerTimer;
+        private GameObject _tracerVisualPrefab;
+        private Color _tracerVisualColor;
 
         // -----------------------------------------------------------------------
         // [DEBUG] 폭발 통계 구조체.
@@ -117,12 +141,39 @@ namespace KillRitual.Weapons
             _initialized      = true;
         }
 
+        /// <summary>
+        /// [선택적 기능] 비행 중 유도 추적탄(자동 조준 잔탄)을 활성화합니다.
+        /// Initialize() 직후, 발사 전 호출해야 합니다. 호출하지 않으면 일반 투사체로 동작합니다.
+        /// </summary>
+        /// <param name="radius">추적탄이 적을 탐지하는 반경</param>
+        /// <param name="interval">추적탄 발사 주기(초). 0.1이면 초당 약 10발의 작은 탄이 나갑니다.</param>
+        /// <param name="tracerDamage">추적탄 1발당 데미지 (메인 폭발 데미지와는 별개입니다)</param>
+        /// <param name="tracerVisualPrefab">추적탄이 명중할 때 보여줄 시각효과 프리팹 (KRHitscanTracer). null이면 시각효과 생략.</param>
+        /// <param name="tracerVisualColor">추적탄 시각효과 색상</param>
+        public void ConfigureHomingTracers(float radius, float interval, float tracerDamage,
+            GameObject tracerVisualPrefab, Color tracerVisualColor)
+        {
+            _hasHomingTracers   = true;
+            _tracerRadius       = radius;
+            _tracerInterval     = Mathf.Max(0.01f, interval);
+            _tracerDamage       = tracerDamage;
+            _tracerVisualPrefab = tracerVisualPrefab;
+            _tracerVisualColor  = tracerVisualColor;
+            _tracerTimer        = 0f;
+        }
+
         private void Update()
         {
             if (!_initialized) return;
 
             _elapsedLifetime += Time.deltaTime;
             if (_elapsedLifetime >= _maxLifetimeSeconds) { Destroy(gameObject); return; }
+
+            // 유도 추적탄은 투사체가 살아있는 모든 프레임에 주기적으로 동작합니다(이동 여부와 무관).
+            if (_hasHomingTracers)
+            {
+                UpdateHomingTracers();
+            }
 
             _velocity += Physics.gravity * (_gravityScale * Time.deltaTime);
 
@@ -163,6 +214,74 @@ namespace KillRitual.Weapons
             {
                 if (_explodesOnImpact) Explode(nextPosition);
                 Destroy(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// [유도 추적탄] 일정 주기마다 주변 적을 탐지하고, 레이캐스트로 실제 시야가 확보된
+        /// 대상에게만 소량의 즉발 데미지를 적용합니다. 시야 확인에 KRManagers.Combat의 O(1)
+        /// 캐시 조회를 사용해, 광역 폭발 최적화와 동일한 원칙(해시 기반 사전 매핑)을 재사용합니다.
+        /// </summary>
+        private void UpdateHomingTracers()
+        {
+            _tracerTimer += Time.deltaTime;
+            if (_tracerTimer < _tracerInterval) return;
+            _tracerTimer = 0f;
+
+            Vector3 origin = transform.position;
+
+            // 1단계 — 브로드페이즈: Damageable 전용 마스크로 주변 후보를 탐지합니다(벽 제외).
+            int count = Physics.OverlapSphereNonAlloc(origin, _tracerRadius, _tracerOverlapBuffer, _explosionLayerMask);
+
+            for (int i = 0; i < count; i++)
+            {
+                IDamageable target = KRManagers.Combat != null
+                    ? KRManagers.Combat.Lookup(_tracerOverlapBuffer[i])
+                    : _tracerOverlapBuffer[i].GetComponentInParent<IDamageable>();
+
+                if (target == null || ReferenceEquals(target, _owner) || target.IsDead) continue;
+
+                Vector3 toTarget = target.Position - origin;
+                float distance = toTarget.magnitude;
+                if (distance <= 0.0001f) continue;
+
+                Vector3 direction = toTarget / distance;
+
+                // 2단계 — 시야 확인: Hitscan 마스크(벽 포함)로 실제로 막혀있지 않은지 레이캐스트로 검증합니다.
+                // 벽 뒤에 있는 적은 추적탄에 맞지 않아야 하므로, 가장 먼저 맞는 대상이 정확히 target인지 확인합니다.
+                int hitCount = Physics.RaycastNonAlloc(origin, direction, _raycastBuffer, distance, _hitscanLayerMask);
+                int closestIndex = FindClosestHitIndex(hitCount);
+                if (closestIndex < 0) continue;
+
+                Collider hitCollider = _raycastBuffer[closestIndex].collider;
+                IDamageable lineOfSightTarget = KRManagers.Combat != null
+                    ? KRManagers.Combat.Lookup(hitCollider)
+                    : hitCollider.GetComponentInParent<IDamageable>();
+
+                // 첫 충돌이 의도한 target과 다르면(벽이나 다른 적에게 막힘) 이번 틱은 건너뜁니다.
+                if (!ReferenceEquals(lineOfSightTarget, target)) continue;
+
+                var context = new KRDamageContext(_tracerDamage, _elementType, target.Position, direction);
+                target.TakeDamage(context);
+
+                SpawnTracerVisual(origin, target.Position);
+            }
+        }
+
+        /// <summary>유도 추적탄이 명중했을 때의 시각효과(작은 트레이서)를 생성합니다. 프리팹이 없으면 생략됩니다.</summary>
+        private void SpawnTracerVisual(Vector3 origin, Vector3 targetPosition)
+        {
+            if (_tracerVisualPrefab == null) return;
+
+            GameObject instance = Instantiate(_tracerVisualPrefab, Vector3.zero, Quaternion.identity);
+
+            if (instance.TryGetComponent(out KRHitscanTracer tracer))
+            {
+                tracer.Play(origin, targetPosition, 0.08f, _tracerVisualColor);
+            }
+            else
+            {
+                Destroy(instance); // 잘못된 프리팹이 할당된 경우 안전하게 정리합니다.
             }
         }
 
@@ -308,19 +427,16 @@ namespace KillRitual.Weapons
                 float a0 = step * i;
                 float a1 = step * (i + 1);
 
-                // XZ 평면 (수평 링)
                 Debug.DrawLine(
                     center + new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0)) * radius,
                     center + new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1)) * radius,
                     color, duration);
 
-                // XY 평면 (수직 링)
                 Debug.DrawLine(
                     center + new Vector3(Mathf.Cos(a0), Mathf.Sin(a0), 0f) * radius,
                     center + new Vector3(Mathf.Cos(a1), Mathf.Sin(a1), 0f) * radius,
                     color, duration);
 
-                // YZ 평면 (수직 링 90도 회전)
                 Debug.DrawLine(
                     center + new Vector3(0f, Mathf.Cos(a0), Mathf.Sin(a0)) * radius,
                     center + new Vector3(0f, Mathf.Cos(a1), Mathf.Sin(a1)) * radius,

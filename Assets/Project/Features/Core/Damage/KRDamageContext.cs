@@ -5,10 +5,9 @@ namespace KillRitual.Core.Damage
 {
     /// <summary>
     /// 동양 오행(五行) 속성 5종을 정의하는 열거형입니다.
-    /// KRDamageContext.Type(피격 시 속성)과 KRElementDataSO.Element(무기 데이터의 속성)가
+    /// KRDamageContext.Type(피격 시 속성)과 각 무기 스크립트(KRWeaponBase._element)의 속성이
     /// 동일한 이 enum을 공유하여 사용합니다. 무기의 속성이 곧 그 무기가 입히는 데미지의 속성과
-    /// 같기 때문에, 별도의 "원소 타입" enum을 새로 만들지 않고 하나로 통합했습니다
-    /// (스크립트/타입 개수 최소화 원칙).
+    /// 같기 때문에, 별도의 "원소 타입" enum을 새로 만들지 않고 하나로 통합했습니다.
     /// 캐스팅 안전성을 위해 정수 값을 명시적으로 고정합니다.
     /// </summary>
     public enum KRDamageType
