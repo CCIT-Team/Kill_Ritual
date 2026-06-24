@@ -9,7 +9,7 @@ namespace KillRitual.Data
     /// 데이터-로직 이원화 원칙에 따라, LOGIC 레이어인 KRCombatSystem이 이 데이터를
     /// "참조"하여 사용할 뿐, 이 SO는 자기 자신을 어떻게 쓰는지 전혀 알지 못합니다.
     /// </summary>
-    [CreateAssetMenu(fileName = "KRCharacterStats", menuName = "KillRitual/Data/Character Stats", order = 0)]
+    [CreateAssetMenu(fileName = "KRCharacterStats", menuName = "Kill Ritual/Data/Character Stats", order = 0)]
     public sealed class KRCharacterStatsSO : ScriptableObject
     {
         [Header("생존")]
