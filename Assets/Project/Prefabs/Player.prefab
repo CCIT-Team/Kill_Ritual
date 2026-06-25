@@ -506,7 +506,7 @@ MonoBehaviour:
   gravity: -35
   fallGravityMultiplier: 1.45
   riseGravityMultiplier: 0.95
-  useVariableJumpHeight: 1
+  useVariableJumpHeight: 0
   jumpCutMultiplier: 0.45
   maxFallSpeed: 38
   groundedStickVelocity: 3

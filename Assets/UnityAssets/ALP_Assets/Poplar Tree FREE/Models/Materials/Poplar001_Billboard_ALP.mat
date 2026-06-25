@@ -9,6 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Poplar001_Billboard_ALP
   m_Shader: {fileID: 4800000, guid: e6635b5d95e70a74d8b1863e3ee43787, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
   - GEOM_TYPE_LEAF
@@ -20,6 +22,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -193,7 +196,7 @@ Material:
     - _MetallicStrength: 0
     - _Mode: 3
     - _NormalStrength: -0.35
-    - _Occlusion: 0
+    - _Occlusion: 0.26
     - _OcclusionSource: 1
     - _OcclusionStrength: 1
     - _OcclusionStrengthAO: 0
