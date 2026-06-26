@@ -83,6 +83,10 @@ namespace KillRitual.Player.Combat
         // 처형 대상 탐색 전용 NonAlloc 버퍼.
         private static readonly Collider[] _executionOverlapBuffer = new Collider[16];
 
+        // [조준점 보정] FirePoint(총구)가 화면 중앙이 아닌 위치에 있어도, 실제 탄이 카메라가
+        // 가리키는 화면 정중앙(조준점)으로 수렴하도록 보정할 때 사용하는 전용 레이캐스트 버퍼.
+        private static readonly RaycastHit[] _aimRaycastBuffer = new RaycastHit[8];
+
         private KRResourceWallet _resourceWallet;
         private KRDamageType _currentElement = KRDamageType.Fire;
         private float _health;
@@ -96,6 +100,57 @@ namespace KillRitual.Player.Combat
 
         /// <summary>Hitscan/CCD 판정용 마스크 (Damageable + Environment 포함).</summary>
         public LayerMask HitscanLayerMask => _damageableLayerMask;
+
+        /// <summary>
+        /// [조준점 보정] 무기의 총구(muzzleOrigin)가 화면 정중앙이 아닌 곳에 있어도, 카메라가
+        /// 가리키는 화면 정중앙의 "조준점"을 향해 탄이 날아가도록 보정된 방향을 계산합니다.
+        ///
+        /// 동작 방식: 먼저 카메라 위치에서 카메라 정면 방향으로 maxRange만큼 레이캐스트를 쏴서
+        /// 화면 중앙이 실제로 가리키는 지점(조준점)을 찾습니다. 그 지점에 아무것도 없으면
+        /// maxRange 끝 지점을 조준점으로 삼습니다. 그런 다음 (조준점 - muzzleOrigin) 방향을
+        /// 반환합니다. 이렇게 하면 총구 위치가 화면 한쪽으로 치우쳐 있어도, 실제 탄/투사체는
+        /// 항상 크로스헤어가 가리키는 지점으로 수렴합니다.
+        /// </summary>
+        /// <param name="muzzleOrigin">실제 탄/투사체가 출발할 총구 위치 (FirePoint 또는 무기별 발사 지점)</param>
+        /// <param name="maxRange">조준점을 탐색할 최대 거리 (무기의 사거리를 그대로 사용하면 됩니다)</param>
+        public Vector3 GetAimDirection(Vector3 muzzleOrigin, float maxRange)
+        {
+            if (_playerCamera == null)
+            {
+                // 카메라가 없는 비정상 상황에서는 FirePoint의 정면 방향으로 안전하게 폴백합니다.
+                return _firePoint != null ? _firePoint.forward : Vector3.forward;
+            }
+
+            Vector3 camPos = _playerCamera.transform.position;
+            Vector3 camForward = _playerCamera.transform.forward;
+
+            int hitCount = Physics.RaycastNonAlloc(camPos, camForward, _aimRaycastBuffer, maxRange, _damageableLayerMask);
+            int closestIndex = FindClosestAimHitIndex(hitCount);
+
+            Vector3 aimPoint = closestIndex >= 0
+                ? _aimRaycastBuffer[closestIndex].point
+                : camPos + (camForward * maxRange);
+
+            Vector3 direction = aimPoint - muzzleOrigin;
+            return direction.sqrMagnitude > 0.0001f ? direction.normalized : camForward;
+        }
+
+        private static int FindClosestAimHitIndex(int hitCount)
+        {
+            int closestIndex = -1;
+            float closestDistance = float.MaxValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                if (_aimRaycastBuffer[i].distance < closestDistance)
+                {
+                    closestDistance = _aimRaycastBuffer[i].distance;
+                    closestIndex = i;
+                }
+            }
+
+            return closestIndex;
+        }
 
         /// <summary>광역 폭발 판정용 마스크 (Damageable만 포함).</summary>
         public LayerMask ExplosionLayerMask => _explosionLayerMask;

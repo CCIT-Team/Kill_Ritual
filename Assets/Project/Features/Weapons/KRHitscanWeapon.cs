@@ -50,7 +50,10 @@ namespace KillRitual.Weapons
 
             for (int p = 0; p < pellets; p++)
             {
-                Vector3 direction = ApplySpreadJitter(fp.forward, _spreadAngleDegrees);
+                // [조준점 보정] 총구가 화면 중앙이 아니어도, 실제 탄은 크로스헤어가 가리키는
+                // 지점으로 수렴하도록 fp.forward 대신 GetAimDirection으로 보정된 방향을 사용합니다.
+                Vector3 aimDirection = _combatSystem.GetAimDirection(fp.position, _range);
+                Vector3 direction = ApplySpreadJitter(aimDirection, _spreadAngleDegrees);
                 int hitCount = Physics.RaycastNonAlloc(fp.position, direction, _hitscanBuffer, _range, _combatSystem.HitscanLayerMask);
 
                 Vector3 endPoint = ApplyNearestHitDamage(hitCount, damagePerPellet, fp.position, direction);

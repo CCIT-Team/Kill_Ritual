@@ -58,7 +58,13 @@ namespace KillRitual.Weapons
             }
 
             Transform fp = ResolveFirePoint();
-            GameObject instance = Instantiate(_projectilePrefab, fp.position, fp.rotation);
+
+            // [조준점 보정] 총구가 화면 중앙이 아니어도, 투사체는 크로스헤어가 가리키는
+            // 지점으로 수렴하도록 fp.rotation 대신 GetAimDirection으로 보정된 방향을 사용합니다.
+            Vector3 aimDirection = _combatSystem.GetAimDirection(fp.position, _range);
+            Quaternion aimRotation = Quaternion.LookRotation(aimDirection, Vector3.up);
+
+            GameObject instance = Instantiate(_projectilePrefab, fp.position, aimRotation);
 
             if (!instance.TryGetComponent(out KRPhysicsProjectile projectile))
             {
@@ -66,16 +72,16 @@ namespace KillRitual.Weapons
             }
 
             projectile.Initialize(
-                elementType:        _element,
-                damage:             damage,
-                speed:              _projectileSpeed,
-                gravityScale:       _gravityScale,
-                pierceCount:        _pierceCount,
-                explodesOnImpact:   _explodesOnImpact,
-                explosionRadius:    _explosionRadius,
-                maxRange:           _range,
-                owner:              _combatSystem.Owner,
-                hitscanLayerMask:   _combatSystem.HitscanLayerMask,
+                elementType: _element,
+                damage: damage,
+                speed: _projectileSpeed,
+                gravityScale: _gravityScale,
+                pierceCount: _pierceCount,
+                explodesOnImpact: _explodesOnImpact,
+                explosionRadius: _explosionRadius,
+                maxRange: _range,
+                owner: _combatSystem.Owner,
+                hitscanLayerMask: _combatSystem.HitscanLayerMask,
                 explosionLayerMask: _combatSystem.ExplosionLayerMask);
 
             _lastFiredProjectile = projectile;
