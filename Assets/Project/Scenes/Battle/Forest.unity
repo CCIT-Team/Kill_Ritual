@@ -2277,6 +2277,10 @@ PrefabInstance:
       propertyPath: riseGravityMultiplier
       value: 1.4
       objectReference: {fileID: 0}
+    - target: {fileID: 2355106738923016005, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3543975738508371740, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
       propertyPath: _maxResourcePerElement
       value: 10000
