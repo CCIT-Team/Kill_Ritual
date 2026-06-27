@@ -5,21 +5,15 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/FPS_Engine/Demo/MovementShowroom.unity
-    guid: 613fba616958bec418ee718b8e414d39
-  - enabled: 0
-    path: Assets/FPS_Engine/Demo/Showroom.unity
-    guid: c65d245ca63349e40af89661df799c04
-  - enabled: 0
-    path: Assets/Project/Scenes/2.unity
-    guid: 2fe88cf2187c18b429d435f1d9b95e42
+  - enabled: 1
+    path: Assets/Project/Scenes/MainMenu.unity
+    guid: d3e77df716449024d93b9c9165da1321
   - enabled: 1
     path: Assets/Project/Scenes/Loading.unity
     guid: 1795d1701ff2d12458e494d82407ef37
   - enabled: 1
-    path: Assets/Project/Scenes/Testing/Temple.unity
-    guid: 2face1c9264185b46a0c65e299d6b755
+    path: Assets/Project/Scenes/Temple.unity
+    guid: c058c43ee26b0f4408bce9b5e7844b5c
   - enabled: 1
     path: Assets/Project/Scenes/Battle/Forest.unity
     guid: b0ab193be514f444c9b3bb892d00bb17

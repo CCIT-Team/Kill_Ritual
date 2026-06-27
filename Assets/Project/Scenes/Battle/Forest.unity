@@ -856,6 +856,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 767232846597564718, guid: a40d515f0b989de439627ce663565574, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1426748991451048136, guid: a40d515f0b989de439627ce663565574, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -972,12 +976,20 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6733443099719170759, guid: a40d515f0b989de439627ce663565574, type: 3}
+      propertyPath: m_Color.a
+      value: 0.5921569
+      objectReference: {fileID: 0}
     - target: {fileID: 8736074730838217887, guid: a40d515f0b989de439627ce663565574, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8736074730838217887, guid: a40d515f0b989de439627ce663565574, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8888134833761068404, guid: a40d515f0b989de439627ce663565574, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -2209,6 +2221,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 44499595798980597, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 902635741499123753, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
       propertyPath: m_ShowToolkit
       value: 0
