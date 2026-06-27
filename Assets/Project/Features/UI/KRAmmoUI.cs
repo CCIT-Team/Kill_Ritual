@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using KillRitual.Core.Damage;
 using KillRitual.Player.Combat;
-
+ 
 namespace KillRitual.UI
 {
     /// <summary>
@@ -59,7 +59,7 @@ namespace KillRitual.UI
 
             KRDamageType element = _combatSystem.CurrentElement;
             float amount = _combatSystem.GetResourceAmount(element);
-            float max = _combatSystem.MaxResourcePerElement;
+            float max = _combatSystem.GetMaxResourceAmount(element);
             float ratio = max > 0f ? Mathf.Clamp01(amount / max) : 0f;
 
             UpdateAmmoText(amount, max, ratio);
@@ -101,3 +101,4 @@ namespace KillRitual.UI
         }
     }
 }
+

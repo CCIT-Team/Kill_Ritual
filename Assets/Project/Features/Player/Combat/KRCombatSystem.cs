@@ -6,7 +6,7 @@ using KillRitual.Core.Events;
 using KillRitual.Core.Managers;
 using KillRitual.Data;
 using KillRitual.Weapons;
-
+ 
 namespace KillRitual.Player.Combat
 {
     /// <summary>
@@ -53,8 +53,9 @@ namespace KillRitual.Player.Combat
         [SerializeField] private LayerMask _explosionLayerMask = ~0;
 
         [Header("공용 자원 지갑")]
-        [Tooltip("속성별 자원 주머니의 최대치. 모든 오행 속성이 동일한 최대치를 공유합니다.")]
-        [SerializeField] private float _maxResourcePerElement = 100f;
+        [Tooltip("속성별 자원 주머니의 최대치. 길이 5, [0]=Fire(화) [1]=Water(수) [2]=Wood(목) [3]=Earth(토) [4]=Metal(금) 순서. " +
+                 "속성마다 다른 최대 탄약량을 줄 수 있습니다(예: 금(金) BFG는 적게, 목(木) 정밀소총은 많게).")]
+        [SerializeField] private float[] _maxResourcePerElement = new float[] { 100f, 100f, 100f, 100f, 100f };
 
         [Header("처형 (Execution)")]
         [Tooltip("그로기 상태인 대상을 처형할 수 있는 최대 거리.")]
@@ -177,8 +178,9 @@ namespace KillRitual.Player.Combat
         /// <summary>지정 속성 자원의 현재 잔량 비율(0~1). 오버레이 바 그래프에 사용됩니다.</summary>
         public float GetResourceRatio(KRDamageType element)
         {
-            if (_resourceWallet == null || _maxResourcePerElement <= 0f) return 0f;
-            return _resourceWallet.Get(element) / _maxResourcePerElement;
+            if (_resourceWallet == null) return 0f;
+            float max = _resourceWallet.GetMax(element);
+            return max > 0f ? _resourceWallet.Get(element) / max : 0f;
         }
 
         /// <summary>현재 프레임 기준 시야 콘+사거리 안에 처형 가능한 대상이 존재하면 true.</summary>
@@ -191,8 +193,11 @@ namespace KillRitual.Player.Combat
             return _resourceWallet != null ? _resourceWallet.Get(element) : 0f;
         }
 
-        /// <summary>모든 속성이 공유하는 자원 주머니의 최대치.</summary>
-        public float MaxResourcePerElement => _maxResourcePerElement;
+        /// <summary>지정 속성의 최대 자원량. 속성마다 다를 수 있습니다(KRAmmoUI 등이 호출).</summary>
+        public float GetMaxResourceAmount(KRDamageType element)
+        {
+            return _resourceWallet != null ? _resourceWallet.GetMax(element) : 0f;
+        }
 
         public bool HasExecutableTargetNearby => FindNearestExecutableTarget() != null;
 
@@ -408,23 +413,27 @@ namespace KillRitual.Player.Combat
 
         // ------------------------------------------------------------------
         // [내부 전용] 자원 지갑 - 오행 5속성 공용 자원 주머니를 관리합니다.
+        // 속성마다 최대치가 다를 수 있으므로 _maxPerElement도 배열로 보관합니다.
         // ------------------------------------------------------------------
         private sealed class KRResourceWallet
         {
             private readonly float[] _pool = new float[kElementCount];
-            private readonly float _maxPerElement;
+            private readonly float[] _maxPerElement = new float[kElementCount];
 
-            public KRResourceWallet(float maxPerElement)
+            public KRResourceWallet(float[] maxPerElement)
             {
-                _maxPerElement = maxPerElement;
-
-                for (int i = 0; i < _pool.Length; i++)
+                for (int i = 0; i < kElementCount; i++)
                 {
-                    _pool[i] = maxPerElement;
+                    // 인스펙터에서 배열 길이를 5보다 작게 줄여놓는 실수를 해도 100f로 안전하게 대체합니다.
+                    float max = (maxPerElement != null && i < maxPerElement.Length) ? maxPerElement[i] : 100f;
+                    _maxPerElement[i] = max;
+                    _pool[i] = max; // 시작 시 가득 채운 상태로 둡니다.
                 }
             }
 
             public float Get(KRDamageType element) => _pool[(int)element];
+
+            public float GetMax(KRDamageType element) => _maxPerElement[(int)element];
 
             public bool TryConsume(KRDamageType element, float amount)
             {
@@ -442,8 +451,9 @@ namespace KillRitual.Player.Combat
             public void Refill(KRDamageType element, float amount)
             {
                 int idx = (int)element;
-                _pool[idx] = Mathf.Min(_maxPerElement, _pool[idx] + amount);
+                _pool[idx] = Mathf.Min(_maxPerElement[idx], _pool[idx] + amount);
             }
         }
     }
 }
+
