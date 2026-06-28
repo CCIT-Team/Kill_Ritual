@@ -598,7 +598,7 @@ GameObject:
   - component: {fileID: 704263680}
   - component: {fileID: 704263679}
   - component: {fileID: 704263678}
-  m_Layer: 0
+  m_Layer: 23
   m_Name: Plane (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1491,13 +1491,14 @@ MonoBehaviour:
   _damage: 25
   _range: 50
   _cooldown: 0.5
-  _resourceCost: 5
+  _resourceCost: 0
   _projectilePrefab: {fileID: 7746200650505838778, guid: 202957e482d9edb4b954acfcec3c08fc, type: 3}
-  _projectileSpeed: 10
-  _gravityScale: 2
+  _projectileSpeed: 20
+  _gravityScale: 1
   _pierceCount: 0
   _explodesOnImpact: 1
-  _explosionRadius: 3
+  _explosionRadius: 5
+  _explosionVfxPrefab: {fileID: 9035787057060768122, guid: bcfe3c65e337d8b4ebaa769a8eb955ba, type: 3}
 --- !u!114 &1664087330347290814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1517,11 +1518,12 @@ MonoBehaviour:
   _cooldown: 0.2
   _resourceCost: 1
   _projectilePrefab: {fileID: 5238590708250679060, guid: 5320ffbc31b4a6d4b989528e7ad1613f, type: 3}
-  _projectileSpeed: 1
+  _projectileSpeed: 20
   _gravityScale: 0
   _pierceCount: 0
   _explodesOnImpact: 0
   _explosionRadius: 0
+  _explosionVfxPrefab: {fileID: 0}
 --- !u!4 &1751780205162103391
 Transform:
   m_ObjectHideFlags: 0
@@ -1767,10 +1769,11 @@ MonoBehaviour:
   _gravityScale: 0
   _pierceCount: 0
   _explodesOnImpact: 1
-  _explosionRadius: 3
+  _explosionRadius: 10
+  _explosionVfxPrefab: {fileID: 9153084505907029488, guid: 7d2063300133a304a8dbca7096698d39, type: 3}
   _chargeDuration: 1.5
   _hasHomingTracers: 1
-  _homingTracerRadius: 10
+  _homingTracerRadius: 15
   _homingTracerInterval: 0.2
   _homingTracerDamage: 10
   _homingTracerVisualPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
@@ -1839,8 +1842,8 @@ MonoBehaviour:
   _cooldown: 0.8
   _resourceCost: 2
   _pelletCount: 5
-  _spreadAngleDegrees: 0
-  _boxHeight: 0.01
+  _spreadAngleDegrees: 13
+  _boxHeight: 2
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
   _tracerDuration: 2
   _tracerColor: {r: 1, g: 0.6028177, b: 0, a: 1}
@@ -2318,6 +2321,7 @@ MonoBehaviour:
   _pierceCount: 0
   _explodesOnImpact: 1
   _explosionRadius: 3
+  _explosionVfxPrefab: {fileID: 3963463621129087411, guid: ed8f4a368e8099d4b99681bb1e4989c7, type: 3}
   _chargeDuration: 2
   _hasHomingTracers: 0
   _homingTracerRadius: 15

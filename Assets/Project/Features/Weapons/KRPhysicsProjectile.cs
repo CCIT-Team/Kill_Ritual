@@ -29,15 +29,35 @@ namespace KillRitual.Weapons
         [Tooltip("충돌 판정 없이 자동 소멸되기까지의 최대 생존 시간(초). 사거리 소진 전에 안전망 역할을 합니다.")]
         [SerializeField] private float _maxLifetimeSeconds = 6f;
 
-        private static readonly RaycastHit[] _raycastBuffer      = new RaycastHit[8];
-        private static readonly Collider[]   _overlapBuffer      = new Collider[32];
+        private void Awake()
+        {
+            // [방어 로직] 충돌 판정은 이 스크립트가 직접 레이캐스트로 계산하므로, 투사체 자신에게는
+            // 원래 Collider/Rigidbody가 전혀 필요하지 않습니다. 그런데 프리팹 작업 중 실수로
+            // Collider가 남아있으면, 그 콜라이더는 PhysX의 일반 충돌로 처리되어 플레이어의
+            // Rigidbody와 물리적으로 겹침-밀어내기(depenetration)를 일으킵니다. 투사체가 느릴수록
+            // 플레이어 몸 근처에 오래 머물러 이 밀어내기가 누적되어 "넉백"처럼 느껴지게 됩니다.
+            // 이는 _owner 제외 로직(게임 로직)과 전혀 다른 채널(물리 엔진)에서 발생하므로 스크립트로
+            // 막을 수 없고, Collider 자체를 Trigger로 강제 전환해야 물리적 충돌이 원천 차단됩니다.
+            if (TryGetComponent(out Collider ownCollider))
+            {
+                ownCollider.isTrigger = true;
+            }
+
+            if (TryGetComponent(out Rigidbody ownRigidbody))
+            {
+                ownRigidbody.isKinematic = true;
+            }
+        }
+
+        private static readonly RaycastHit[] _raycastBuffer = new RaycastHit[8];
+        private static readonly Collider[] _overlapBuffer = new Collider[32];
 
         // [최적화] 중복 제거용 인스턴스 ID 마킹 배열. O(n²) 이중 루프를 O(n) 단일 패스로 대체합니다.
         // _overlapBuffer와 동일한 크기로 선언해 인덱스 초과를 원천 차단합니다.
-        private static readonly int[]        _handledInstanceIds = new int[32];
+        private static readonly int[] _handledInstanceIds = new int[32];
 
         // 유도 추적탄 전용 NonAlloc 버퍼. 폭발용 버퍼와 분리해 동시에 사용해도 안전합니다.
-        private static readonly Collider[]   _tracerOverlapBuffer = new Collider[8];
+        private static readonly Collider[] _tracerOverlapBuffer = new Collider[8];
 
         private KRDamageType _elementType;
         private float _damage;
@@ -70,6 +90,10 @@ namespace KillRitual.Weapons
         private float _tracerTimer;
         private GameObject _tracerVisualPrefab;
         private Color _tracerVisualColor;
+
+        // [폭발 시각효과] 실제 인게임에서 보이는 폭발 VFX 프리팹. ConfigureExplosionVisual()로
+        // 설정하지 않으면 시각효과 없이 데미지 판정만 동작합니다(기존과 동일하게 안전).
+        private GameObject _explosionVfxPrefab;
 
         // -----------------------------------------------------------------------
         // [DEBUG] 폭발 통계 구조체.
@@ -124,21 +148,21 @@ namespace KillRitual.Weapons
             LayerMask hitscanLayerMask,
             LayerMask explosionLayerMask)
         {
-            _elementType       = elementType;
-            _damage            = damage;
-            _gravityScale      = gravityScale;
-            _pierceRemaining   = pierceCount;
-            _explodesOnImpact  = explodesOnImpact;
-            _explosionRadius   = explosionRadius;
-            _owner             = owner;
-            _hitscanLayerMask  = hitscanLayerMask;
+            _elementType = elementType;
+            _damage = damage;
+            _gravityScale = gravityScale;
+            _pierceRemaining = pierceCount;
+            _explodesOnImpact = explodesOnImpact;
+            _explosionRadius = explosionRadius;
+            _owner = owner;
+            _hitscanLayerMask = hitscanLayerMask;
             _explosionLayerMask = explosionLayerMask;
 
-            _velocity         = transform.forward * speed;
+            _velocity = transform.forward * speed;
             _previousPosition = transform.position;
-            _remainingRange   = maxRange;
-            _elapsedLifetime  = 0f;
-            _initialized      = true;
+            _remainingRange = maxRange;
+            _elapsedLifetime = 0f;
+            _initialized = true;
         }
 
         /// <summary>
@@ -153,13 +177,24 @@ namespace KillRitual.Weapons
         public void ConfigureHomingTracers(float radius, float interval, float tracerDamage,
             GameObject tracerVisualPrefab, Color tracerVisualColor)
         {
-            _hasHomingTracers   = true;
-            _tracerRadius       = radius;
-            _tracerInterval     = Mathf.Max(0.01f, interval);
-            _tracerDamage       = tracerDamage;
+            _hasHomingTracers = true;
+            _tracerRadius = radius;
+            _tracerInterval = Mathf.Max(0.01f, interval);
+            _tracerDamage = tracerDamage;
             _tracerVisualPrefab = tracerVisualPrefab;
-            _tracerVisualColor  = tracerVisualColor;
-            _tracerTimer        = 0f;
+            _tracerVisualColor = tracerVisualColor;
+            _tracerTimer = 0f;
+        }
+
+        /// <summary>
+        /// [선택적 기능] 폭발 시 실제로 화면에 보이는 시각효과(파티클 등)를 지정합니다.
+        /// 호출하지 않으면 데미지 판정은 그대로 동작하되 시각효과 없이 조용히 폭발합니다.
+        /// </summary>
+        /// <param name="vfxPrefab">폭발 지점에 생성할 프리팹. ParticleSystem이 있으면 재생 시간에 맞춰 자동 정리되고,
+        /// 없으면 3초 후 안전하게 제거됩니다.</param>
+        public void ConfigureExplosionVisual(GameObject vfxPrefab)
+        {
+            _explosionVfxPrefab = vfxPrefab;
         }
 
         private void Update()
@@ -177,8 +212,8 @@ namespace KillRitual.Weapons
 
             _velocity += Physics.gravity * (_gravityScale * Time.deltaTime);
 
-            Vector3 displacement  = _velocity * Time.deltaTime;
-            float travelDistance  = displacement.magnitude;
+            Vector3 displacement = _velocity * Time.deltaTime;
+            float travelDistance = displacement.magnitude;
             if (travelDistance <= 0f) return;
 
             Vector3 direction = displacement / travelDistance;
@@ -186,8 +221,8 @@ namespace KillRitual.Weapons
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // 비행 경로를 씬 뷰와 게임 뷰 모두에서 확인할 수 있도록 매 프레임 궤적 선을 그립니다.
             // 색상: 수(水)=파랑, 금(金)=노랑, 나머지=흰색
-            Color trailColor = _elementType == KRDamageType.Water  ? Color.cyan  :
-                               _elementType == KRDamageType.Metal  ? Color.yellow : Color.white;
+            Color trailColor = _elementType == KRDamageType.Water ? Color.cyan :
+                               _elementType == KRDamageType.Metal ? Color.yellow : Color.white;
             Debug.DrawLine(_previousPosition, _previousPosition + displacement, trailColor, 0.5f);
 #endif
 
@@ -206,9 +241,9 @@ namespace KillRitual.Weapons
             }
 
             Vector3 nextPosition = _previousPosition + displacement;
-            transform.position   = nextPosition;
-            _previousPosition    = nextPosition;
-            _remainingRange     -= travelDistance;
+            transform.position = nextPosition;
+            _previousPosition = nextPosition;
+            _remainingRange -= travelDistance;
 
             if (_remainingRange <= 0f)
             {
@@ -285,9 +320,31 @@ namespace KillRitual.Weapons
             }
         }
 
+        /// <summary>
+        /// 폭발 지점에 시각효과 프리팹을 생성합니다. ParticleSystem이 붙어 있으면 그 재생 시간에
+        /// 맞춰 자동으로 정리하고, 일반 메시/스프라이트 등이면 안전하게 3초 후 제거합니다.
+        /// 프리팹이 비어있으면 데미지 판정에는 영향 없이 시각효과만 생략됩니다.
+        /// </summary>
+        private void SpawnExplosionVisual(Vector3 center)
+        {
+            if (_explosionVfxPrefab == null) return;
+
+            GameObject instance = Instantiate(_explosionVfxPrefab, center, Quaternion.identity);
+
+            if (instance.TryGetComponent(out ParticleSystem ps))
+            {
+                float lifetime = ps.main.duration + ps.main.startLifetime.constantMax;
+                Destroy(instance, Mathf.Max(0.1f, lifetime));
+            }
+            else
+            {
+                Destroy(instance, 3f);
+            }
+        }
+
         private int FindClosestHitIndex(int hitCount)
         {
-            int   closestIndex    = -1;
+            int closestIndex = -1;
             float closestDistance = float.MaxValue;
 
             for (int i = 0; i < hitCount; i++)
@@ -295,7 +352,7 @@ namespace KillRitual.Weapons
                 if (_raycastBuffer[i].distance < closestDistance)
                 {
                     closestDistance = _raycastBuffer[i].distance;
-                    closestIndex    = i;
+                    closestIndex = i;
                 }
             }
             return closestIndex;
@@ -335,6 +392,9 @@ namespace KillRitual.Weapons
         /// </summary>
         private void Explode(Vector3 center)
         {
+            // 실제 데미지 판정과 무관하게, 누구를 맞췄는지와 별개로 폭발 시각효과는 항상 재생합니다.
+            SpawnExplosionVisual(center);
+
             // 브로드페이즈: Damageable 전용 마스크로 후보 수 선제 제한
             int count = Physics.OverlapSphereNonAlloc(
                 center, _explosionRadius, _overlapBuffer, _explosionLayerMask);
@@ -344,8 +404,8 @@ namespace KillRitual.Weapons
             var stats = new KRExplosionStats
             {
                 RawColliderCount = count,
-                Center           = center,
-                Radius           = _explosionRadius
+                Center = center,
+                Radius = _explosionRadius
             };
 #endif
 
@@ -389,9 +449,9 @@ namespace KillRitual.Weapons
                 if (handledCount < _handledInstanceIds.Length)
                     _handledInstanceIds[handledCount++] = instanceId;
 
-                float distance     = Vector3.Distance(center, target.Position);
+                float distance = Vector3.Distance(center, target.Position);
                 float clampedRatio = Mathf.Clamp01(distance / Mathf.Max(0.0001f, _explosionRadius));
-                float finalDamage  = _damage * (1f - clampedRatio);
+                float finalDamage = _damage * (1f - clampedRatio);
 
                 if (finalDamage <= 0f) continue;
 
