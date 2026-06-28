@@ -41,6 +41,10 @@ namespace KillRitual.Weapons
         [Min(0f)]
         [SerializeField] private float _explosionRadius = 0f;
 
+        [Tooltip("폭발 시 실제로 화면에 보이는 시각효과(파티클 등) 프리팹. " +
+                 "ExplodesOnImpact가 true일 때만 사용되며, 비워두면 시각효과 없이 데미지만 적용됩니다.")]
+        [SerializeField] private GameObject _explosionVfxPrefab;
+
         /// <summary>
         /// 가장 최근에 생성한 투사체 인스턴스. KRChargeProjectileWeapon처럼 발사 직후 추가 설정
         /// (예: 유도 추적탄)이 필요한 자식 클래스가 DoFire()를 오버라이드해 이 참조를 사용합니다.
@@ -85,6 +89,11 @@ namespace KillRitual.Weapons
                 explosionLayerMask: _combatSystem.ExplosionLayerMask);
 
             _lastFiredProjectile = projectile;
+
+            if (_explodesOnImpact && _explosionVfxPrefab != null)
+            {
+                projectile.ConfigureExplosionVisual(_explosionVfxPrefab);
+            }
         }
 
         // ------------------------------------------------------------------
