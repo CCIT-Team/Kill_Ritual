@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using KillRitual;
 
 // 씬 선택 창(Panel)을 열고 닫고, 버튼으로 씬을 전환하는 스크립트입니다.
 public class SceneSelectMenu : MonoBehaviour
 {
     [Header("씬 선택 창 패널 (SceneSelectPanel을 연결하세요)")]
     public GameObject panel;
+
+    [Header("플레이어 시점 회전 스크립트 (Player 오브젝트의 KRPlayerLook)")]
+    public KRPlayerLook playerLook;   
 
     // 창이 현재 열려 있는지 외부에서 확인할 수 있도록 공개
     public bool IsOpen { get; private set; }
@@ -32,20 +36,35 @@ public class SceneSelectMenu : MonoBehaviour
         panel.SetActive(true);
         IsOpen = true;
 
-        // FPS는 보통 마우스가 잠겨 있으므로, 창이 열리면 커서를 풀어준다
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        // 시점 회전 끄기 → 마우스로 화면이 안 돌아감
+        if (playerLook != null)
+        {
+            playerLook.enabled = false;
+            playerLook.UnlockCursor();   // 커서 보이게
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 
-    // 창 닫기
     public void CloseMenu()
     {
         panel.SetActive(false);
         IsOpen = false;
 
-        // 창을 닫으면 다시 FPS 조준 상태로 (커서 잠금)
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // 시점 회전 다시 켜기
+        if (playerLook != null)
+        {
+            playerLook.enabled = true;
+            playerLook.LockCursor();     // 커서 다시 잠금
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     // 버튼에 연결할 씬 전환 함수
