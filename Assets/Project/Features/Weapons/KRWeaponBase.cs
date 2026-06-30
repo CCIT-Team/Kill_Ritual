@@ -56,6 +56,14 @@ namespace KillRitual.Weapons
 
         public KRDamageType Element => _element;
 
+        /// <summary>
+        /// 이 무기가 현재 실제로 장착(선택)된 속성인지 여부입니다. KRCombatSystem은 1~5 숫자키로
+        /// 속성만 전환할 뿐, 어떤 무기 컴포넌트가 "지금 쓰이고 있는지"는 무기 스스로 이 값을 보고
+        /// 판단해야 합니다. 줌(KRZoomHitscanWeapon)처럼 Update()에서 입력을 직접 폴링하는 무기가
+        /// 미장착 상태에서도 동작해버리는 버그를 막는 데 사용됩니다.
+        /// </summary>
+        protected bool IsEquipped => _combatSystem != null && _combatSystem.CurrentElement == _element;
+
         protected virtual void Awake()
         {
             _combatSystem = GetComponentInParent<KRCombatSystem>();

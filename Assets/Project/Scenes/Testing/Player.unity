@@ -1454,7 +1454,7 @@ MonoBehaviour:
   _spreadAngleDegrees: 0
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 1
+  _tracerDuration: 0.08
   _tracerColor: {r: 0.10062885, g: 0.049681537, b: 0.049681537, a: 1}
 --- !u!4 &1568937659721086530
 Transform:
