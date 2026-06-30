@@ -6,7 +6,7 @@ using KillRitual.Core.Events;
 using KillRitual.Core.Managers;
 using KillRitual.Data;
 using KillRitual.Weapons;
- 
+
 namespace KillRitual.Player.Combat
 {
     /// <summary>
@@ -98,6 +98,12 @@ namespace KillRitual.Player.Combat
 
         /// <summary>무기의 발사 기준점(총구) Transform.</summary>
         public Transform FirePoint => _firePoint;
+
+        /// <summary>
+        /// 플레이어 카메라 참조. 스나이퍼(KRZoomHitscanWeapon)처럼 줌(FOV 조정) 같은
+        /// 카메라 효과가 필요한 무기가 이 프로퍼티로 직접 접근합니다.
+        /// </summary>
+        public Camera PlayerCamera => _playerCamera;
 
         /// <summary>Hitscan/CCD 판정용 마스크 (Damageable + Environment 포함).</summary>
         public LayerMask HitscanLayerMask => _damageableLayerMask;
@@ -275,8 +281,8 @@ namespace KillRitual.Player.Combat
 
                 // 무기 전환(퀵스왑) 시, 이전에 장착했던 무기들의 가속/충전 등 임시 상태를 리셋합니다.
                 // 버튼을 누르고 있던 도중 무기를 바꿔도 다음에 그 무기로 돌아왔을 때 깨끗한 상태로 시작합니다.
-                GetWeapon(_typeOneWeapons, _currentElement)?.NotifyReleased();
-                GetWeapon(_typeTwoWeapons, _currentElement)?.NotifyReleased();
+                GetWeapon(_typeOneWeapons, _currentElement)?.NotifyCancelled();
+                GetWeapon(_typeTwoWeapons, _currentElement)?.NotifyCancelled();
 
                 _currentElement = newElement;
             }
@@ -456,4 +462,3 @@ namespace KillRitual.Player.Combat
         }
     }
 }
-

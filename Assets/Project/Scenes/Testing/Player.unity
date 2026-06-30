@@ -1361,7 +1361,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3924698388048019985}
-  - component: {fileID: 7982466982747825619}
+  - component: {fileID: 3924698388048019986}
   m_Layer: 0
   m_Name: weapon3-2
   m_TagString: Untagged
@@ -1410,8 +1410,8 @@ MonoBehaviour:
   _range: 50
   _cooldown: 0.5
   _resourceCost: 5
-  _pelletCount: 8
-  _spreadAngleDegrees: 9
+  _pelletCount: 10
+  _spreadAngleDegrees: 90
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
   _tracerDuration: 2
@@ -1659,7 +1659,7 @@ MonoBehaviour:
   _cooldown: 1
   _resourceCost: 0.1
   _pelletCount: 1
-  _spreadAngleDegrees: 11
+  _spreadAngleDegrees: 29
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
   _tracerDuration: 0.05
@@ -1700,6 +1700,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5582932181863423888}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3924698388048019986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 367982705124916020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dae6bf9761bbe9c49a7dcafb21f49cc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _element: 2
+  _weaponName: "\uC2A4\uB098\uC774\uD37C"
+  _damage: 50
+  _range: 100
+  _cooldown: 0.8
+  _resourceCost: 5
+  _pelletCount: 1
+  _spreadAngleDegrees: 0
+  _boxHeight: 1.5
+  _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
+  _tracerDuration: 0.1
+  _tracerColor: {r: 0.7492038, g: 0.9622642, b: 0.52349585, a: 1}
+  _zoomFov: 18
+  _zoomSmoothSpeed: 12
 --- !u!4 &3981121275189363252
 Transform:
   m_ObjectHideFlags: 0
@@ -1772,6 +1798,8 @@ MonoBehaviour:
   _explosionRadius: 10
   _explosionVfxPrefab: {fileID: 9153084505907029488, guid: 7d2063300133a304a8dbca7096698d39, type: 3}
   _chargeDuration: 1.5
+  _minChargeRatio: 0
+  _minHoldTimeBeforeFire: 0.2
   _hasHomingTracers: 1
   _homingTracerRadius: 15
   _homingTracerInterval: 0.2
@@ -1842,7 +1870,7 @@ MonoBehaviour:
   _cooldown: 0.8
   _resourceCost: 2
   _pelletCount: 5
-  _spreadAngleDegrees: 13
+  _spreadAngleDegrees: 10
   _boxHeight: 2
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
   _tracerDuration: 2
@@ -2032,7 +2060,7 @@ MonoBehaviour:
   _spreadAngleDegrees: 0
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 0.1
+  _tracerDuration: 0.01
   _tracerColor: {r: 0.09201916, g: 0.33333334, b: 0, a: 1}
 --- !u!136 &6456210170396288385
 CapsuleCollider:
@@ -2273,30 +2301,6 @@ MonoBehaviour:
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
   m_AfterStackBundles: []
---- !u!114 &7982466982747825619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 367982705124916020}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f29439d4e0f05b5489ca254e1c0d5cc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _element: 2
-  _weaponName: "\uBAA9_\uC800\uACA9\uCD1D"
-  _damage: 30
-  _range: 100
-  _cooldown: 0.4
-  _resourceCost: 5
-  _pelletCount: 1
-  _spreadAngleDegrees: 0
-  _boxHeight: 1.5
-  _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 0.05
-  _tracerColor: {r: 0.63274294, g: 1, b: 0.36163503, a: 1}
 --- !u!114 &8009032598697985088
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2322,7 +2326,9 @@ MonoBehaviour:
   _explodesOnImpact: 1
   _explosionRadius: 3
   _explosionVfxPrefab: {fileID: 3963463621129087411, guid: ed8f4a368e8099d4b99681bb1e4989c7, type: 3}
-  _chargeDuration: 2
+  _chargeDuration: 3
+  _minChargeRatio: 0.15
+  _minHoldTimeBeforeFire: 0.5
   _hasHomingTracers: 0
   _homingTracerRadius: 15
   _homingTracerInterval: 0.1
@@ -2413,7 +2419,7 @@ MonoBehaviour:
   _typeTwoWeapons:
   - {fileID: 654868973108905009}
   - {fileID: 8009032598697985088}
-  - {fileID: 7982466982747825619}
+  - {fileID: 3924698388048019986}
   - {fileID: 3273040403669643228}
   - {fileID: 4232061730199721130}
   _playerCamera: {fileID: 3068157983861045341}
