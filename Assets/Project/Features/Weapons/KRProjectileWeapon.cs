@@ -1,6 +1,6 @@
 // Assets/Project/Scripts/03_Weapons/KRProjectileWeapon.cs
 using UnityEngine;
-
+ 
 namespace KillRitual.Weapons
 {
     /// <summary>
@@ -41,11 +41,23 @@ namespace KillRitual.Weapons
         [Min(0f)]
         [SerializeField] private float _explosionRadius = 0f;
 
+        [Tooltip("폭발 시 실제로 화면에 보이는 시각효과(파티클 등) 프리팹. " +
+                 "ExplodesOnImpact가 true일 때만 사용되며, 비워두면 시각효과 없이 데미지만 적용됩니다.")]
+        [SerializeField] private GameObject _explosionVfxPrefab;
+
         /// <summary>
         /// 가장 최근에 생성한 투사체 인스턴스. KRChargeProjectileWeapon처럼 발사 직후 추가 설정
         /// (예: 유도 추적탄)이 필요한 자식 클래스가 DoFire()를 오버라이드해 이 참조를 사용합니다.
         /// </summary>
         protected KRPhysicsProjectile _lastFiredProjectile;
+
+        /// <summary>
+        /// 이번 발사에 적용할 충전 비율(0~1). 기본값은 1(완전 충전과 동일하게 100% 크기로 발사).
+        /// 데미지·폭발 반경·투사체 시각적 크기에 공통으로 곱연산됩니다.
+        /// KRChargeProjectileWeapon이 이 메서드를 오버라이드해, 버튼을 뗀 시점까지 누적된
+        /// 실제 충전량을 반영합니다(중간에 떼도 그 크기 그대로 발사).
+        /// </summary>
+        protected virtual float GetChargeRatio() => 1f;
 
         protected override void DoFire(float damage)
         {
@@ -57,8 +69,21 @@ namespace KillRitual.Weapons
                 return;
             }
 
+            float chargeRatio = Mathf.Clamp01(GetChargeRatio());
+            float scaledDamage = damage * chargeRatio;
+            float scaledExplosionRadius = _explosionRadius * chargeRatio;
+
             Transform fp = ResolveFirePoint();
-            GameObject instance = Instantiate(_projectilePrefab, fp.position, fp.rotation);
+
+            // [조준점 보정] 총구가 화면 중앙이 아니어도, 투사체는 크로스헤어가 가리키는
+            // 지점으로 수렴하도록 fp.rotation 대신 GetAimDirection으로 보정된 방향을 사용합니다.
+            Vector3 aimDirection = _combatSystem.GetAimDirection(fp.position, _range);
+            Quaternion aimRotation = Quaternion.LookRotation(aimDirection, Vector3.up);
+
+            GameObject instance = Instantiate(_projectilePrefab, fp.position, aimRotation);
+
+            // 충전 비율만큼 투사체의 시각적 크기도 함께 줄어듭니다(원본 프리팹 스케일에 곱연산).
+            instance.transform.localScale *= Mathf.Max(0.01f, chargeRatio);
 
             if (!instance.TryGetComponent(out KRPhysicsProjectile projectile))
             {
@@ -66,19 +91,24 @@ namespace KillRitual.Weapons
             }
 
             projectile.Initialize(
-                elementType:        _element,
-                damage:             damage,
-                speed:              _projectileSpeed,
-                gravityScale:       _gravityScale,
-                pierceCount:        _pierceCount,
-                explodesOnImpact:   _explodesOnImpact,
-                explosionRadius:    _explosionRadius,
-                maxRange:           _range,
-                owner:              _combatSystem.Owner,
-                hitscanLayerMask:   _combatSystem.HitscanLayerMask,
+                elementType: _element,
+                damage: scaledDamage,
+                speed: _projectileSpeed,
+                gravityScale: _gravityScale,
+                pierceCount: _pierceCount,
+                explodesOnImpact: _explodesOnImpact,
+                explosionRadius: scaledExplosionRadius,
+                maxRange: _range,
+                owner: _combatSystem.Owner,
+                hitscanLayerMask: _combatSystem.HitscanLayerMask,
                 explosionLayerMask: _combatSystem.ExplosionLayerMask);
 
             _lastFiredProjectile = projectile;
+
+            if (_explodesOnImpact && _explosionVfxPrefab != null)
+            {
+                projectile.ConfigureExplosionVisual(_explosionVfxPrefab);
+            }
         }
 
         // ------------------------------------------------------------------
@@ -100,3 +130,4 @@ namespace KillRitual.Weapons
         }
     }
 }
+

@@ -53,8 +53,9 @@ namespace KillRitual.Player.Combat
         [SerializeField] private LayerMask _explosionLayerMask = ~0;
 
         [Header("공용 자원 지갑")]
-        [Tooltip("속성별 자원 주머니의 최대치. 모든 오행 속성이 동일한 최대치를 공유합니다.")]
-        [SerializeField] private float _maxResourcePerElement = 100f;
+        [Tooltip("속성별 자원 주머니의 최대치. 길이 5, [0]=Fire(화) [1]=Water(수) [2]=Wood(목) [3]=Earth(토) [4]=Metal(금) 순서. " +
+                 "속성마다 다른 최대 탄약량을 줄 수 있습니다(예: 금(金) BFG는 적게, 목(木) 정밀소총은 많게).")]
+        [SerializeField] private float[] _maxResourcePerElement = new float[] { 100f, 100f, 100f, 100f, 100f };
 
         [Header("처형 (Execution)")]
         [Tooltip("그로기 상태인 대상을 처형할 수 있는 최대 거리.")]
@@ -83,6 +84,10 @@ namespace KillRitual.Player.Combat
         // 처형 대상 탐색 전용 NonAlloc 버퍼.
         private static readonly Collider[] _executionOverlapBuffer = new Collider[16];
 
+        // [조준점 보정] FirePoint(총구)가 화면 중앙이 아닌 위치에 있어도, 실제 탄이 카메라가
+        // 가리키는 화면 정중앙(조준점)으로 수렴하도록 보정할 때 사용하는 전용 레이캐스트 버퍼.
+        private static readonly RaycastHit[] _aimRaycastBuffer = new RaycastHit[8];
+
         private KRResourceWallet _resourceWallet;
         private KRDamageType _currentElement = KRDamageType.Fire;
         private float _health;
@@ -94,8 +99,65 @@ namespace KillRitual.Player.Combat
         /// <summary>무기의 발사 기준점(총구) Transform.</summary>
         public Transform FirePoint => _firePoint;
 
+        /// <summary>
+        /// 플레이어 카메라 참조. 스나이퍼(KRZoomHitscanWeapon)처럼 줌(FOV 조정) 같은
+        /// 카메라 효과가 필요한 무기가 이 프로퍼티로 직접 접근합니다.
+        /// </summary>
+        public Camera PlayerCamera => _playerCamera;
+
         /// <summary>Hitscan/CCD 판정용 마스크 (Damageable + Environment 포함).</summary>
         public LayerMask HitscanLayerMask => _damageableLayerMask;
+
+        /// <summary>
+        /// [조준점 보정] 무기의 총구(muzzleOrigin)가 화면 정중앙이 아닌 곳에 있어도, 카메라가
+        /// 가리키는 화면 정중앙의 "조준점"을 향해 탄이 날아가도록 보정된 방향을 계산합니다.
+        ///
+        /// 동작 방식: 먼저 카메라 위치에서 카메라 정면 방향으로 maxRange만큼 레이캐스트를 쏴서
+        /// 화면 중앙이 실제로 가리키는 지점(조준점)을 찾습니다. 그 지점에 아무것도 없으면
+        /// maxRange 끝 지점을 조준점으로 삼습니다. 그런 다음 (조준점 - muzzleOrigin) 방향을
+        /// 반환합니다. 이렇게 하면 총구 위치가 화면 한쪽으로 치우쳐 있어도, 실제 탄/투사체는
+        /// 항상 크로스헤어가 가리키는 지점으로 수렴합니다.
+        /// </summary>
+        /// <param name="muzzleOrigin">실제 탄/투사체가 출발할 총구 위치 (FirePoint 또는 무기별 발사 지점)</param>
+        /// <param name="maxRange">조준점을 탐색할 최대 거리 (무기의 사거리를 그대로 사용하면 됩니다)</param>
+        public Vector3 GetAimDirection(Vector3 muzzleOrigin, float maxRange)
+        {
+            if (_playerCamera == null)
+            {
+                // 카메라가 없는 비정상 상황에서는 FirePoint의 정면 방향으로 안전하게 폴백합니다.
+                return _firePoint != null ? _firePoint.forward : Vector3.forward;
+            }
+
+            Vector3 camPos = _playerCamera.transform.position;
+            Vector3 camForward = _playerCamera.transform.forward;
+
+            int hitCount = Physics.RaycastNonAlloc(camPos, camForward, _aimRaycastBuffer, maxRange, _damageableLayerMask);
+            int closestIndex = FindClosestAimHitIndex(hitCount);
+
+            Vector3 aimPoint = closestIndex >= 0
+                ? _aimRaycastBuffer[closestIndex].point
+                : camPos + (camForward * maxRange);
+
+            Vector3 direction = aimPoint - muzzleOrigin;
+            return direction.sqrMagnitude > 0.0001f ? direction.normalized : camForward;
+        }
+
+        private static int FindClosestAimHitIndex(int hitCount)
+        {
+            int closestIndex = -1;
+            float closestDistance = float.MaxValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                if (_aimRaycastBuffer[i].distance < closestDistance)
+                {
+                    closestDistance = _aimRaycastBuffer[i].distance;
+                    closestIndex = i;
+                }
+            }
+
+            return closestIndex;
+        }
 
         /// <summary>광역 폭발 판정용 마스크 (Damageable만 포함).</summary>
         public LayerMask ExplosionLayerMask => _explosionLayerMask;
@@ -122,8 +184,9 @@ namespace KillRitual.Player.Combat
         /// <summary>지정 속성 자원의 현재 잔량 비율(0~1). 오버레이 바 그래프에 사용됩니다.</summary>
         public float GetResourceRatio(KRDamageType element)
         {
-            if (_resourceWallet == null || _maxResourcePerElement <= 0f) return 0f;
-            return _resourceWallet.Get(element) / _maxResourcePerElement;
+            if (_resourceWallet == null) return 0f;
+            float max = _resourceWallet.GetMax(element);
+            return max > 0f ? _resourceWallet.Get(element) / max : 0f;
         }
 
         /// <summary>현재 프레임 기준 시야 콘+사거리 안에 처형 가능한 대상이 존재하면 true.</summary>
@@ -136,8 +199,11 @@ namespace KillRitual.Player.Combat
             return _resourceWallet != null ? _resourceWallet.Get(element) : 0f;
         }
 
-        /// <summary>모든 속성이 공유하는 자원 주머니의 최대치.</summary>
-        public float MaxResourcePerElement => _maxResourcePerElement;
+        /// <summary>지정 속성의 최대 자원량. 속성마다 다를 수 있습니다(KRAmmoUI 등이 호출).</summary>
+        public float GetMaxResourceAmount(KRDamageType element)
+        {
+            return _resourceWallet != null ? _resourceWallet.GetMax(element) : 0f;
+        }
 
         public bool HasExecutableTargetNearby => FindNearestExecutableTarget() != null;
 
@@ -215,8 +281,8 @@ namespace KillRitual.Player.Combat
 
                 // 무기 전환(퀵스왑) 시, 이전에 장착했던 무기들의 가속/충전 등 임시 상태를 리셋합니다.
                 // 버튼을 누르고 있던 도중 무기를 바꿔도 다음에 그 무기로 돌아왔을 때 깨끗한 상태로 시작합니다.
-                GetWeapon(_typeOneWeapons, _currentElement)?.NotifyReleased();
-                GetWeapon(_typeTwoWeapons, _currentElement)?.NotifyReleased();
+                GetWeapon(_typeOneWeapons, _currentElement)?.NotifyCancelled();
+                GetWeapon(_typeTwoWeapons, _currentElement)?.NotifyCancelled();
 
                 _currentElement = newElement;
             }
@@ -353,23 +419,27 @@ namespace KillRitual.Player.Combat
 
         // ------------------------------------------------------------------
         // [내부 전용] 자원 지갑 - 오행 5속성 공용 자원 주머니를 관리합니다.
+        // 속성마다 최대치가 다를 수 있으므로 _maxPerElement도 배열로 보관합니다.
         // ------------------------------------------------------------------
         private sealed class KRResourceWallet
         {
             private readonly float[] _pool = new float[kElementCount];
-            private readonly float _maxPerElement;
+            private readonly float[] _maxPerElement = new float[kElementCount];
 
-            public KRResourceWallet(float maxPerElement)
+            public KRResourceWallet(float[] maxPerElement)
             {
-                _maxPerElement = maxPerElement;
-
-                for (int i = 0; i < _pool.Length; i++)
+                for (int i = 0; i < kElementCount; i++)
                 {
-                    _pool[i] = maxPerElement;
+                    // 인스펙터에서 배열 길이를 5보다 작게 줄여놓는 실수를 해도 100f로 안전하게 대체합니다.
+                    float max = (maxPerElement != null && i < maxPerElement.Length) ? maxPerElement[i] : 100f;
+                    _maxPerElement[i] = max;
+                    _pool[i] = max; // 시작 시 가득 채운 상태로 둡니다.
                 }
             }
 
             public float Get(KRDamageType element) => _pool[(int)element];
+
+            public float GetMax(KRDamageType element) => _maxPerElement[(int)element];
 
             public bool TryConsume(KRDamageType element, float amount)
             {
@@ -387,7 +457,7 @@ namespace KillRitual.Player.Combat
             public void Refill(KRDamageType element, float amount)
             {
                 int idx = (int)element;
-                _pool[idx] = Mathf.Min(_maxPerElement, _pool[idx] + amount);
+                _pool[idx] = Mathf.Min(_maxPerElement[idx], _pool[idx] + amount);
             }
         }
     }
