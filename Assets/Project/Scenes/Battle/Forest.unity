@@ -980,13 +980,21 @@ PrefabInstance:
       propertyPath: m_Color.a
       value: 0.5921569
       objectReference: {fileID: 0}
+    - target: {fileID: 6846773147766373722, guid: a40d515f0b989de439627ce663565574, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6954853518955640852, guid: a40d515f0b989de439627ce663565574, type: 3}
+      propertyPath: m_text
+      value: Pass through the Forest.
+      objectReference: {fileID: 0}
     - target: {fileID: 8736074730838217887, guid: a40d515f0b989de439627ce663565574, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 8736074730838217887, guid: a40d515f0b989de439627ce663565574, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8888134833761068404, guid: a40d515f0b989de439627ce663565574, type: 3}
       propertyPath: m_IsActive
