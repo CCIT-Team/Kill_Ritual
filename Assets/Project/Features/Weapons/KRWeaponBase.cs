@@ -86,6 +86,17 @@ namespace KillRitual.Weapons
         }
 
         /// <summary>
+        /// 무기가 전환(퀵스왑)되어 더 이상 장착되지 않게 될 때 호출됩니다.
+        /// 기본 구현은 NotifyReleased()와 동일하게 동작합니다. 하지만 차징 무기처럼
+        /// "마우스를 뗀 것(=발사해야 함)"과 "무기가 전환된 것(=조용히 취소해야 함)"을
+        /// 구분해야 하는 경우, 이 메서드만 따로 오버라이드해 다르게 처리할 수 있습니다.
+        /// </summary>
+        public virtual void NotifyCancelled()
+        {
+            NotifyReleased();
+        }
+
+        /// <summary>
         /// 쿨다운과 자원 잔량을 확인한 뒤 통과하면 실제 발사를 실행합니다.
         /// 발사에 성공하면 true, 쿨다운/자원 부족으로 무산되면 false를 반환합니다.
         /// </summary>

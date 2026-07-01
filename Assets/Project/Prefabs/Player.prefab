@@ -4504,7 +4504,7 @@ MonoBehaviour:
   _explosionRadius: 3
   _chargeDuration: 1.5
   _hasHomingTracers: 1
-  _homingTracerRadius: 20
+  _homingTracerRadius: 10
   _homingTracerInterval: 0.1
   _homingTracerDamage: 10
   _homingTracerVisualPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
