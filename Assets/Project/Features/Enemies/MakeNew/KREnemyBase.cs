@@ -167,14 +167,15 @@ namespace KillRitual.Enemies
         /// </summary>
         public void Execute()
         {
-            if (IsDead)
-            {
-                return;
-            }
+            if (IsDead) return;
 
-            // [선택] 처형 보상 이벤트(KRExecutionSuccessEvent)를 발행하고 싶다면 여기에 추가합니다.
-            // 지금은 외부 매니저 의존 없이 안전하게 돌아가도록 비워둡니다.
-            // 나중에 KRManagers가 준비되면 이 자리에서 이벤트를 발행하면 플레이어가 체력/자원을 회복합니다.
+            // 드롭 스포너에 현재 플레이어 장착 속성을 넘겨줍니다.
+            var combatSystem = GameObject.FindGameObjectWithTag("Player")
+                ?.GetComponentInParent<KillRitual.Player.Combat.KRCombatSystem>();
+            GetComponent<KillRitual.Items.KRDropSpawner>()
+                ?.SpawnDrops(transform.position, combatSystem?.CurrentElement
+                ?? KillRitual.Core.Damage.KRDamageType.Fire);
+            Debug.Log($"[KREnemyBase] {name} 처형됨 → 보상 발행");
 
             EnterDead();
         }

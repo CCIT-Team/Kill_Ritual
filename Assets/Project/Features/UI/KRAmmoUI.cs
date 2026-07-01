@@ -1,59 +1,69 @@
-// Assets/Project/Scripts/06_UI/KRAmmoUI.cs
+using KillRitual.Core.Damage;
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using KillRitual.Core.Damage;
-using KillRitual.Player.Combat;
- 
-namespace KillRitual.UI
+
+namespace KillRitual.Player
 {
     /// <summary>
-    /// í˜„ì¬ ì¥ì°©ëœ ì˜¤í–‰ ì†ì„±ì˜ ì”íƒ„(ìì›)ëŸ‰ê³¼ ìµœëŒ€ì¹˜ë¥¼ í™”ë©´ì— í‘œì‹œí•˜ëŠ” HUD ì»´í¬ë„ŒíŠ¸ì…ë‹ˆë‹¤.
+    /// ÇöÀç ÀåÂøµÈ ¿ÀÇà ¼Ó¼ºÀÇ ÀÜÅº(ÀÚ¿ø)·®À» HUD¿¡ Ç¥½ÃÇÕ´Ï´Ù.
+    ///   1. ÀÜÅº ºñÀ²¿¡ µû¶ó ¸·´ë ImageÀÇ fillAmount¸¦ Á¶ÀıÇÕ´Ï´Ù.
+    ///   2. ÀÜÅº ¼ıÀÚ¸¦ Text·Î Ç¥½ÃÇÕ´Ï´Ù (¿¹: "73 / 100").
+    ///   3. ¹«±â¸¦ ÀüÈ¯ÇÏ¸é ÇØ´ç ¼Ó¼ºÀÇ ÀÜÅºÀ¸·Î ÀÚµ¿ °»½ÅµË´Ï´Ù.
+    ///   4. ÀÜÅºÀÌ °æ°í ºñÀ² ÀÌÇÏ·Î ¶³¾îÁö¸é ¸·´ë¿Í ÅØ½ºÆ® »öÀÌ °æ°í»öÀ¸·Î ¹Ù²ò´Ï´Ù.
     ///
-    /// [í‘œì‹œ ë°©ì‹] 5ì†ì„±ì„ í•œêº¼ë²ˆì— ë³´ì—¬ì£¼ì§€ ì•Šê³ , 1~5 ìˆ«ìí‚¤ë¡œ ë¬´ê¸°ë¥¼ ì „í™˜í•  ë•Œë§ˆë‹¤
-    /// í‘œì‹œ ëŒ€ìƒì´ ìƒˆë¡œ ì„ íƒí•œ ì†ì„±ìœ¼ë¡œ ì¦‰ì‹œ ê°±ì‹ ë©ë‹ˆë‹¤(í´ë˜ì‹ FPS íƒ„í™˜ ì¹´ìš´í„°ì™€ ë™ì¼í•œ ë°©ì‹).
+    /// [ÀÜÅº¹Ù¸¦ ÄÚµå·Î ±×¸®Áö ¾Ê°í UI·Î ¸¸µç ÀÌÀ¯]
+    /// À¯´ÏÆ¼¿¡¼­ Image¿Í Text ¿ÀºêÁ§Æ®¸¦ Á÷Á¢ ¸¸µé°í, ÀÌ ½ºÅ©¸³Æ®´Â
+    /// ±× ¿ÀºêÁ§Æ®µéÀ» "ÀÜÅº·®¿¡ ¸ÂÃç °»½Å"ÇÏ´Â ¿ªÇÒ¸¸ ÇÕ´Ï´Ù.
+    /// À§Ä¡¡¤»ö¡¤Å©±â´Â ÀüºÎ À¯´ÏÆ¼ È­¸é¿¡¼­ µå·¡±×¿Í Å¬¸¯À¸·Î Á¶ÀıÇÒ ¼ö ÀÖ½À´Ï´Ù.
     ///
-    /// [UI êµ¬ì„± ìš”êµ¬ì‚¬í•­ - Unity ì—ë””í„°ì—ì„œ ì§ì ‘ ë°°ì¹˜]
-    ///   1. Canvas í•˜ìœ„ì— Text(ë ˆê±°ì‹œ UI) ì˜¤ë¸Œì íŠ¸ë¥¼ ë§Œë“¤ê³  ì´ ì»´í¬ë„ŒíŠ¸ë¥¼ ë¶€ì°©
-    ///   2. _ammoTextì— ê·¸ Text ì»´í¬ë„ŒíŠ¸ë¥¼ ì—°ê²° (ì˜ˆ: "73 / 100" í˜•ì‹ìœ¼ë¡œ í‘œì‹œë¨)
-    ///   3. (ì„ íƒ) ì”íƒ„ ë¹„ìœ¨ì„ ë§‰ëŒ€ë¡œë„ ë³´ì—¬ì£¼ê³  ì‹¶ë‹¤ë©´ Image(Filled íƒ€ì…)ë¥¼ ë§Œë“¤ì–´ _ammoFillImageì— ì—°ê²°
-    ///   4. (ì„ íƒ) ì†ì„±ë³„ ì•„ì´ì½˜ì„ ë³´ì—¬ì£¼ê³  ì‹¶ë‹¤ë©´ Imageë¥¼ ë§Œë“¤ì–´ _elementIconImageì— ì—°ê²°í•˜ê³ ,
-    ///      _elementIcons ë°°ì—´ì— í™”â†’ìˆ˜â†’ëª©â†’í† â†’ê¸ˆ ìˆœì„œë¡œ ìŠ¤í”„ë¼ì´íŠ¸ 5ê°œë¥¼ ì±„ì›€
-    ///   5. _combatSystemì— í”Œë ˆì´ì–´ì˜ KRCombatSystemì„ ì—°ê²°
-    ///
-    /// í…ìŠ¤íŠ¸ ì»´í¬ë„ŒíŠ¸ë¡œ TextMeshProë¥¼ ì“°ê³  ì‹¶ë‹¤ë©´ í•„ë“œ íƒ€ì…ì„ UnityEngine.UI.Textì—ì„œ
-    /// TMPro.TextMeshProUGUIë¡œ ë°”ê¾¸ê¸°ë§Œ í•˜ë©´ ë‚˜ë¨¸ì§€ ë¡œì§ì€ ë™ì¼í•˜ê²Œ ë™ì‘í•©ë‹ˆë‹¤.
+    /// [¿¬°á ¹æ¹ı ¿ä¾à]
+    /// Ammo ¿ÀºêÁ§Æ®¿¡ ÀÌ ½ºÅ©¸³Æ®¸¦ ºÙÀÌ°í,
+    /// _combatSystem¿¡ KRCombatSystem, _ammoBarFill¿¡ Bar Image,
+    /// _ammoText¿¡ Text¸¦ ²ø¾î´Ù ³ÖÀ¸¸é µË´Ï´Ù.
     /// </summary>
     public sealed class KRAmmoUI : MonoBehaviour
     {
-        [Header("ì—°ê²°")]
-        [Tooltip("ì”íƒ„ ì •ë³´ë¥¼ ê°€ì ¸ì˜¬ í”Œë ˆì´ì–´ì˜ KRCombatSystem")]
-        [SerializeField] private KRCombatSystem _combatSystem;
+        [Header("Combat System ¿¬°á")]
+        [Tooltip("ÇÃ·¹ÀÌ¾îÀÇ KRCombatSystem ÄÄÆ÷³ÍÆ®¸¦ ¿©±â¿¡ ³ÖÀ¸¼¼¿ä. ºñ¿öµÎ¸é ºÎ¸ğ °èÃş¿¡¼­ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [SerializeField] private KillRitual.Player.Combat.KRCombatSystem _combatSystem;
 
-        [Header("UI ì°¸ì¡°")]
-        [Tooltip("\"73 / 100\" í˜•ì‹ìœ¼ë¡œ ì”íƒ„ì„ í‘œì‹œí•  í…ìŠ¤íŠ¸")]
-        [SerializeField] private Text _ammoText;
+        [Header("ÀÜÅº ¸·´ë UI ¿¬°á")]
+        [Tooltip("ÀÜÅº¿¡ µû¶ó Ã¤¿öÁú ¸·´ë ImageÀÔ´Ï´Ù. " +
+                 "À¯´ÏÆ¼¿¡¼­ ¸¸µç ÀÜÅº¹Ù Image¸¦ ¿©±â¿¡ ³ÖÀ¸¼¼¿ä. " +
+                 "ÀÌ ImageÀÇ Image TypeÀº 'Filled'¿©¾ß fillAmount·Î Á¶ÀıµË´Ï´Ù.")]
+        [SerializeField] private Image _ammoBarFill;
 
-        [Tooltip("(ì„ íƒ) ì”íƒ„ ë¹„ìœ¨ì„ ë§‰ëŒ€ë¡œ í‘œì‹œí•  Image. Image Typeì„ \"Filled\"ë¡œ ì„¤ì •í•´ì•¼ í•©ë‹ˆë‹¤.")]
-        [SerializeField] private Image _ammoFillImage;
+        [Tooltip("ÀÜÅº ¼ıÀÚ¸¦ Ç¥½ÃÇÒ Text(¼±ÅÃ). ¾øÀ¸¸é ºñ¿öµÎ¼¼¿ä. ¿¹: '73 / 100'")]
+        [SerializeField] private TextMeshProUGUI _ammoText;
 
-        [Tooltip("(ì„ íƒ) í˜„ì¬ ì†ì„± ì•„ì´ì½˜ì„ í‘œì‹œí•  Image")]
-        [SerializeField] private Image _elementIconImage;
-
-        [Tooltip("í™”â†’ìˆ˜â†’ëª©â†’í† â†’ê¸ˆ ìˆœì„œë¡œ 5ê°œì˜ ì•„ì´ì½˜ ìŠ¤í”„ë¼ì´íŠ¸. _elementIconImageë¥¼ ì“¸ ë•Œë§Œ í•„ìš”í•©ë‹ˆë‹¤.")]
-        [SerializeField] private Sprite[] _elementIcons = new Sprite[5];
-
-        [Header("í‘œì‹œ í˜•ì‹")]
-        [Tooltip("ì†Œìˆ˜ì  ì—†ì´ ì •ìˆ˜ë¡œ í‘œì‹œí• ì§€ ì—¬ë¶€. ì²´í¬ í•´ì œí•˜ë©´ \"73.4 / 100.0\"ì²˜ëŸ¼ ì†Œìˆ˜ì ì´ ë³´ì…ë‹ˆë‹¤.")]
-        [SerializeField] private bool _roundToInteger = true;
-
-        [Tooltip("ì”íƒ„ì´ ì´ ë¹„ìœ¨(0~1) ì´í•˜ë¡œ ë–¨ì–´ì§€ë©´ í…ìŠ¤íŠ¸/ë§‰ëŒ€ ìƒ‰ì´ ê²½ê³ ìƒ‰ìœ¼ë¡œ ë°”ë€ë‹ˆë‹¤.")]
+        [Header("°æ°í ¼³Á¤")]
+        [Tooltip("ÀÜÅº ºñÀ²ÀÌ ÀÌ °ª ÀÌÇÏ·Î ¶³¾îÁö¸é °æ°í»öÀ¸·Î ¹Ù²ò´Ï´Ù.")]
         [Range(0f, 1f)]
         [SerializeField] private float _lowAmmoWarningRatio = 0.25f;
 
         [SerializeField] private Color _normalColor = Color.white;
         [SerializeField] private Color _lowAmmoColor = new Color(1f, 0.3f, 0.3f);
 
+        private void Awake()
+        {
+            if (_combatSystem == null)
+            {
+                _combatSystem = GetComponentInParent<KillRitual.Player.Combat.KRCombatSystem>();
+            }
+
+            UpdateAmmoUI();
+        }
+
         private void Update()
+        {
+            UpdateAmmoUI();
+        }
+
+        /// <summary>ÀÜÅº ¸·´ë¿Í ¼ıÀÚ ÅØ½ºÆ®¸¦ ÇöÀç ÀÜÅº·®¿¡ ¸ÂÃç °»½ÅÇÕ´Ï´Ù.</summary>
+        private void UpdateAmmoUI()
         {
             if (_combatSystem == null) return;
 
@@ -62,43 +72,20 @@ namespace KillRitual.UI
             float max = _combatSystem.GetMaxResourceAmount(element);
             float ratio = max > 0f ? Mathf.Clamp01(amount / max) : 0f;
 
-            UpdateAmmoText(amount, max, ratio);
-            UpdateFillBar(ratio);
-            UpdateElementIcon(element);
-        }
+            Color color = ratio <= _lowAmmoWarningRatio ? _lowAmmoColor : _normalColor;
 
-        private void UpdateAmmoText(float amount, float max, float ratio)
-        {
-            if (_ammoText == null) return;
-
-            _ammoText.text = _roundToInteger
-                ? $"{Mathf.CeilToInt(amount)} / {Mathf.CeilToInt(max)}"
-                : $"{amount:F1} / {max:F1}";
-
-            _ammoText.color = ratio <= _lowAmmoWarningRatio ? _lowAmmoColor : _normalColor;
-        }
-
-        private void UpdateFillBar(float ratio)
-        {
-            if (_ammoFillImage == null) return;
-
-            _ammoFillImage.fillAmount = ratio;
-            _ammoFillImage.color = ratio <= _lowAmmoWarningRatio ? _lowAmmoColor : _normalColor;
-        }
-
-        private void UpdateElementIcon(KRDamageType element)
-        {
-            if (_elementIconImage == null) return;
-
-            int idx = (int)element;
-            if (_elementIcons == null || idx < 0 || idx >= _elementIcons.Length) return;
-
-            Sprite icon = _elementIcons[idx];
-            if (icon != null)
+            if (_ammoBarFill != null)
             {
-                _elementIconImage.sprite = icon;
+                // fillAmount´Â 0(ºó Ä­)~1(°¡µæ Âü) »çÀÌ °ªÀÔ´Ï´Ù. ÀÜÅº ºñÀ²À» ±×´ë·Î ³Ö½À´Ï´Ù.
+                _ammoBarFill.fillAmount = ratio;
+                _ammoBarFill.color = color;
+            }
+
+            if (_ammoText != null)
+            {
+                _ammoText.text = Mathf.CeilToInt(amount) + " / " + Mathf.CeilToInt(max);
+                _ammoText.color = color;
             }
         }
     }
 }
-

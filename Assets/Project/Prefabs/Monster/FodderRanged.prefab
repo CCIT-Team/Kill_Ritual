@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6931515174503654446}
   - component: {fileID: 5226000127037393583}
   - component: {fileID: 4425732016448060421}
+  - component: {fileID: -25393815954892765}
   m_Layer: 22
   m_Name: FodderRanged
   m_TagString: Untagged
@@ -85,6 +86,29 @@ MonoBehaviour:
   _projectileSpeed: 12
   _projectilePrefab: {fileID: 0}
   _muzzleHeightOffset: 1.5
+--- !u!114 &-25393815954892765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5940570228893223761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5826c3ac5a83a442877027098823f13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _healthOrbPrefab: {fileID: 4057119000860932141, guid: 3b4c764679c9f3f46b825615ffeec072, type: 3}
+  _ammoOrbPrefabs:
+  - {fileID: 4674817366920187620, guid: e0ad2817a280c934ebb65638f86ee0a9, type: 3}
+  - {fileID: 2100269200738529668, guid: 7706137ffd313494c9ec904a1fb8fc89, type: 3}
+  - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
+  - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
+  - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
+  _healthOrbChance: 0.22
+  _ammoOrbChance: 1
+  _spreadRadius: 0.5
+  _spawnHeightOffset: 0.8
 --- !u!1 &8994799602591678226
 GameObject:
   m_ObjectHideFlags: 0
