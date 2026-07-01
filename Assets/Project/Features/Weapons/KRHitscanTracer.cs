@@ -12,28 +12,11 @@ namespace KillRitual.Weapons
     /// 짧은 선분을, "탄속(VisualSpeed)"에 맞춰 끝점 쪽으로 빠르게 훑고 지나가도록 그려서
     /// "총알 꼬리"를 흉내 냅니다.
     ///
-    /// [동작 방식 - 거리 비례 + 즉시 소멸]
-    /// 기존에는 거리와 무관하게 고정된 시간(duration) 동안 늘 같은 길이로 보였는데, 이제는
-    /// 시작점~끝점 사이 거리를 "탄속"으로 나눈 시간만큼만 보이고, 끝점(충돌 지점)에 도달하는
-    /// 즉시 더 이상의 잔상 없이 바로 파괴됩니다. 가까운 거리에 맞으면 거의 0초 만에, 먼 거리는
-    /// 그만큼 더 길게 보여서 실제 탄속처럼 느껴집니다.
-    ///
-    /// [길이 제한]
-    /// MaxVisualLength를 두면, 사거리가 아주 길어도 트레이서 자체의 시각적 길이는 그 값을
-    /// 넘지 않습니다(시작점을 끝점 방향으로 당겨서 짧게 표시). 0이면 제한 없이 전체 거리를
-    /// 다 그립니다.
-    ///
-    /// [왜 기본 LineRenderer는 사각형처럼 보이는가]
-    /// LineRenderer의 Alignment 기본값(Transform Z)은 월드 공간에 고정된 평면(리본)을 그립니다.
-    /// 카메라가 그 평면을 정면이 아닌 옆/위 각도에서 보면, 얇은 선이 아니라 공중에 떠 있는
-    /// 평평한 카드(사각형)처럼 보입니다. 이를 Awake에서 코드로 강제 보정합니다(View 정렬 + 둥근 끝 + 폭 테이퍼).
-    ///
-    /// [프리팹 구성 요구사항]
-    ///   1. 빈 GameObject에 LineRenderer 컴포넌트 부착
-    ///   2. LineRenderer Material은 발광이 잘 보이는 알파 블렌딩 셰이더 권장 (예: Sprites/Default, Particles/Additive)
-    ///   3. 이 컴포넌트(KRHitscanTracer)를 같은 GameObject에 부착
-    ///
-    /// [사용 패턴] 각 무기 스크립트(KRHitscanWeapon)가 Instantiate 직후 Play()를 호출합니다.
+    /// [LineRenderer + Moving Particle]
+    /// LineRenderer는 실제 Transform이 이동하는 것이 아니라 월드 좌표 두 점을 그리는 방식입니다.
+    /// 따라서 자식 ParticleSystem을 붙여도 자동으로 선을 따라가지 않습니다.
+    /// 이 스크립트는 MovingParticleRoot를 직접 start → end 방향으로 이동시켜,
+    /// 총알 머리/불씨/탄흔 파티클이 트레이서를 따라가는 것처럼 보이게 만듭니다.
     /// </summary>
     [RequireComponent(typeof(LineRenderer))]
     public sealed class KRHitscanTracer : MonoBehaviour
@@ -48,28 +31,58 @@ namespace KillRitual.Weapons
         [SerializeField] private float _endWidth = 0.015f;
 
         [Header("탄속 / 길이 (무기별 기본값, Play() 인자로 덮어쓸 수 있음)")]
-        [Tooltip("트레이서가 화면에서 이동하는 속도(미터/초). 클수록 더 빨리 지나가서 더 짧게 보입니다. " +
-                 "예: 200이면 10미터 거리는 0.05초 만에 지나가고 사라집니다.")]
+        [Tooltip("트레이서가 화면에서 이동하는 속도(미터/초). 클수록 더 빨리 지나가서 더 짧게 보입니다.")]
         [Min(1f)]
         [SerializeField] private float _visualSpeed = 250f;
 
-        [Tooltip("트레이서 선 자체의 최대 시각적 길이(미터). 0이면 제한 없음(전체 사거리를 다 그림). " +
-                 "값을 주면 선이 이 길이를 넘지 않도록 시작점을 끝점 쪽으로 당겨서 그립니다 " +
-                 "(예: 사거리가 100미터여도 선은 항상 최대 8미터 길이로만 보임).")]
+        [Tooltip("트레이서 선 자체의 최대 시각적 길이(미터). 0이면 제한 없음.")]
         [Min(0f)]
         [SerializeField] private float _maxVisualLength = 8f;
 
+        [Header("이동 파티클")]
+        [Tooltip("트레이서 머리를 따라 이동할 파티클 루트입니다. 비워두면 파티클 추적을 사용하지 않습니다.")]
+        [SerializeField] private Transform _movingParticleRoot;
+
+        [Tooltip("이동 파티클 루트 아래의 ParticleSystem입니다. 비워두면 위치 이동만 수행합니다.")]
+        [SerializeField] private ParticleSystem _movingParticle;
+
+        [Tooltip("true면 MovingParticleRoot가 트레이서 머리를 따라 start → end로 이동합니다.")]
+        [SerializeField] private bool _moveParticleAlongTracer = true;
+
+        [Tooltip("true면 MovingParticleRoot가 이동 방향을 바라보도록 회전합니다.")]
+        [SerializeField] private bool _rotateParticleToDirection = true;
+
+        [Tooltip("true면 트레이서가 사라질 때 파티클을 분리하고 StopEmitting만 하여 남은 입자가 자연스럽게 사라지게 합니다.")]
+        [SerializeField] private bool _detachParticleOnFinish = false;
+
+        [Tooltip("Detach Particle On Finish가 true일 때, 분리된 파티클 루트를 제거하기까지의 시간입니다.")]
+        [Min(0.01f)]
+        [SerializeField] private float _detachedParticleDestroyDelay = 1.0f;
+
         private LineRenderer _line;
+
         private Vector3 _startPos;
-        private Vector3 _endPos;
+        private Vector3 _actualEndPos;
+        private Vector3 _direction;
+
         private Color _baseColor;
+
+        private float _totalDistance;
+        private float _visibleLength;
         private float _travelDuration;
         private float _elapsed;
+
+        private bool _isPlaying;
 
         private void Awake()
         {
             _line = GetComponent<LineRenderer>();
             ConfigureLineRenderer();
+
+            if (_movingParticleRoot != null)
+            {
+                _movingParticleRoot.gameObject.SetActive(false);
+            }
         }
 
         /// <summary>
@@ -85,8 +98,8 @@ namespace KillRitual.Weapons
             var widthCurve = new AnimationCurve(
                 new Keyframe(0f, _startWidth),
                 new Keyframe(1f, _endWidth));
-            _line.widthCurve = widthCurve;
 
+            _line.widthCurve = widthCurve;
             _line.useWorldSpace = true;
         }
 
@@ -96,9 +109,14 @@ namespace KillRitual.Weapons
         /// <param name="start">총구(FirePoint) 월드 좌표</param>
         /// <param name="end">명중 지점 또는 사거리 소진 지점의 월드 좌표</param>
         /// <param name="color">속성별 트레이서 색상</param>
-        /// <param name="visualSpeedOverride">0 이하면 인스펙터 기본값(_visualSpeed) 사용. 무기별로 탄속을 다르게 주고 싶을 때 전달합니다.</param>
-        /// <param name="maxLengthOverride">음수면 인스펙터 기본값(_maxVisualLength) 사용. 0을 명시적으로 넘기면 길이 제한 없음.</param>
-        public void Play(Vector3 start, Vector3 end, Color color, float visualSpeedOverride = -1f, float maxLengthOverride = -1f)
+        /// <param name="visualSpeedOverride">0 이하면 인스펙터 기본값(_visualSpeed) 사용</param>
+        /// <param name="maxLengthOverride">음수면 인스펙터 기본값(_maxVisualLength) 사용. 0이면 길이 제한 없음</param>
+        public void Play(
+            Vector3 start,
+            Vector3 end,
+            Color color,
+            float visualSpeedOverride = -1f,
+            float maxLengthOverride = -1f)
         {
             if (_line == null)
             {
@@ -110,45 +128,131 @@ namespace KillRitual.Weapons
             float maxLength = maxLengthOverride >= 0f ? maxLengthOverride : _maxVisualLength;
 
             _startPos = start;
-            _endPos = end;
+            _actualEndPos = end;
             _baseColor = color;
             _elapsed = 0f;
 
-            float totalDistance = Vector3.Distance(start, end);
-            _travelDuration = Mathf.Max(0.02f, totalDistance / speed);
+            Vector3 delta = _actualEndPos - _startPos;
+            _totalDistance = delta.magnitude;
 
-            // [길이 제한] 시작점(총구)은 고정하고 끝점을 총구 방향으로 당겨서 선 길이를 제한합니다.
-            // 이전 방식(시작점을 끝점으로 밀기)은 충돌이 없어 사거리가 길 때 시작점이 이미
-            // 끝점 근처로 배치되어 선이 거의 안 보이는 버그가 있었습니다.
-            if (maxLength > 0f && totalDistance > maxLength)
+            if (_totalDistance <= 0.001f)
             {
-                _endPos = start + (end - start).normalized * maxLength;
+                Destroy(gameObject);
+                return;
             }
 
-            _line.SetPosition(0, _startPos);
-            _line.SetPosition(1, _endPos);
+            _direction = delta / _totalDistance;
+
+            _visibleLength = maxLength > 0f
+                ? Mathf.Min(maxLength, _totalDistance)
+                : _totalDistance;
+
+            _travelDuration = Mathf.Max(0.02f, _totalDistance / Mathf.Max(1f, speed));
+
             _line.startColor = _baseColor;
             _line.endColor = _baseColor;
+
+            // 시작 프레임에서는 선이 총구 지점에서 시작하도록 둡니다.
+            // 이후 Update에서 총알 머리(head)가 앞으로 나가고,
+            // 꼬리(tail)는 visibleLength만큼 뒤따라갑니다.
+            _line.SetPosition(0, _startPos);
+            _line.SetPosition(1, _startPos);
+
+            SetupMovingParticle();
+
+            _isPlaying = true;
+        }
+
+        private void SetupMovingParticle()
+        {
+            if (_movingParticleRoot == null)
+            {
+                return;
+            }
+
+            _movingParticleRoot.gameObject.SetActive(true);
+            _movingParticleRoot.position = _startPos;
+
+            if (_rotateParticleToDirection)
+            {
+                _movingParticleRoot.rotation = Quaternion.LookRotation(_direction, Vector3.up);
+            }
+
+            if (_movingParticle != null)
+            {
+                _movingParticle.Clear(true);
+                _movingParticle.Play(true);
+            }
         }
 
         private void Update()
         {
+            if (!_isPlaying)
+            {
+                return;
+            }
+
             _elapsed += Time.deltaTime;
+
             float t = Mathf.Clamp01(_elapsed / _travelDuration);
 
-            // [핵심 변경] 기존의 "서서히 꼬리가 줄어드는 잔상" 대신, 선 전체(시작~끝)가
-            // 한 덩어리로 끝점을 향해 빠르게 이동하다가, 도착하는 즉시(t>=1) 잔상 없이
-            // 바로 파괴됩니다 — "충돌하자마자 사라진다"는 요구사항에 맞춘 동작입니다.
-            Vector3 currentStart = Vector3.Lerp(_startPos, _endPos, t);
-
-            _line.SetPosition(0, currentStart);
-            _line.SetPosition(1, _endPos);
+            UpdateLine(t);
+            UpdateMovingParticle(t);
 
             if (t >= 1f)
             {
-                // 도착 즉시 파괴 — 알파 페이드 등 추가 잔상 없이 충돌과 동시에 사라집니다.
-                Destroy(gameObject);
+                FinishTracer();
             }
+        }
+
+        private void UpdateLine(float t)
+        {
+            // head는 실제 총알 머리처럼 start → actualEnd로 이동합니다.
+            float headDistance = _totalDistance * t;
+
+            // tail은 head보다 visibleLength만큼 뒤에 있습니다.
+            // 초반에는 tail이 총구보다 뒤로 갈 수 없으므로 0으로 클램프합니다.
+            float tailDistance = Mathf.Max(0f, headDistance - _visibleLength);
+
+            Vector3 tailPos = _startPos + (_direction * tailDistance);
+            Vector3 headPos = _startPos + (_direction * headDistance);
+
+            _line.SetPosition(0, tailPos);
+            _line.SetPosition(1, headPos);
+        }
+
+        private void UpdateMovingParticle(float t)
+        {
+            if (!_moveParticleAlongTracer || _movingParticleRoot == null)
+            {
+                return;
+            }
+
+            Vector3 headPos = Vector3.Lerp(_startPos, _actualEndPos, t);
+            _movingParticleRoot.position = headPos;
+
+            if (_rotateParticleToDirection)
+            {
+                _movingParticleRoot.rotation = Quaternion.LookRotation(_direction, Vector3.up);
+            }
+        }
+
+        private void FinishTracer()
+        {
+            _isPlaying = false;
+
+            if (_movingParticle != null)
+            {
+                _movingParticle.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            }
+
+            if (_detachParticleOnFinish && _movingParticleRoot != null)
+            {
+                _movingParticleRoot.SetParent(null, true);
+                Destroy(_movingParticleRoot.gameObject, _detachedParticleDestroyDelay);
+            }
+
+            Destroy(gameObject);
         }
     }
 }
