@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-using KillRitual.Core.Events;
-using KillRitual.Core.Managers;
+using KillRitual.Core.Damage;
+using KillRitual.Player;
 
 namespace KillRitual.Items
 {
@@ -9,9 +9,7 @@ namespace KillRitual.Items
     /// KREnemyBase(또는 적 오브젝트)에 붙입니다.
     ///
     /// [동작 방식]
-    /// 처형 이벤트(KRExecutionSuccessEvent) 대신, KREnemyBase.Execute()가 호출될 때
-    /// 직접 이 컴포넌트의 SpawnDrops()를 호출하는 방식을 씁니다.
-    /// (이벤트 방식은 어느 적이 처형됐는지 위치를 알 수 없어서, 직접 호출이 더 적합합니다.)
+    /// KREnemyBase.Execute()가 호출될 때 직접 이 컴포넌트의 SpawnDrops()를 호출합니다.
     ///
     /// [KREnemyBase 연동 방법]
     /// KREnemyBase.Execute() 안에 아래 한 줄을 추가하세요:
@@ -53,19 +51,38 @@ namespace KillRitual.Items
         [Min(0f)]
         [SerializeField] private float _bounceOutwardForce = 3f;
 
+        // Awake에서 한 번만 찾아 캐싱합니다.
+        // SpawnDrops()가 처형마다 호출될 때마다 FindGameObjectWithTag를 반복하는
+        // 비용을 없애기 위해 미리 참조를 저장해 둡니다.
+        private KRPlayerDamageFeedback _playerFeedback;
+
+        private void Awake()
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                _playerFeedback = player.GetComponentInParent<KRPlayerDamageFeedback>();
+            }
+
+            if (_playerFeedback == null)
+            {
+                Debug.LogWarning("[KRDropSpawner] KRPlayerDamageFeedback을 찾지 못했습니다. " +
+                                 "Player 태그와 KRPlayerDamageFeedback 컴포넌트를 확인하세요.");
+            }
+        }
+
         /// <summary>
         /// 처형 성공 시 호출합니다. KREnemyBase.Execute()에서 직접 호출하세요.
         /// </summary>
         /// <param name="position">드롭 위치 (적 오브젝트의 위치)</param>
         /// <param name="currentElement">현재 플레이어가 장착한 속성 (탄약 오브 종류 결정)</param>
-        public void SpawnDrops(Vector3 position, KillRitual.Core.Damage.KRDamageType currentElement)
+        public void SpawnDrops(Vector3 position, KRDamageType currentElement)
         {
             // 체력은 오브 없이 즉시 직접 회복합니다.
+            // KRPlayerDamageFeedback.Heal()을 호출해 HP바까지 함께 갱신됩니다.
             if (_healthRestoreOnExecute > 0f)
             {
-                var playerStats = GameObject.FindGameObjectWithTag("Player")
-                    ?.GetComponentInParent<KillRitual.Player.Combat.KRPlayerStats>();
-                playerStats?.Heal(_healthRestoreOnExecute);
+                _playerFeedback?.Heal(_healthRestoreOnExecute);
             }
 
             // 탄약 오브 — 5속성 전부 드롭합니다.
@@ -112,7 +129,6 @@ namespace KillRitual.Items
             // 생성 직후 랜덤한 방향으로 힘을 가해 물리적으로 퍼지게 합니다.
             if (instance.TryGetComponent(out Rigidbody rb))
             {
-                // 수평으로 랜덤한 방향, 위쪽으로 고정된 힘을 동시에 가합니다.
                 Vector2 randomDir = Random.insideUnitCircle.normalized;
                 Vector3 force = new Vector3(randomDir.x, 0f, randomDir.y) * _bounceOutwardForce
                               + Vector3.up * _bounceUpForce;
