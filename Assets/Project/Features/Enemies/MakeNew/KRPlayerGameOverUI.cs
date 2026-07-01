@@ -1,107 +1,66 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-// Assets/Project/Scripts/02_Player/KRGameOverUI.cs
+﻿// Assets/Project/Scripts/02_Player/KRGameOverUI.cs
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace KillRitual.Player
 {
     /// <summary>
-    /// "GAME OVER" 문구를 화면 중앙에 띄우고, 게임을 멈추는 간단한 게임오버 화면입니다.
-    /// 재시작(R) 버튼과 종료(ESC를 통한 커서 해제)도 포함합니다.
+    /// 게임오버가 되면 "게임오버 전용 씬"으로 화면을 통째로 전환합니다.
     ///
-    /// UI Canvas나 별도 폰트 에셋 없이 OnGUI만으로 동작하므로, 처음 만드는 단계에서
-    /// 추가 설정 없이 바로 쓸 수 있습니다. 나중에 멋진 UI Canvas로 교체하면 됩니다.
+    /// [이전 방식과의 차이]
+    /// 예전에는 현재 화면 위에 "GAME OVER" 글자를 덮어 그리고 시간을 멈췄지만,
+    /// 이제는 아예 다른 씬(GameOver 씬)으로 넘어갑니다. 그 씬에서 글자·버튼·배경을
+    /// 유니티 화면으로 자유롭게 꾸밀 수 있어 확장에 유리합니다.
+    ///
+    /// [사용법] 플레이어가 죽으면 KRPlayerDamageFeedback이 이 컴포넌트의 ShowGameOver()를
+    /// 호출합니다. 그러면 인스펙터에 지정한 이름의 씬으로 전환됩니다.
+    ///
+    /// [주의] 전환할 씬(GameOver)은 반드시 File → Build Settings의 "Scenes In Build"
+    /// 목록에 등록돼 있어야 합니다. 등록돼 있지 않으면 전환되지 않고 콘솔에 경고가 뜹니다.
     /// </summary>
     public sealed class KRGameOverUI : MonoBehaviour
     {
-        [Tooltip("게임오버 시 마우스 커서를 다시 보이게 할지 여부.")]
-        [SerializeField] private bool _unlockCursorOnGameOver = true;
-
-        [Tooltip("게임오버 시 시간을 멈출지 여부(true면 모든 움직임이 정지합니다).")]
-        [SerializeField] private bool _pauseTimeOnGameOver = true;
+        [Tooltip("게임오버 시 전환할 씬의 이름입니다. File → Build Settings에 등록된 이름과 " +
+                 "정확히 같아야 합니다(대소문자 구분). 예: \"GameOver\"")]
+        [SerializeField] private string _gameOverSceneName = "GameOver";
 
         private bool _isGameOver;
 
-        /// <summary>게임오버 화면을 띄웁니다. KRPlayerDamageFeedback이 사망 시 호출합니다.</summary>
+        /// <summary>
+        /// 게임오버 씬으로 전환합니다. 플레이어가 죽는 순간 KRPlayerDamageFeedback이 호출합니다.
+        /// </summary>
         public void ShowGameOver()
         {
             if (_isGameOver)
             {
-                return; // 이미 게임오버면 중복 처리하지 않습니다.
+                return; // 이미 게임오버 처리가 시작됐다면 중복 실행하지 않습니다.
             }
 
             _isGameOver = true;
 
-            if (_unlockCursorOnGameOver)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
-
-            if (_pauseTimeOnGameOver)
-            {
-                Time.timeScale = 0f; // 시간을 멈춥니다. 재시작 시 다시 1로 되돌립니다.
-            }
-        }
-
-        private void Update()
-        {
-            if (!_isGameOver)
-            {
-                return;
-            }
-
-            // 게임오버 상태에서 R 키를 누르면 현재 씬을 다시 로드해 재시작합니다.
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                RestartGame();
-            }
-        }
-
-        private void RestartGame()
-        {
-            // 멈췄던 시간을 반드시 원래대로 돌려놓아야 다시 시작했을 때 게임이 움직입니다.
+            // 혹시 시간이 멈춰 있던 상태(다른 곳에서 Time.timeScale=0을 했을 수 있음)를 대비해,
+            // 씬을 넘어가기 전에 시간 흐름을 정상(1)으로 되돌립니다. 이걸 안 하면 새 씬도 멈춰 있습니다.
             Time.timeScale = 1f;
 
-            // 현재 씬을 처음부터 다시 불러옵니다.
-            Scene current = SceneManager.GetActiveScene();
-            SceneManager.LoadScene(current.buildIndex);
+            // FPS 플레이 중에는 마우스 커서가 숨겨져 있으므로, 게임오버 화면에서
+            // 버튼을 클릭할 수 있도록 커서를 다시 보이게 하고 잠금을 풉니다.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            LoadGameOverScene();
         }
 
-        private void OnGUI()
+        private void LoadGameOverScene()
         {
-            if (!_isGameOver)
+            if (string.IsNullOrEmpty(_gameOverSceneName))
             {
+                Debug.LogWarning("[KRGameOverUI] 전환할 게임오버 씬 이름이 비어 있습니다. " +
+                                 "인스펙터의 Game Over Scene Name을 설정하세요.");
                 return;
             }
 
-            // 화면 전체를 어둡게 덮습니다.
-            GUI.color = new Color(0f, 0f, 0f, 0.7f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
-            // "GAME OVER" 큰 글씨.
-            var titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 64,
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Bold
-            };
-            titleStyle.normal.textColor = Color.red;
-
-            var hintStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 24,
-                alignment = TextAnchor.MiddleCenter
-            };
-            hintStyle.normal.textColor = Color.white;
-
-            float centerX = Screen.width * 0.5f;
-            float centerY = Screen.height * 0.5f;
-
-            GUI.Label(new Rect(centerX - 400, centerY - 80, 800, 120), "GAME OVER", titleStyle);
-            GUI.Label(new Rect(centerX - 400, centerY + 40, 800, 40), "R 키를 눌러 재시작", hintStyle);
+            // 지정한 이름의 씬을 불러옵니다(현재 씬은 자동으로 닫힙니다).
+            SceneManager.LoadScene(_gameOverSceneName);
         }
     }
 }
