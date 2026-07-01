@@ -312,7 +312,10 @@ namespace KillRitual.Weapons
 
             if (instance.TryGetComponent(out KRHitscanTracer tracer))
             {
-                tracer.Play(origin, targetPosition, 0.08f, _tracerVisualColor);
+                // [시그니처 갱신] KRHitscanTracer.Play()가 고정 duration 방식에서 거리 비례
+                // 탄속(visualSpeed) 방식으로 바뀌었습니다. 유도 추적탄은 짧은 거리에서 빠르게
+                // 번뜩이는 느낌이 맞으므로 빠른 탄속(400m/s)과 짧은 최대 길이(3m)를 직접 지정합니다.
+                tracer.Play(origin, targetPosition, _tracerVisualColor, visualSpeedOverride: 400f, maxLengthOverride: 3f);
             }
             else
             {

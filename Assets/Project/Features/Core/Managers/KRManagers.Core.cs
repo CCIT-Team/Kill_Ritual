@@ -21,7 +21,7 @@ namespace KillRitual.Core.Managers
         public static KRFileManager File { get; private set; }
 
         /// <summary>발사체/이펙트 재사용을 위한 오브젝트 풀 매니저(현재는 최소 스텁).</summary>
-        public static KRPoolManager Pool { get; private set; }
+  
 
         /// <summary>
         /// [최적화] Collider → IDamageable 사전 매핑 캐시입니다.
@@ -37,7 +37,6 @@ namespace KillRitual.Core.Managers
         {
             Event  = new KREventBus();
             File   = new KRFileManager();
-            Pool   = new KRPoolManager();
             Combat = new KRCombatRegistry();
         }
     }

@@ -1414,7 +1414,8 @@ MonoBehaviour:
   _spreadAngleDegrees: 90
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 2
+  _tracerVisualSpeed: 250
+  _tracerMaxVisualLength: 8
   _tracerColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1248569822962963450
 GameObject:
@@ -1454,7 +1455,8 @@ MonoBehaviour:
   _spreadAngleDegrees: 0
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 1
+  _tracerVisualSpeed: 250
+  _tracerMaxVisualLength: 8
   _tracerColor: {r: 0.10062885, g: 0.049681537, b: 0.049681537, a: 1}
 --- !u!4 &1568937659721086530
 Transform:
@@ -1556,7 +1558,7 @@ MonoBehaviour:
   minPitch: -80
   maxPitch: 80
   lockCursorOnStart: 1
-  allowEscapeUnlock: 1
+  allowEscapeToggle: 1
 --- !u!1 &2597383335124302927
 GameObject:
   m_ObjectHideFlags: 0
@@ -1640,32 +1642,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &3273040403669643228
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163898709972514839}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1d4475640a4b6d2448e6fd6fabc5c410, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _element: 3
-  _weaponName: "\uD1A0_\uC2A4\uCEEC\uD06C\uB798\uC154"
-  _damage: 0.5
-  _range: 50
-  _cooldown: 1
-  _resourceCost: 0.1
-  _pelletCount: 1
-  _spreadAngleDegrees: 29
-  _boxHeight: 1.5
-  _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 0.05
-  _tracerColor: {r: 0.7106918, g: 0.5459731, b: 0.13632755, a: 1}
-  _minCooldown: 0.01
-  _rampUpDuration: 3
 --- !u!1 &3732985660099021985
 GameObject:
   m_ObjectHideFlags: 0
@@ -1722,7 +1698,8 @@ MonoBehaviour:
   _spreadAngleDegrees: 0
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 0.1
+  _tracerVisualSpeed: 250
+  _tracerMaxVisualLength: 8
   _tracerColor: {r: 0.7492038, g: 0.9622642, b: 0.52349585, a: 1}
   _zoomFov: 18
   _zoomSmoothSpeed: 12
@@ -1873,7 +1850,8 @@ MonoBehaviour:
   _spreadAngleDegrees: 10
   _boxHeight: 2
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 2
+  _tracerVisualSpeed: 250
+  _tracerMaxVisualLength: 8
   _tracerColor: {r: 1, g: 0.6028177, b: 0, a: 1}
 --- !u!1 &5350011881093338835
 GameObject:
@@ -2060,7 +2038,8 @@ MonoBehaviour:
   _spreadAngleDegrees: 0
   _boxHeight: 1.5
   _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
-  _tracerDuration: 0.01
+  _tracerVisualSpeed: 250
+  _tracerMaxVisualLength: 8
   _tracerColor: {r: 0.09201916, g: 0.33333334, b: 0, a: 1}
 --- !u!136 &6456210170396288385
 CapsuleCollider:
@@ -2191,7 +2170,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5902184316846621043}
-  - component: {fileID: 3273040403669643228}
+  - component: {fileID: 7163898709972514840}
   m_Layer: 0
   m_Name: weapon4-2
   m_TagString: Untagged
@@ -2199,6 +2178,40 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &7163898709972514840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163898709972514839}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d4475640a4b6d2448e6fd6fabc5c410, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _element: 3
+  _weaponName: Weapon
+  _damage: 10
+  _range: 50
+  _cooldown: 0.5
+  _resourceCost: 1
+  _pelletCount: 1
+  _spreadAngleDegrees: 0
+  _boxHeight: 1.5
+  _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
+  _tracerVisualSpeed: 40
+  _tracerMaxVisualLength: 8
+  _tracerColor: {r: 0.5849056, g: 0.37716645, b: 0.02391113, a: 1}
+  _minCooldown: 0.1
+  _rampUpDuration: 2.5
+  _maxPelletCount: 3
+  _maxSpreadAngleDegrees: 30
+  _pelletStaggerInterval: 0.005
+  _useFlameVisual: 0
+  _flameGlobPrefab: {fileID: 5058461601959581309, guid: 0253d25d54334c6409444793f3cc4833, type: 3}
+  _flameTravelDuration: 0.12
+  _flameColor: {r: 0.66666657, g: 0.3678649, b: 0.12788247, a: 1}
 --- !u!23 &7422596093680821042
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2409,7 +2422,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a603d37a55cf8864f8701d8d0e55274e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _characterStats: {fileID: 11400000, guid: 48c9c3896f5310548991a82319a18da0, type: 2}
+  _playerStats: {fileID: 0}
   _typeOneWeapons:
   - {fileID: 5157171458005847063}
   - {fileID: 1664087330347290814}
@@ -2420,7 +2433,7 @@ MonoBehaviour:
   - {fileID: 654868973108905009}
   - {fileID: 8009032598697985088}
   - {fileID: 3924698388048019986}
-  - {fileID: 3273040403669643228}
+  - {fileID: 7163898709972514840}
   - {fileID: 4232061730199721130}
   _playerCamera: {fileID: 3068157983861045341}
   _firePoint: {fileID: 217918501947978497}
@@ -2431,7 +2444,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4194304
   _maxResourcePerElement:
-  - 20
+  - 1000
   - 180
   - 200
   - 360

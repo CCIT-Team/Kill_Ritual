@@ -46,7 +46,7 @@ namespace KillRitual.Core.Damage
         /// <summary>피격 지점의 월드 좌표. 이펙트 생성, AoE 중심점 계산 등에 사용됩니다.</summary>
         public readonly Vector3 HitPoint;
 
-        /// <summary>데미지가 들어온 방향. 넉백, 히트 리액션 연출 등에 사용됩니다.</summary>
+        /// <summary>데미지가 들어온 방향. 히트 리액션 연출 등에 사용됩니다.</summary>
         public readonly Vector3 Direction;
 
         public KRDamageContext(float damageAmount, KRDamageType type, Vector3 hitPoint, Vector3 direction)

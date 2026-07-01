@@ -4,7 +4,6 @@ using KillRitual.Core.Interfaces;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Events;
 using KillRitual.Core.Managers;
-using KillRitual.Data;
 using KillRitual.Weapons;
 
 namespace KillRitual.Player.Combat
@@ -19,8 +18,14 @@ namespace KillRitual.Player.Combat
     /// "무기 홀더(Weapon Holder)"로 축소되었습니다:
     ///   1. 1~5 숫자키로 현재 장착 속성(오행) 선택
     ///   2. 좌클릭(Mouse0)/우클릭(Mouse1) 입력을 현재 장착된 무기의 NotifyHeld()/NotifyReleased()로 전달
-    ///   3. 공용 자원 지갑(오행 5속성), 플레이어 체력(IDamageable), 처형(Execution) 로직 유지
+    ///   3. 공용 자원 지갑(오행 5속성), 처형(Execution) 로직 유지
     ///   4. 무기 스크립트가 참조할 공용 서비스(FirePoint, 레이어 마스크, 공격 배율) 제공
+    ///
+    /// [스탯 분리] 체력/공격 배율/공격 속도 배율은 더 이상 이 클래스가 직접 들고 있지 않고,
+    /// 별도 컴포넌트인 KRPlayerStats가 전담합니다. KRCombatSystem은 IDamageable 계약
+    /// (TakeDamage/IsDead/Execute 등)을 여전히 구현하지만, 내부적으로는 KRPlayerStats에
+    /// 위임만 합니다. 이렇게 분리한 이유는 "무기 홀더"라는 본래 책임과 "스탯 관리"라는
+    /// 책임을 명확히 나누기 위함입니다.
     ///
     /// 실제 발사 판정(레이캐스트/투사체/트레이서/가속연사/충전발사)은 03_Weapons의
     /// KRWeaponBase 및 그 자식 클래스(KRHitscanWeapon, KRProjectileWeapon 등)가 전담합니다.
@@ -30,8 +35,10 @@ namespace KillRitual.Player.Combat
     {
         private const int kElementCount = 5;
 
-        [Header("Data 레이어 참조 (ScriptableObject)")]
-        [SerializeField] private KRCharacterStatsSO _characterStats;
+        [Header("스탯 관리자")]
+        [Tooltip("체력/공격배율/공격속도배율을 관리하는 KRPlayerStats 컴포넌트. 비워두면 Awake 시 " +
+                 "같은 오브젝트(또는 부모 계층)에서 자동으로 찾습니다. 그래도 못 찾으면 안전한 기본값으로 동작합니다.")]
+        [SerializeField] private KRPlayerStats _playerStats;
 
         [Header("무기 홀더 (인스펙터에서 각 속성의 유형I/유형II 무기 GameObject를 드래그하세요)")]
         [Tooltip("길이 5. [0]=Fire(화) [1]=Water(수) [2]=Wood(목) [3]=Earth(토) [4]=Metal(금) 순서로, " +
@@ -90,7 +97,6 @@ namespace KillRitual.Player.Combat
 
         private KRResourceWallet _resourceWallet;
         private KRDamageType _currentElement = KRDamageType.Fire;
-        private float _health;
 
         // ------------------------------------------------------------------
         // 무기 스크립트가 참조하는 공용 서비스 API
@@ -165,11 +171,11 @@ namespace KillRitual.Player.Combat
         /// <summary>투사체의 발사 주체. 자기 자신에게는 데미지가 들어가지 않도록 비교에 사용됩니다.</summary>
         public IDamageable Owner => this;
 
-        /// <summary>전역 공격 배율 (KRCharacterStatsSO 기반).</summary>
-        public float AttackMultiplier => _characterStats != null ? _characterStats.AttackMultiplier : 1f;
+        /// <summary>전역 공격 배율 (KRPlayerStats 기반).</summary>
+        public float AttackMultiplier => _playerStats != null ? _playerStats.AttackMultiplier : 1f;
 
-        /// <summary>전역 공격 속도 배율 (KRCharacterStatsSO 기반). 0으로 나누는 사고를 막기 위해 최소값을 보장합니다.</summary>
-        public float AttackSpeedMultiplier => _characterStats != null ? Mathf.Max(0.01f, _characterStats.AttackSpeedMultiplier) : 1f;
+        /// <summary>전역 공격 속도 배율 (KRPlayerStats 기반). 0으로 나누는 사고를 막기 위해 최소값을 보장합니다.</summary>
+        public float AttackSpeedMultiplier => _playerStats != null ? _playerStats.AttackSpeedMultiplier : 1f;
 
         /// <summary>지정한 속성의 공용 자원을 소모를 시도합니다. 무기 스크립트가 발사 시 호출합니다.</summary>
         public bool TryConsumeResource(KRDamageType element, float amount)
@@ -210,7 +216,7 @@ namespace KillRitual.Player.Combat
         // ------------------------------------------------------------------
         // IDamageable 구현부 (플레이어 자신이 데미지를 받는 경우)
         // ------------------------------------------------------------------
-        public bool IsDead => _health <= 0f;
+        public bool IsDead => _playerStats != null && _playerStats.IsDead;
 
         // 플레이어는 별도의 그로기 시스템을 사용하지 않으므로 항상 false를 반환합니다(05_Enemies 전용 상태).
         public bool IsGroggy => false;
@@ -219,7 +225,14 @@ namespace KillRitual.Player.Combat
 
         private void Awake()
         {
-            _health = _characterStats != null ? _characterStats.MaxHealth : 100f;
+            // 인스펙터에 직접 할당하지 않았다면, 같은 오브젝트 또는 부모 계층에서 자동으로 찾습니다.
+            // (Player 루트에 KRPlayerStats를 두고, KRCombatSystem은 카메라 쪽 자식에 둘 수도 있으므로
+            // GetComponentInParent로 탐색합니다.)
+            if (_playerStats == null)
+            {
+                _playerStats = GetComponentInParent<KRPlayerStats>();
+            }
+
             _resourceWallet = new KRResourceWallet(_maxResourcePerElement);
 
             if (_playerCamera == null)
@@ -295,6 +308,16 @@ namespace KillRitual.Player.Combat
 
             if (weapon == null)
             {
+                return;
+            }
+
+            // [동시 사격 차단] 반대 버튼(유형I ↔ 유형II)이 눌려있으면 이쪽 버튼을 무시합니다.
+            // 어느 쪽이든 한 쪽이 눌리는 순간 다른 쪽은 Released 상태로 처리되어,
+            // 가속/충전 등의 상태가 초기화됩니다.
+            int otherButton = mouseButton == 0 ? 1 : 0;
+            if (Input.GetMouseButton(otherButton))
+            {
+                weapon.NotifyReleased();
                 return;
             }
 
@@ -389,9 +412,7 @@ namespace KillRitual.Player.Combat
         // ------------------------------------------------------------------
         private void OnExecutionSuccess(KRExecutionSuccessEvent evt)
         {
-            float maxHealth = _characterStats != null ? _characterStats.MaxHealth : 100f;
-            float healAmount = maxHealth * (evt.RecoverHealthAmount / 100f);
-            _health = Mathf.Min(maxHealth, _health + healAmount);
+            _playerStats?.HealByPercent(evt.RecoverHealthAmount);
 
             for (int i = 0; i < _allElements.Length; i++)
             {
@@ -404,17 +425,14 @@ namespace KillRitual.Player.Combat
         // ------------------------------------------------------------------
         public void TakeDamage(KRDamageContext context)
         {
-            if (IsDead)
-            {
-                return;
-            }
+            if (IsDead) return;
 
-            _health = Mathf.Max(0f, _health - context.DamageAmount);
+            _playerStats?.ApplyDamage(context.DamageAmount);
         }
 
         public void Execute()
         {
-            _health = 0f;
+            _playerStats?.Kill();
         }
 
         // ------------------------------------------------------------------

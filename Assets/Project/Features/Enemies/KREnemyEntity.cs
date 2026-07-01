@@ -43,8 +43,8 @@ namespace KillRitual.Enemies
         [SerializeField] private float _autoResetDelaySeconds = 2f;
 
         private float _currentHealth;
-        private bool  _isGroggy;
-        private bool  _isDead;
+        private bool _isGroggy;
+        private bool _isDead;
         private float _resetTimer;
 
         // 등록한 콜라이더 목록. OnDisable에서 정확히 해제하기 위해 캐싱합니다.
@@ -53,8 +53,8 @@ namespace KillRitual.Enemies
         // ------------------------------------------------------------------
         // IDamageable
         // ------------------------------------------------------------------
-        public bool    IsDead   => _isDead;
-        public bool    IsGroggy => _isGroggy;
+        public bool IsDead => _isDead;
+        public bool IsGroggy => _isGroggy;
         public Vector3 Position => transform.position;
 
         // ------------------------------------------------------------------
@@ -62,8 +62,6 @@ namespace KillRitual.Enemies
         // ------------------------------------------------------------------
         private void Awake()
         {
-            // GetComponentsInChildren은 비활성 자식도 포함 가능하나, 여기서는
-            // 활성화 시점에 GetComponents로 정확하게 수집합니다.
             _ownColliders = GetComponentsInChildren<Collider>(includeInactive: false);
             ResetState();
         }
@@ -108,7 +106,7 @@ namespace KillRitual.Enemies
             if (_isDead) return;
 
             _currentHealth = Mathf.Max(0f, _currentHealth - context.DamageAmount);
-            float ratio    = _currentHealth / _maxHealth;
+            float ratio = _currentHealth / _maxHealth;
 
             if (!_isGroggy && ratio <= _groggyThresholdRatio && _currentHealth > 0f)
             {
@@ -129,8 +127,8 @@ namespace KillRitual.Enemies
 
         private void HandleDeath(bool wasExecuted)
         {
-            _isDead    = true;
-            _isGroggy  = false;
+            _isDead = true;
+            _isGroggy = false;
             _resetTimer = 0f;
 
             if (wasExecuted)
@@ -146,9 +144,9 @@ namespace KillRitual.Enemies
         public void ResetState()
         {
             _currentHealth = _maxHealth;
-            _isGroggy      = false;
-            _isDead        = false;
-            _resetTimer    = 0f;
+            _isGroggy = false;
+            _isDead = false;
+            _resetTimer = 0f;
             gameObject.SetActive(true);
         }
 
