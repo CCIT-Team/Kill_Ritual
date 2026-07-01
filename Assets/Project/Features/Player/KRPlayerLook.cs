@@ -39,9 +39,13 @@ namespace KillRitual
         [SerializeField]
         private bool lockCursorOnStart = true;
 
-        [Tooltip("테스트 중 ESC로 커서를 해제할지 여부")]
+        [Tooltip("ESC 키로 커서 잠금/해제를 토글할지 여부. " +
+                 "ESC를 처음 누르면 커서가 풀리고(일시정지), 다시 누르면 커서가 잠기며 게임으로 복귀합니다.")]
         [SerializeField]
-        private bool allowEscapeUnlock = true;
+        private bool allowEscapeToggle = true;
+
+        /// <summary>현재 커서가 잠긴 상태인지 여부.</summary>
+        public bool IsCursorLocked => Cursor.lockState == CursorLockMode.Locked;
 
         /// <summary>
         /// 현재 상하 회전값.
@@ -60,16 +64,17 @@ namespace KillRitual
         private void Update()
         {
             HandleLookInput();
-            HandleCursorUnlockForTest();
+            HandleCursorToggle();
         }
 
         /// <summary>
         /// 마우스 입력을 받아 시점을 회전한다.
+        /// 커서가 잠금 해제된 상태(일시정지 등)에서는 시점 회전을 차단한다.
         /// </summary>
         private void HandleLookInput()
         {
-            if (cameraRoot == null)
-                return;
+            if (!IsCursorLocked) return;
+            if (cameraRoot == null) return;
 
             float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
             float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
@@ -80,23 +85,22 @@ namespace KillRitual
             // 상하 회전은 카메라 루트만 돌린다.
             pitch -= mouseY;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
-
             cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
 
         /// <summary>
-        /// 테스트 중 ESC를 누르면 마우스 커서를 다시 보이게 한다.
-        /// 에디터에서 Play 모드를 빠져나오거나 UI를 조작할 때 필요하다.
+        /// ESC를 누를 때마다 커서 잠금/해제를 토글한다.
+        /// 잠겨있으면 해제(일시정지), 해제되어 있으면 다시 잠금(게임 복귀).
         /// </summary>
-        private void HandleCursorUnlockForTest()
+        private void HandleCursorToggle()
         {
-            if (!allowEscapeUnlock)
-                return;
+            if (!allowEscapeToggle) return;
+            if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
-            if (!Input.GetKeyDown(KeyCode.Escape))
-                return;
-
-            UnlockCursor();
+            if (IsCursorLocked)
+                UnlockCursor();
+            else
+                LockCursor();
         }
 
         /// <summary>
@@ -111,7 +115,7 @@ namespace KillRitual
 
         /// <summary>
         /// 마우스 커서를 다시 보이게 한다.
-        /// 테스트, 일시정지 메뉴, 옵션 메뉴에서 사용한다.
+        /// 일시정지 메뉴, 옵션 메뉴에서 사용한다.
         /// </summary>
         public void UnlockCursor()
         {

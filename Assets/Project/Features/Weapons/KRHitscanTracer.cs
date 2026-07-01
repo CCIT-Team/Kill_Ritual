@@ -115,26 +115,20 @@ namespace KillRitual.Weapons
             _elapsed = 0f;
 
             float totalDistance = Vector3.Distance(start, end);
-            // [거리 비례] 표시 시간을 "거리 ÷ 탄속"으로 계산합니다 — 가까운 거리는 거의 즉시,
-            // 먼 거리는 그만큼 길게 보여서 실제 탄속이 있는 것처럼 느껴집니다.
             _travelDuration = Mathf.Max(0.02f, totalDistance / speed);
 
-            // [길이 제한] maxLength가 0보다 크고 전체 거리보다 짧으면, 시작점을 끝점 쪽으로
-            // 당겨서 트레이서 선 자체의 길이를 maxLength로 고정합니다.
-            Vector3 renderStart = start;
+            // [길이 제한] 시작점(총구)은 고정하고 끝점을 총구 방향으로 당겨서 선 길이를 제한합니다.
+            // 이전 방식(시작점을 끝점으로 밀기)은 충돌이 없어 사거리가 길 때 시작점이 이미
+            // 끝점 근처로 배치되어 선이 거의 안 보이는 버그가 있었습니다.
             if (maxLength > 0f && totalDistance > maxLength)
             {
-                Vector3 dir = (end - start) / totalDistance;
-                renderStart = end - dir * maxLength;
+                _endPos = start + (end - start).normalized * maxLength;
             }
 
-            _line.SetPosition(0, renderStart);
-            _line.SetPosition(1, end);
+            _line.SetPosition(0, _startPos);
+            _line.SetPosition(1, _endPos);
             _line.startColor = _baseColor;
             _line.endColor = _baseColor;
-
-            // 시작점을 별도로 기억해 Update()에서 같은 비율로 따라가게 합니다.
-            _startPos = renderStart;
         }
 
         private void Update()

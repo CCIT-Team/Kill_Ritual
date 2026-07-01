@@ -66,8 +66,7 @@ namespace KillRitual.Core.Managers
             // Developer A 담당 영역(이벤트버스, 파일, 풀매니저 등 코어 시스템) 초기화
             InitCore();
 
-            // Developer B 담당 영역(게임 진행, 데미지 서비스 등 게임플레이 시스템) 초기화
-            InitGameplay();
+            // Developer B 담당 영역(게임 진행, 데미지 서비스 등 게임플레이 시스템) 초기
         }
     }
 }

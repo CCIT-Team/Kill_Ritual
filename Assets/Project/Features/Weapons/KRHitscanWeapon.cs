@@ -50,7 +50,10 @@ namespace KillRitual.Weapons
         [Tooltip("이 무기의 트레이서 색상")]
         [SerializeField] private Color _tracerColor = Color.white;
 
-        private static readonly RaycastHit[] _hitscanBuffer = new RaycastHit[16];
+        // 인스턴스 버퍼로 선언합니다. KRRampingHitscanWeapon처럼 코루틴으로 펠릿을 순차 발사할 때,
+        // yield 사이 프레임에 다른 무기 인스턴스가 static 버퍼를 덮어써서 결과가 오염되는 문제를
+        // 방지합니다. 단일 무기는 한 번에 하나의 레이캐스트만 수행하므로 인스턴스 버퍼로도 충분합니다.
+        private readonly RaycastHit[] _hitscanBuffer = new RaycastHit[16];
 
         protected override void DoFire(float damagePerPellet)
         {
