@@ -118,6 +118,7 @@ namespace KillRitual.Enemies
         // 색상 셰이더 프로퍼티 이름. URP/Standard 양쪽에서 흔히 쓰는 두 가지를 모두 시도합니다.
         private static readonly int kBaseColorId = Shader.PropertyToID("_BaseColor"); // URP Lit
         private static readonly int kColorId = Shader.PropertyToID("_Color");         // Standard
+        private Collider[] _ownColliders;
 
         // ==================================================================
         // IDamageable 구현 — 플레이어 무기 코드가 이 4개를 통해 몬스터와 상호작용합니다.
@@ -197,8 +198,20 @@ namespace KillRitual.Enemies
             _mpb = new MaterialPropertyBlock();
 
             ApplyColor(_baseColor);
+            _ownColliders = GetComponentsInChildren<Collider>(includeInactive: false);
         }
-
+        private void OnEnable()
+        {
+            if (KillRitual.Core.Managers.KRManagers.Combat == null) return;
+            foreach (Collider col in _ownColliders)
+                KillRitual.Core.Managers.KRManagers.Combat.Register(col, this);
+        }
+        private void OnDisable()
+        {
+            if (KillRitual.Core.Managers.KRManagers.Combat == null) return;
+            foreach (Collider col in _ownColliders)
+                KillRitual.Core.Managers.KRManagers.Combat.Unregister(col);
+        }
         protected virtual void Start()
         {
             // 씬에서 플레이어를 찾습니다. 플레이어 오브젝트에 "Player" 태그가 지정돼 있어야 합니다.

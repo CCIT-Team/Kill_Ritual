@@ -83,7 +83,7 @@ namespace KillRitual.Player
 
             if (_ammoText != null)
             {
-                _ammoText.text = Mathf.CeilToInt(amount) + " / " + Mathf.CeilToInt(max);
+                _ammoText.text = " " + Mathf.CeilToInt(amount) ;
                 _ammoText.color = color;
             }
         }

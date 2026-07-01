@@ -120,6 +120,14 @@ namespace KillRitual.Player
             UpdateHealthBar();
             TriggerGameOver();
         }
+        /// <summary>처형 보상 등 외부에서 체력을 회복시킬 때 호출합니다.</summary>
+        public void Heal(float amount)
+        {
+            if (IsDead) return;
+
+            _health = Mathf.Min(_maxHealth, _health + amount);
+            UpdateHealthBar(); // HP바도 즉시 갱신
+        }
 
         /// <summary>체력바 Image의 채움 정도와 숫자 텍스트를 현재 체력에 맞춰 갱신합니다.</summary>
         private void UpdateHealthBar()
