@@ -2359,6 +2359,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4236849863540023129, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
+      propertyPath: _explosionRadius
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4236849863540023129, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
+      propertyPath: _explodesOnImpact
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4365120751127730447, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -2399,6 +2407,10 @@ PrefabInstance:
       propertyPath: _healthBarFill
       value: 
       objectReference: {fileID: 1587713718}
+    - target: {fileID: 7098192808515120431, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
+      propertyPath: _explosionRadius
+      value: 15
+      objectReference: {fileID: 0}
     - target: {fileID: 7255760442256237211, guid: 589edc9abf7338d449b11eb5ec6784ff, type: 3}
       propertyPath: m_IsActive
       value: 1
