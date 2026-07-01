@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8837315714537160597}
   - component: {fileID: 1196209404024060572}
   - component: {fileID: 2501244695606685016}
+  - component: {fileID: 5631658114752514240}
   m_Layer: 22
   m_Name: FodderMelee
   m_TagString: Untagged
@@ -82,6 +83,31 @@ MonoBehaviour:
   _attackRange: 2
   _attackCooldown: 1
   _attackDamage: 10
+--- !u!114 &5631658114752514240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2165758352436178311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5826c3ac5a83a442877027098823f13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _healthOrbPrefab: {fileID: 0}
+  _ammoOrbPrefabs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  _healthOrbChance: 0.5
+  _ammoOrbChance: 1
+  _spreadRadius: 0.5
+  _spawnHeightOffset: 0.8
+  _bounceUpForce: 4
+  _bounceOutwardForce: 3
 --- !u!1 &4026371282902025763
 GameObject:
   m_ObjectHideFlags: 0

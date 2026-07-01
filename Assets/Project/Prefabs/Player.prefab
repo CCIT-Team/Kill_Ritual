@@ -1375,9 +1375,9 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 9080111433478619808}
   - {fileID: 189023245807036552}
   - {fileID: 2490004620012485909}
+  - {fileID: 9080111433478619808}
   m_Father: {fileID: 4770677347296556909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -3498,7 +3498,7 @@ MonoBehaviour:
   _projectilePrefab: {fileID: 9195255059852538374, guid: a809a3e209cf7714b9060ff3f309f93b, type: 3}
   _projectileSpeed: 20
   _gravityScale: 1
-  _pierceCount: 0
+  _pierceCount: 10
   _explodesOnImpact: 1
   _explosionRadius: 7
   _explosionVfxPrefab: {fileID: 3963463621129087411, guid: ed8f4a368e8099d4b99681bb1e4989c7, type: 3}
@@ -3563,7 +3563,7 @@ MonoBehaviour:
   _resourceCost: 0
   _projectilePrefab: {fileID: 7746200650505838778, guid: 202957e482d9edb4b954acfcec3c08fc, type: 3}
   _projectileSpeed: 20
-  _gravityScale: 1
+  _gravityScale: 10
   _pierceCount: 0
   _explodesOnImpact: 1
   _explosionRadius: 5
@@ -4280,6 +4280,7 @@ GameObject:
   - component: {fileID: 2182632133349552899}
   - component: {fileID: 5170085371073713213}
   - component: {fileID: 6547326788467452651}
+  - component: {fileID: 6979393269634020004}
   m_Layer: 20
   m_Name: Player
   m_TagString: Player
@@ -4509,6 +4510,24 @@ MonoBehaviour:
   _gameOverUI: {fileID: 3290451458793769997}
   _damageOverlay: {fileID: 163720709016997230}
   _fadeSpeed: 3
+--- !u!114 &6979393269634020004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7321832389281065598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0fb6ca932e5afd439e82ccaa146e49b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _combatSystem: {fileID: 3543975738508371740}
+  _ammoBarFill: {fileID: 0}
+  _ammoText: {fileID: 5314259700323373492}
+  _lowAmmoWarningRatio: 0.25
+  _normalColor: {r: 1, g: 1, b: 1, a: 1}
+  _lowAmmoColor: {r: 1, g: 0.3, b: 0.3, a: 1}
 --- !u!1 &7520634588936981141
 GameObject:
   m_ObjectHideFlags: 0
@@ -5232,7 +5251,7 @@ MonoBehaviour:
   _projectilePrefab: {fileID: 7746200650505838778, guid: 202957e482d9edb4b954acfcec3c08fc, type: 3}
   _projectileSpeed: 15
   _gravityScale: 0
-  _pierceCount: 0
+  _pierceCount: 10
   _explodesOnImpact: 1
   _explosionRadius: 10
   _explosionVfxPrefab: {fileID: 9153084505907029488, guid: 7d2063300133a304a8dbca7096698d39, type: 3}

@@ -183,6 +183,12 @@ namespace KillRitual.Player.Combat
             return _resourceWallet != null && _resourceWallet.TryConsume(element, amount);
         }
 
+        /// <summary>지정한 속성의 자원을 외부에서 회복시킵니다. 드롭 아이템(KRDropItem) 등이 사용합니다.</summary>
+        public void RefillResource(KRDamageType element, float amount)
+        {
+            _resourceWallet?.Refill(element, amount);
+        }
+
         // ------------------------------------------------------------------
         // [DEBUG] KRCombatDebugOverlay 전용 공개 API
         // ------------------------------------------------------------------
