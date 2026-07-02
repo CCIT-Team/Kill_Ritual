@@ -57,7 +57,10 @@ namespace KillRitual.Weapons
         private static readonly int[] _handledInstanceIds = new int[32];
 
         // 유도 추적탄 전용 NonAlloc 버퍼. 폭발용 버퍼와 분리해 동시에 사용해도 안전합니다.
-        private static readonly Collider[] _tracerOverlapBuffer = new Collider[8];
+        // 호밍 추적탄 전용 버퍼는 인스턴스 필드로 선언합니다.
+        // BFG 투사체가 비행 중 매 틱마다 OverlapSphere를 수행하는데, static이면
+        // 다른 투사체나 폭발 판정과 버퍼를 공유하여 탐색 결과가 오염됩니다.
+        private readonly Collider[] _tracerOverlapBuffer = new Collider[8];
 
         private KRDamageType _elementType;
         private float _damage;
