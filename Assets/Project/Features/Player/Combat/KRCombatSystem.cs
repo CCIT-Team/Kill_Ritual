@@ -5,31 +5,10 @@ using KillRitual.Core.Damage;
 using KillRitual.Core.Events;
 using KillRitual.Core.Managers;
 using KillRitual.Weapons;
+using KillRitual.Weapons.Visual;
 
 namespace KillRitual.Player.Combat
 {
-    /// <summary>
-    /// 플레이어의 전투 "입력"과 무기 전환을 담당하는 컨트롤러입니다.
-    /// 이동/파쿠르/카메라는 Developer B의 별도 스크립트가 담당하므로 이 클래스는 다루지 않습니다.
-    ///
-    /// [아키텍처 변경] 기존에는 KRElementDataSO(ScriptableObject) 1개에 모든 무기 스펙을 담고
-    /// KRCombatSystem이 직접 레이캐스트/투사체 로직을 디스패치했습니다. 이제는 무기마다 자신만의
-    /// 컴포넌트(KRWeaponBase 계열)를 가지며, KRCombatSystem은 다음 역할만 수행하는
-    /// "무기 홀더(Weapon Holder)"로 축소되었습니다:
-    ///   1. 1~5 숫자키로 현재 장착 속성(오행) 선택
-    ///   2. 좌클릭(Mouse0)/우클릭(Mouse1) 입력을 현재 장착된 무기의 NotifyHeld()/NotifyReleased()로 전달
-    ///   3. 공용 자원 지갑(오행 5속성), 처형(Execution) 로직 유지
-    ///   4. 무기 스크립트가 참조할 공용 서비스(FirePoint, 레이어 마스크, 공격 배율) 제공
-    ///
-    /// [스탯 분리] 체력/공격 배율/공격 속도 배율은 더 이상 이 클래스가 직접 들고 있지 않고,
-    /// 별도 컴포넌트인 KRPlayerStats가 전담합니다. KRCombatSystem은 IDamageable 계약
-    /// (TakeDamage/IsDead/Execute 등)을 여전히 구현하지만, 내부적으로는 KRPlayerStats에
-    /// 위임만 합니다. 이렇게 분리한 이유는 "무기 홀더"라는 본래 책임과 "스탯 관리"라는
-    /// 책임을 명확히 나누기 위함입니다.
-    ///
-    /// 실제 발사 판정(레이캐스트/투사체/트레이서/가속연사/충전발사)은 03_Weapons의
-    /// KRWeaponBase 및 그 자식 클래스(KRHitscanWeapon, KRProjectileWeapon 등)가 전담합니다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRCombatSystem : MonoBehaviour, IDamageable
     {
@@ -48,6 +27,28 @@ namespace KillRitual.Player.Combat
         [Tooltip("길이 5, 순서는 위와 동일. 각 속성의 \"유형II(우클릭)\" 무기 컴포넌트를 배치합니다. " +
                  "특정 속성에 유형II가 없다면 해당 인덱스를 비워두세요(우클릭이 안전하게 무시됩니다).")]
         [SerializeField] private KRWeaponBase[] _typeTwoWeapons = new KRWeaponBase[kElementCount];
+
+        [Header("무기 시각 루트")]
+        [Tooltip("길이 5. [0]=FireHand [1]=WaterHand [2]=WoodHand [3]=EarthHand/DirtHand [4]=MetalHand 순서로 손/무기 루트 GameObject를 배치합니다.")]
+        [SerializeField] private GameObject[] _weaponVisualRoots = new GameObject[kElementCount];
+
+        [Tooltip("무기 전환 시 새로 켜진 손을 Equip 상태 처음부터 강제로 재생합니다. 퀵스왑 구조에서는 켜는 편이 안전합니다.")]
+        [SerializeField] private bool _playEquipOnSwitch = true;
+
+        [Header("무기 전환 잠금")]
+        [Tooltip("true면 숫자키 스팸 방지용으로 짧은 시간 동안 추가 전환을 막습니다. 공격 모션 전체를 막는 용도가 아닙니다.")]
+        [SerializeField] private bool _lockWeaponSwitchDuringEquip = true;
+
+        [Tooltip("퀵스왑 후 추가 전환을 잠깐 막는 안전 시간입니다. 길게 잡으면 퀵스왑 감각이 둔해집니다.")]
+        [Min(0.01f)]
+        [SerializeField] private float _weaponSwitchLockFallbackSeconds = 0.1f;
+
+        [Tooltip("Legacy 옵션입니다. 퀵스왑 구조에서는 사용하지 않습니다. 값이 켜져 있어도 현재 로직에는 영향을 주지 않습니다.")]
+        [SerializeField] private bool _blockWeaponSwitchWhileFireButtonHeld = false;
+
+        [Header("퀵스왑 입력 정리")]
+        [Tooltip("무기 전환 당시 눌려 있던 마우스 버튼은 손을 뗄 때까지 새 무기에 전달하지 않습니다. Equip이 공격 모션으로 덮이는 문제를 막습니다.")]
+        [SerializeField] private bool _suppressHeldFireInputAfterSwitch = true;
 
         [Header("References")]
         [SerializeField] private Camera _playerCamera;
@@ -76,68 +77,70 @@ namespace KillRitual.Player.Combat
         [Tooltip("04_Execution 계열(KREnemyEntity 등)이 발행하는 KRExecutionSuccessEvent를 구독해 체력/자원을 회복합니다.")]
         [SerializeField] private bool _subscribeToExecutionRewards = true;
 
-        // 캐스팅 안전성을 위해 1~5 숫자키를 KRDamageType 정수값 순서(Fire..Metal)와 동일하게 배열로 관리합니다.
         private static readonly KeyCode[] _weaponKeys =
         {
-            KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5
+            KeyCode.Alpha1,
+            KeyCode.Alpha2,
+            KeyCode.Alpha3,
+            KeyCode.Alpha4,
+            KeyCode.Alpha5
         };
 
-        // 처형 보상 시 모든 속성을 순회 회복시키기 위해 한 번만 계산해 캐싱한 전체 원소 배열 (GC 0)
         private static readonly KRDamageType[] _allElements =
         {
-            KRDamageType.Fire, KRDamageType.Water, KRDamageType.Wood, KRDamageType.Earth, KRDamageType.Metal
+            KRDamageType.Fire,
+            KRDamageType.Water,
+            KRDamageType.Wood,
+            KRDamageType.Earth,
+            KRDamageType.Metal
         };
 
-        // 처형 대상 탐색 전용 NonAlloc 버퍼.
         private static readonly Collider[] _executionOverlapBuffer = new Collider[16];
-
-        // [조준점 보정] FirePoint(총구)가 화면 중앙이 아닌 위치에 있어도, 실제 탄이 카메라가
-        // 가리키는 화면 정중앙(조준점)으로 수렴하도록 보정할 때 사용하는 전용 레이캐스트 버퍼.
         private static readonly RaycastHit[] _aimRaycastBuffer = new RaycastHit[8];
 
         private KRResourceWallet _resourceWallet;
         private KRDamageType _currentElement = KRDamageType.Fire;
 
-        // ------------------------------------------------------------------
-        // 무기 스크립트가 참조하는 공용 서비스 API
-        // ------------------------------------------------------------------
+        private bool _isWeaponSwitchLocked;
+        private float _weaponSwitchUnlockTime;
 
-        /// <summary>무기의 발사 기준점(총구) Transform.</summary>
+        private bool _suppressMouse0UntilRelease;
+        private bool _suppressMouse1UntilRelease;
+
         public Transform FirePoint => _firePoint;
-
-        /// <summary>
-        /// 플레이어 카메라 참조. 스나이퍼(KRZoomHitscanWeapon)처럼 줌(FOV 조정) 같은
-        /// 카메라 효과가 필요한 무기가 이 프로퍼티로 직접 접근합니다.
-        /// </summary>
         public Camera PlayerCamera => _playerCamera;
-
-        /// <summary>Hitscan/CCD 판정용 마스크 (Damageable + Environment 포함).</summary>
         public LayerMask HitscanLayerMask => _damageableLayerMask;
+        public LayerMask ExplosionLayerMask => _explosionLayerMask;
+        public IDamageable Owner => this;
 
-        /// <summary>
-        /// [조준점 보정] 무기의 총구(muzzleOrigin)가 화면 정중앙이 아닌 곳에 있어도, 카메라가
-        /// 가리키는 화면 정중앙의 "조준점"을 향해 탄이 날아가도록 보정된 방향을 계산합니다.
-        ///
-        /// 동작 방식: 먼저 카메라 위치에서 카메라 정면 방향으로 maxRange만큼 레이캐스트를 쏴서
-        /// 화면 중앙이 실제로 가리키는 지점(조준점)을 찾습니다. 그 지점에 아무것도 없으면
-        /// maxRange 끝 지점을 조준점으로 삼습니다. 그런 다음 (조준점 - muzzleOrigin) 방향을
-        /// 반환합니다. 이렇게 하면 총구 위치가 화면 한쪽으로 치우쳐 있어도, 실제 탄/투사체는
-        /// 항상 크로스헤어가 가리키는 지점으로 수렴합니다.
-        /// </summary>
-        /// <param name="muzzleOrigin">실제 탄/투사체가 출발할 총구 위치 (FirePoint 또는 무기별 발사 지점)</param>
-        /// <param name="maxRange">조준점을 탐색할 최대 거리 (무기의 사거리를 그대로 사용하면 됩니다)</param>
+        public KRDamageType CurrentElement => _currentElement;
+
+        public float AttackMultiplier => _playerStats != null ? _playerStats.AttackMultiplier : 1f;
+        public float AttackSpeedMultiplier => _playerStats != null ? _playerStats.AttackSpeedMultiplier : 1f;
+
+        public bool IsDead => _playerStats != null && _playerStats.IsDead;
+        public bool IsGroggy => false;
+        public Vector3 Position => transform.position;
+
+        public bool HasExecutableTargetNearby => FindNearestExecutableTarget() != null;
+
         public Vector3 GetAimDirection(Vector3 muzzleOrigin, float maxRange)
         {
             if (_playerCamera == null)
             {
-                // 카메라가 없는 비정상 상황에서는 FirePoint의 정면 방향으로 안전하게 폴백합니다.
                 return _firePoint != null ? _firePoint.forward : Vector3.forward;
             }
 
             Vector3 camPos = _playerCamera.transform.position;
             Vector3 camForward = _playerCamera.transform.forward;
 
-            int hitCount = Physics.RaycastNonAlloc(camPos, camForward, _aimRaycastBuffer, maxRange, _damageableLayerMask);
+            int hitCount = Physics.RaycastNonAlloc(
+                camPos,
+                camForward,
+                _aimRaycastBuffer,
+                maxRange,
+                _damageableLayerMask);
+
             int closestIndex = FindClosestAimHitIndex(hitCount);
 
             Vector3 aimPoint = closestIndex >= 0
@@ -165,75 +168,39 @@ namespace KillRitual.Player.Combat
             return closestIndex;
         }
 
-        /// <summary>광역 폭발 판정용 마스크 (Damageable만 포함).</summary>
-        public LayerMask ExplosionLayerMask => _explosionLayerMask;
-
-        /// <summary>투사체의 발사 주체. 자기 자신에게는 데미지가 들어가지 않도록 비교에 사용됩니다.</summary>
-        public IDamageable Owner => this;
-
-        /// <summary>전역 공격 배율 (KRPlayerStats 기반).</summary>
-        public float AttackMultiplier => _playerStats != null ? _playerStats.AttackMultiplier : 1f;
-
-        /// <summary>전역 공격 속도 배율 (KRPlayerStats 기반). 0으로 나누는 사고를 막기 위해 최소값을 보장합니다.</summary>
-        public float AttackSpeedMultiplier => _playerStats != null ? _playerStats.AttackSpeedMultiplier : 1f;
-
-        /// <summary>지정한 속성의 공용 자원을 소모를 시도합니다. 무기 스크립트가 발사 시 호출합니다.</summary>
         public bool TryConsumeResource(KRDamageType element, float amount)
         {
             return _resourceWallet != null && _resourceWallet.TryConsume(element, amount);
         }
 
-        /// <summary>지정한 속성의 자원을 외부에서 회복시킵니다. 드롭 아이템(KRDropItem) 등이 사용합니다.</summary>
         public void RefillResource(KRDamageType element, float amount)
         {
             _resourceWallet?.Refill(element, amount);
         }
 
-        // ------------------------------------------------------------------
-        // [DEBUG] KRCombatDebugOverlay 전용 공개 API
-        // ------------------------------------------------------------------
-
-        /// <summary>지정 속성 자원의 현재 잔량 비율(0~1). 오버레이 바 그래프에 사용됩니다.</summary>
         public float GetResourceRatio(KRDamageType element)
         {
-            if (_resourceWallet == null) return 0f;
+            if (_resourceWallet == null)
+            {
+                return 0f;
+            }
+
             float max = _resourceWallet.GetMax(element);
             return max > 0f ? _resourceWallet.Get(element) / max : 0f;
         }
 
-        /// <summary>현재 프레임 기준 시야 콘+사거리 안에 처형 가능한 대상이 존재하면 true.</summary>
-        /// <summary>현재 장착(선택)된 오행 속성. UI가 탄약 표시 대상을 결정하는 데 사용합니다.</summary>
-        public KRDamageType CurrentElement => _currentElement;
-
-        /// <summary>지정 속성의 현재 잔탄(자원) 절대값. 비율이 아닌 실제 수치가 필요한 UI 표시에 사용합니다.</summary>
         public float GetResourceAmount(KRDamageType element)
         {
             return _resourceWallet != null ? _resourceWallet.Get(element) : 0f;
         }
 
-        /// <summary>지정 속성의 최대 자원량. 속성마다 다를 수 있습니다(KRAmmoUI 등이 호출).</summary>
         public float GetMaxResourceAmount(KRDamageType element)
         {
             return _resourceWallet != null ? _resourceWallet.GetMax(element) : 0f;
         }
 
-        public bool HasExecutableTargetNearby => FindNearestExecutableTarget() != null;
-
-        // ------------------------------------------------------------------
-        // IDamageable 구현부 (플레이어 자신이 데미지를 받는 경우)
-        // ------------------------------------------------------------------
-        public bool IsDead => _playerStats != null && _playerStats.IsDead;
-
-        // 플레이어는 별도의 그로기 시스템을 사용하지 않으므로 항상 false를 반환합니다(05_Enemies 전용 상태).
-        public bool IsGroggy => false;
-
-        public Vector3 Position => transform.position;
-
         private void Awake()
         {
-            // 인스펙터에 직접 할당하지 않았다면, 같은 오브젝트 또는 부모 계층에서 자동으로 찾습니다.
-            // (Player 루트에 KRPlayerStats를 두고, KRCombatSystem은 카메라 쪽 자식에 둘 수도 있으므로
-            // GetComponentInParent로 탐색합니다.)
             if (_playerStats == null)
             {
                 _playerStats = GetComponentInParent<KRPlayerStats>();
@@ -249,6 +216,22 @@ namespace KillRitual.Player.Combat
             if (_firePoint == null)
             {
                 _firePoint = _playerCamera != null ? _playerCamera.transform : transform;
+            }
+
+            _currentElement = KRDamageType.Fire;
+            _isWeaponSwitchLocked = false;
+            _weaponSwitchUnlockTime = 0f;
+
+            _suppressMouse0UntilRelease = false;
+            _suppressMouse1UntilRelease = false;
+
+            ApplyWeaponVisualRootState(_currentElement);
+
+            KRWeaponVisual initialVisual = GetWeaponVisual(_currentElement);
+
+            if (_playEquipOnSwitch)
+            {
+                initialVisual?.PlayEquipImmediately();
             }
         }
 
@@ -270,18 +253,16 @@ namespace KillRitual.Player.Combat
 
         private void Update()
         {
-            HandleWeaponSelectionInput();
+            UpdateWeaponSwitchLockFallback();
 
-            // 좌클릭 = 유형I(Mouse0), 우클릭 = 유형II(Mouse1). 각 무기 스크립트가 자신의 발사 로직을 전담합니다.
             HandleFireButton(mouseButton: 0, weaponArray: _typeOneWeapons);
             HandleFireButton(mouseButton: 1, weaponArray: _typeTwoWeapons);
+
+            HandleWeaponSelectionInput();
 
             HandleExecutionInput();
         }
 
-        // ------------------------------------------------------------------
-        // 무기 선택 (1~5 숫자키)
-        // ------------------------------------------------------------------
         private void HandleWeaponSelectionInput()
         {
             for (int i = 0; i < _weaponKeys.Length; i++)
@@ -298,29 +279,171 @@ namespace KillRitual.Player.Combat
                     continue;
                 }
 
-                // 무기 전환(퀵스왑) 시, 이전에 장착했던 무기들의 가속/충전 등 임시 상태를 리셋합니다.
-                // 버튼을 누르고 있던 도중 무기를 바꿔도 다음에 그 무기로 돌아왔을 때 깨끗한 상태로 시작합니다.
-                GetWeapon(_typeOneWeapons, _currentElement)?.NotifyCancelled();
-                GetWeapon(_typeTwoWeapons, _currentElement)?.NotifyCancelled();
+                if (IsWeaponSwitchLocked())
+                {
+                    continue;
+                }
 
-                _currentElement = newElement;
+                SwitchElement(newElement);
             }
         }
 
-        /// <summary>지정한 마우스 버튼의 누름/뗌 상태를 현재 장착된 무기에 전달합니다.</summary>
+        private void SwitchElement(KRDamageType newElement)
+        {
+            KRDamageType previousElement = _currentElement;
+
+            // 1. 이전 무기의 게임플레이 상태 취소.
+            // HoldAuto는 발사 중지, ChargeRelease는 발사하지 않고 차지 취소.
+            GetWeapon(_typeOneWeapons, previousElement)?.NotifyCancelled();
+            GetWeapon(_typeTwoWeapons, previousElement)?.NotifyCancelled();
+
+            // 2. 이전 손 Animator는 Rebind하지 말고 Idle 상태로만 정리.
+            KRWeaponVisual previousVisual = GetWeaponVisual(previousElement);
+            previousVisual?.PlayIdleImmediately();
+
+            // 3. 전환 당시 누르고 있던 마우스 버튼은 새 무기에 넘기지 않도록 잠금.
+            if (_suppressHeldFireInputAfterSwitch)
+            {
+                _suppressMouse0UntilRelease = Input.GetMouseButton(0);
+                _suppressMouse1UntilRelease = Input.GetMouseButton(1);
+            }
+
+            // 4. 현재 속성 변경.
+            _currentElement = newElement;
+
+            // 5. 손 루트 교체.
+            ApplyWeaponVisualRootState(_currentElement);
+
+            // 6. 새 손은 Equip 처음부터 시작.
+            if (_playEquipOnSwitch)
+            {
+                KRWeaponVisual newVisual = GetWeaponVisual(_currentElement);
+                newVisual?.PlayEquipImmediately();
+            }
+            else
+            {
+                KRWeaponVisual newVisual = GetWeaponVisual(_currentElement);
+                newVisual?.ClearAllTriggers();
+            }
+
+            // 7. 숫자키 스팸 방지용 아주 짧은 잠금.
+            BeginWeaponSwitchLock();
+        }
+
+        private void BeginWeaponSwitchLock()
+        {
+            if (!_lockWeaponSwitchDuringEquip)
+            {
+                return;
+            }
+
+            _isWeaponSwitchLocked = true;
+            _weaponSwitchUnlockTime = Time.time + _weaponSwitchLockFallbackSeconds;
+        }
+
+        private bool IsWeaponSwitchLocked()
+        {
+            if (!_lockWeaponSwitchDuringEquip)
+            {
+                return false;
+            }
+
+            if (!_isWeaponSwitchLocked)
+            {
+                return false;
+            }
+
+            if (Time.time >= _weaponSwitchUnlockTime)
+            {
+                _isWeaponSwitchLocked = false;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void UpdateWeaponSwitchLockFallback()
+        {
+            if (!_isWeaponSwitchLocked)
+            {
+                return;
+            }
+
+            if (Time.time >= _weaponSwitchUnlockTime)
+            {
+                _isWeaponSwitchLocked = false;
+            }
+        }
+
+        public void UnlockWeaponSwitch()
+        {
+            _isWeaponSwitchLocked = false;
+        }
+
+        private void ApplyWeaponVisualRootState(KRDamageType activeElement)
+        {
+            int activeIndex = (int)activeElement;
+
+            if (_weaponVisualRoots == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _weaponVisualRoots.Length; i++)
+            {
+                GameObject root = _weaponVisualRoots[i];
+
+                if (root == null)
+                {
+                    continue;
+                }
+
+                bool shouldBeActive = i == activeIndex;
+
+                if (root.activeSelf != shouldBeActive)
+                {
+                    root.SetActive(shouldBeActive);
+                }
+            }
+        }
+
+        private KRWeaponVisual GetWeaponVisual(KRDamageType element)
+        {
+            int idx = (int)element;
+
+            if (_weaponVisualRoots == null || idx < 0 || idx >= _weaponVisualRoots.Length)
+            {
+                return null;
+            }
+
+            GameObject root = _weaponVisualRoots[idx];
+
+            if (root == null)
+            {
+                return null;
+            }
+
+            return root.GetComponentInChildren<KRWeaponVisual>(true);
+        }
+
         private void HandleFireButton(int mouseButton, KRWeaponBase[] weaponArray)
         {
             KRWeaponBase weapon = GetWeapon(weaponArray, _currentElement);
 
             if (weapon == null)
             {
+                ClearSuppressionIfReleased(mouseButton);
                 return;
             }
 
-            // [동시 사격 차단] 반대 버튼(유형I ↔ 유형II)이 눌려있으면 이쪽 버튼을 무시합니다.
-            // 어느 쪽이든 한 쪽이 눌리는 순간 다른 쪽은 Released 상태로 처리되어,
-            // 가속/충전 등의 상태가 초기화됩니다.
+            if (IsFireInputSuppressed(mouseButton))
+            {
+                weapon.NotifyReleased();
+                return;
+            }
+
             int otherButton = mouseButton == 0 ? 1 : 0;
+
             if (Input.GetMouseButton(otherButton))
             {
                 weapon.NotifyReleased();
@@ -337,15 +460,67 @@ namespace KillRitual.Player.Combat
             }
         }
 
+        private bool IsFireInputSuppressed(int mouseButton)
+        {
+            if (!_suppressHeldFireInputAfterSwitch)
+            {
+                return false;
+            }
+
+            if (mouseButton == 0)
+            {
+                if (!_suppressMouse0UntilRelease)
+                {
+                    return false;
+                }
+
+                if (!Input.GetMouseButton(0))
+                {
+                    _suppressMouse0UntilRelease = false;
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (mouseButton == 1)
+            {
+                if (!_suppressMouse1UntilRelease)
+                {
+                    return false;
+                }
+
+                if (!Input.GetMouseButton(1))
+                {
+                    _suppressMouse1UntilRelease = false;
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ClearSuppressionIfReleased(int mouseButton)
+        {
+            if (mouseButton == 0 && !Input.GetMouseButton(0))
+            {
+                _suppressMouse0UntilRelease = false;
+            }
+
+            if (mouseButton == 1 && !Input.GetMouseButton(1))
+            {
+                _suppressMouse1UntilRelease = false;
+            }
+        }
+
         private static KRWeaponBase GetWeapon(KRWeaponBase[] array, KRDamageType element)
         {
             int idx = (int)element;
             return array != null && idx >= 0 && idx < array.Length ? array[idx] : null;
         }
 
-        // ------------------------------------------------------------------
-        // 처형 입력 (E키): 시야 콘 + 사거리 내에서 그로기 상태인 가장 가까운 대상 1명을 처형합니다.
-        // ------------------------------------------------------------------
         private void HandleExecutionInput()
         {
             if (!Input.GetKeyDown(KeyCode.E))
@@ -355,8 +530,6 @@ namespace KillRitual.Player.Combat
 
             IDamageable target = FindNearestExecutableTarget();
 
-            // 그로기 상태가 아니거나 이미 (다른 플레이어 등에 의해) 죽은 대상은 탐색 단계에서부터
-            // 걸러지므로, target이 null이 아니라면 안전하게 처형을 실행해도 됩니다.
             if (target == null)
             {
                 return;
@@ -365,14 +538,18 @@ namespace KillRitual.Player.Combat
             target.Execute();
         }
 
-        /// <summary>
-        /// FirePoint를 중심으로 _executionRange 반경 내, 정면 _executionConeAngleDegrees 콘 안에 있는
-        /// IDamageable 중 그로기 상태인 대상만 후보로 삼아 가장 가까운 1명을 반환합니다.
-        /// 후보가 없으면 null을 반환합니다.
-        /// </summary>
         private IDamageable FindNearestExecutableTarget()
         {
-            int count = Physics.OverlapSphereNonAlloc(_firePoint.position, _executionRange, _executionOverlapBuffer, _damageableLayerMask);
+            if (_firePoint == null)
+            {
+                return null;
+            }
+
+            int count = Physics.OverlapSphereNonAlloc(
+                _firePoint.position,
+                _executionRange,
+                _executionOverlapBuffer,
+                _damageableLayerMask);
 
             IDamageable best = null;
             float bestDistance = float.MaxValue;
@@ -413,12 +590,14 @@ namespace KillRitual.Player.Combat
             return best;
         }
 
-        // ------------------------------------------------------------------
-        // 처형 성공 보상 수신 (04_Execution의 Absorption 개념 - 기존 KREventBus 인프라 재사용)
-        // ------------------------------------------------------------------
         private void OnExecutionSuccess(KRExecutionSuccessEvent evt)
         {
             _playerStats?.HealByPercent(evt.RecoverHealthAmount);
+
+            if (_resourceWallet == null)
+            {
+                return;
+            }
 
             for (int i = 0; i < _allElements.Length; i++)
             {
@@ -426,12 +605,12 @@ namespace KillRitual.Player.Combat
             }
         }
 
-        // ------------------------------------------------------------------
-        // IDamageable 구현부 (플레이어가 데미지를 받는 경우)
-        // ------------------------------------------------------------------
         public void TakeDamage(KRDamageContext context)
         {
-            if (IsDead) return;
+            if (IsDead)
+            {
+                return;
+            }
 
             _playerStats?.ApplyDamage(context.DamageAmount);
         }
@@ -441,10 +620,6 @@ namespace KillRitual.Player.Combat
             _playerStats?.Kill();
         }
 
-        // ------------------------------------------------------------------
-        // [내부 전용] 자원 지갑 - 오행 5속성 공용 자원 주머니를 관리합니다.
-        // 속성마다 최대치가 다를 수 있으므로 _maxPerElement도 배열로 보관합니다.
-        // ------------------------------------------------------------------
         private sealed class KRResourceWallet
         {
             private readonly float[] _pool = new float[kElementCount];
@@ -454,16 +629,24 @@ namespace KillRitual.Player.Combat
             {
                 for (int i = 0; i < kElementCount; i++)
                 {
-                    // 인스펙터에서 배열 길이를 5보다 작게 줄여놓는 실수를 해도 100f로 안전하게 대체합니다.
-                    float max = (maxPerElement != null && i < maxPerElement.Length) ? maxPerElement[i] : 100f;
+                    float max = (maxPerElement != null && i < maxPerElement.Length)
+                        ? maxPerElement[i]
+                        : 100f;
+
                     _maxPerElement[i] = max;
-                    _pool[i] = max; // 시작 시 가득 채운 상태로 둡니다.
+                    _pool[i] = max;
                 }
             }
 
-            public float Get(KRDamageType element) => _pool[(int)element];
+            public float Get(KRDamageType element)
+            {
+                return _pool[(int)element];
+            }
 
-            public float GetMax(KRDamageType element) => _maxPerElement[(int)element];
+            public float GetMax(KRDamageType element)
+            {
+                return _maxPerElement[(int)element];
+            }
 
             public bool TryConsume(KRDamageType element, float amount)
             {

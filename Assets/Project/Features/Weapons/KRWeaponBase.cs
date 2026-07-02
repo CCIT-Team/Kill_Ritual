@@ -69,6 +69,11 @@ namespace KillRitual.Weapons
 
             if (_visual == null)
             {
+                _visual = GetComponentInParent<KRWeaponVisual>();
+            }
+
+            if (_visual == null)
+            {
                 _visual = GetComponentInChildren<KRWeaponVisual>();
             }
 
@@ -76,6 +81,12 @@ namespace KillRitual.Weapons
             {
                 Debug.LogWarning($"[{_weaponName}] 부모 계층에서 KRCombatSystem을 찾지 못했습니다. " +
                                  $"이 무기는 KRCombatSystem이 붙은 Player 오브젝트의 자식이어야 합니다.");
+            }
+
+            if (_visual == null)
+            {
+                Debug.LogWarning($"[{_weaponName}] KRWeaponVisual을 찾지 못했습니다. " +
+                                 $"Visual 슬롯에 직접 연결하거나, 부모/자식 계층에 KRWeaponVisual을 배치하세요.");
             }
         }
 
@@ -94,17 +105,24 @@ namespace KillRitual.Weapons
                     }
 
                     _buttonHeld = true;
+                    Debug.Log($"[{_weaponName}] Tap Held / Visual={_visual}");
                     TryFireNow();
                     break;
 
                 case KRAttackInputType.HoldAuto:
-                    _buttonHeld = true;
+                    if (!_buttonHeld)
+                    {
+                        _buttonHeld = true;
+                        Debug.Log($"[{_weaponName}] Hold Start / Visual={_visual} / Slot={_visualAttackSlot}");
+                        _visual?.PlayHoldStart(_visualAttackSlot);
+                    }
+
                     TryFireNow();
                     break;
 
                 case KRAttackInputType.ChargeRelease:
-                    // 차지 무기는 KRChargeProjectileWeapon 같은 자식 클래스가 NotifyHeld/Released를 오버라이드해서 처리합니다.
                     _buttonHeld = true;
+                    Debug.Log($"[{_weaponName}] Charge Held / Visual={_visual}");
                     break;
             }
         }
@@ -115,6 +133,12 @@ namespace KillRitual.Weapons
         /// </summary>
         public virtual void NotifyReleased()
         {
+            if (_inputType == KRAttackInputType.HoldAuto && _buttonHeld)
+            {
+                Debug.Log($"[{_weaponName}] Hold End / Visual={_visual} / Slot={_visualAttackSlot}");
+                _visual?.PlayHoldEnd(_visualAttackSlot);
+            }
+
             _buttonHeld = false;
         }
 
