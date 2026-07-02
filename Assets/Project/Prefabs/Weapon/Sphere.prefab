@@ -170,6 +170,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VFX_Trail_Water
       objectReference: {fileID: 0}
+    - target: {fileID: 2330101429996553316, guid: 07a0367c119e4ca408ec23af0e377799, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3993955628774986641, guid: 07a0367c119e4ca408ec23af0e377799, type: 3}
       propertyPath: m_Time
       value: 0.1

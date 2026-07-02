@@ -49,7 +49,16 @@ namespace KillRitual.Player.Combat
 
         [Header("References")]
         [SerializeField] private Camera _playerCamera;
+
+        [Tooltip("기본 FirePoint입니다. 속성/공격 유형별 FirePoint가 비어 있으면 이것을 사용합니다.")]
         [SerializeField] private Transform _firePoint;
+
+        [Header("속성 / 공격 유형별 FirePoint")]
+        [Tooltip("길이 5. [0]=Fire(화) [1]=Water(수) [2]=Wood(목) [3]=Earth(토) [4]=Metal(금). 각 속성의 유형I(좌클릭) 발사 위치입니다.")]
+        [SerializeField] private Transform[] _typeOneFirePoints = new Transform[kElementCount];
+
+        [Tooltip("길이 5. [0]=Fire(화) [1]=Water(수) [2]=Wood(목) [3]=Earth(토) [4]=Metal(금). 각 속성의 유형II(우클릭) 발사 위치입니다.")]
+        [SerializeField] private Transform[] _typeTwoFirePoints = new Transform[kElementCount];
 
         [SerializeField] private LayerMask _damageableLayerMask = ~0;
 
@@ -98,13 +107,37 @@ namespace KillRitual.Player.Combat
         private KRResourceWallet _resourceWallet;
         private KRDamageType _currentElement = KRDamageType.Fire;
 
+        private Transform _activeFirePoint;
+
         private bool _isWeaponSwitchLocked;
         private float _weaponSwitchUnlockTime;
 
         private bool _suppressMouse0UntilRelease;
         private bool _suppressMouse1UntilRelease;
 
-        public Transform FirePoint => _firePoint;
+        public Transform FirePoint
+        {
+            get
+            {
+                if (_activeFirePoint != null)
+                {
+                    return _activeFirePoint;
+                }
+
+                if (_firePoint != null)
+                {
+                    return _firePoint;
+                }
+
+                if (_playerCamera != null)
+                {
+                    return _playerCamera.transform;
+                }
+
+                return transform;
+            }
+        }
+
         public Camera PlayerCamera => _playerCamera;
         public LayerMask HitscanLayerMask => _damageableLayerMask;
         public LayerMask ExplosionLayerMask => _explosionLayerMask;
@@ -125,7 +158,8 @@ namespace KillRitual.Player.Combat
         {
             if (_playerCamera == null)
             {
-                return _firePoint != null ? _firePoint.forward : Vector3.forward;
+                Transform firePoint = FirePoint;
+                return firePoint != null ? firePoint.forward : Vector3.forward;
             }
 
             Vector3 camPos = _playerCamera.transform.position;
@@ -216,6 +250,8 @@ namespace KillRitual.Player.Combat
             }
 
             _currentElement = KRDamageType.Fire;
+            _activeFirePoint = ResolveFirePoint(mouseButton: 0, _currentElement);
+
             _isWeaponSwitchLocked = false;
             _weaponSwitchUnlockTime = 0f;
 
@@ -308,10 +344,14 @@ namespace KillRitual.Player.Combat
             // 4. 현재 속성 변경.
             _currentElement = newElement;
 
-            // 5. 손 루트 교체.
+            // 5. 현재 속성의 기본 FirePoint를 유형I 기준으로 미리 잡아둔다.
+            // 실제 발사 시에는 HandleFireButton에서 좌/우클릭에 맞게 다시 선택된다.
+            _activeFirePoint = ResolveFirePoint(mouseButton: 0, _currentElement);
+
+            // 6. 손 루트 교체.
             ApplyWeaponVisualRootState(_currentElement);
 
-            // 6. 새 손은 Equip 처음부터 시작.
+            // 7. 새 손은 Equip 처음부터 시작.
             if (_playEquipOnSwitch)
             {
                 KRWeaponVisual newVisual = GetWeaponVisual(_currentElement);
@@ -323,7 +363,7 @@ namespace KillRitual.Player.Combat
                 newVisual?.ClearAllTriggers();
             }
 
-            // 7. 숫자키 스팸 방지용 아주 짧은 잠금.
+            // 8. 숫자키 스팸 방지용 아주 짧은 잠금.
             BeginWeaponSwitchLock();
         }
 
@@ -433,6 +473,8 @@ namespace KillRitual.Player.Combat
                 return;
             }
 
+            _activeFirePoint = ResolveFirePoint(mouseButton, _currentElement);
+
             if (IsFireInputSuppressed(mouseButton))
             {
                 weapon.NotifyReleased();
@@ -455,6 +497,37 @@ namespace KillRitual.Player.Combat
             {
                 weapon.NotifyReleased();
             }
+        }
+
+        private Transform ResolveFirePoint(int mouseButton, KRDamageType element)
+        {
+            Transform[] firePointArray = mouseButton == 0
+                ? _typeOneFirePoints
+                : _typeTwoFirePoints;
+
+            int idx = (int)element;
+
+            if (firePointArray != null && idx >= 0 && idx < firePointArray.Length)
+            {
+                Transform specificFirePoint = firePointArray[idx];
+
+                if (specificFirePoint != null)
+                {
+                    return specificFirePoint;
+                }
+            }
+
+            if (_firePoint != null)
+            {
+                return _firePoint;
+            }
+
+            if (_playerCamera != null)
+            {
+                return _playerCamera.transform;
+            }
+
+            return transform;
         }
 
         private bool IsFireInputSuppressed(int mouseButton)
@@ -537,13 +610,15 @@ namespace KillRitual.Player.Combat
 
         private IDamageable FindNearestExecutableTarget()
         {
-            if (_firePoint == null)
+            Transform executionOrigin = _firePoint != null ? _firePoint : FirePoint;
+
+            if (executionOrigin == null)
             {
                 return null;
             }
 
             int count = Physics.OverlapSphereNonAlloc(
-                _firePoint.position,
+                executionOrigin.position,
                 _executionRange,
                 _executionOverlapBuffer,
                 _damageableLayerMask);
@@ -561,7 +636,7 @@ namespace KillRitual.Player.Combat
                     continue;
                 }
 
-                Vector3 toTarget = candidate.Position - _firePoint.position;
+                Vector3 toTarget = candidate.Position - executionOrigin.position;
                 float distance = toTarget.magnitude;
 
                 if (distance <= 0.0001f)
@@ -570,7 +645,7 @@ namespace KillRitual.Player.Combat
                 }
 
                 Vector3 direction = toTarget / distance;
-                float dot = Vector3.Dot(_firePoint.forward, direction);
+                float dot = Vector3.Dot(executionOrigin.forward, direction);
 
                 if (dot < halfAngleCos)
                 {
