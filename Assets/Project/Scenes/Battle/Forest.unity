@@ -17990,7 +17990,7 @@ Transform:
   m_GameObject: {fileID: 1978910929}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.18, y: 0.06666666, z: 1.33}
+  m_LocalPosition: {x: 0, y: 0.06666666, z: 1.33}
   m_LocalScale: {x: 0.6666667, y: 0.6666667, z: 0.6666667}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -99444,11 +99444,11 @@ MonoBehaviour:
   _typeOneFirePoints:
   - {fileID: 7249230033294675774}
   - {fileID: 1609075868}
-  - {fileID: 0}
+  - {fileID: 1397750782}
   _typeTwoFirePoints:
   - {fileID: 1966708134}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1978910930}
+  - {fileID: 464927147}
   _damageableLayerMask:
     serializedVersion: 2
     m_Bits: 12582912
