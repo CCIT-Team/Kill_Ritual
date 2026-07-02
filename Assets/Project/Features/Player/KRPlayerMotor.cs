@@ -169,6 +169,11 @@ namespace KillRitual
         [SerializeField]
         private bool softenFallingVelocityOnDash = true;
 
+        [Header("Dash UI")]
+        [Tooltip("대시 충전 상태를 표시하는 UI입니다.")]
+        [SerializeField]
+        private KRDashChargeUI dashChargeUI;
+
         // ============================================================
         // Debug
         // ============================================================
@@ -303,6 +308,8 @@ namespace KillRitual
 
             if (currentDashCharges <= 0 && maxDashCharges > 0)
                 currentDashCharges = maxDashCharges;
+
+            UpdateDashUI();
         }
 
         private void Update()
@@ -320,6 +327,8 @@ namespace KillRitual
             UpdateVerticalVelocity();
 
             MoveCharacter();
+
+            UpdateDashUI();
         }
 
         private void OnValidate()
@@ -795,6 +804,40 @@ namespace KillRitual
 
             if (showDebugLog)
                 Debug.Log($"Dash Recharged. Charges: {currentDashCharges}/{maxDashCharges}");
+        }
+
+        public float DashRechargeProgress01
+        {
+            get
+            {
+                if (maxDashCharges <= 0)
+                    return 0f;
+
+                if (currentDashCharges >= maxDashCharges)
+                    return 1f;
+
+                if (nextDashRechargeTime < 0f)
+                    return 0f;
+
+                float remainingTime = nextDashRechargeTime - Time.time;
+                float progress = 1f - remainingTime / dashRechargeTime;
+
+                return Mathf.Clamp01(progress);
+            }
+        }
+
+        private void UpdateDashUI()
+        {
+            if (dashChargeUI == null)
+            {
+                return;
+            }
+
+            dashChargeUI.SetDashState(
+                currentDashCharges,
+                maxDashCharges,
+                DashRechargeProgress01
+            );
         }
 
         // ============================================================
