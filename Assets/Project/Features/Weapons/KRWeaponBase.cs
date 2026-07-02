@@ -79,14 +79,12 @@ namespace KillRitual.Weapons
 
             if (_combatSystem == null)
             {
-                Debug.LogWarning($"[{_weaponName}] 부모 계층에서 KRCombatSystem을 찾지 못했습니다. " +
-                                 $"이 무기는 KRCombatSystem이 붙은 Player 오브젝트의 자식이어야 합니다.");
+
             }
 
             if (_visual == null)
             {
-                Debug.LogWarning($"[{_weaponName}] KRWeaponVisual을 찾지 못했습니다. " +
-                                 $"Visual 슬롯에 직접 연결하거나, 부모/자식 계층에 KRWeaponVisual을 배치하세요.");
+
             }
         }
 

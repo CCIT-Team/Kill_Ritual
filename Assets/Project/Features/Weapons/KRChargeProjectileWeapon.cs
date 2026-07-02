@@ -51,13 +51,6 @@ namespace KillRitual.Weapons
         [Tooltip("유도 추적탄 시각효과 색상")]
         [SerializeField] private Color _homingTracerColor = new Color(0.4f, 1f, 0.5f);
 
-        [Header("차지 애니메이션")]
-        [Tooltip("차지 애니메이션을 재생할 손/무기 시각 루트의 KRWeaponVisual입니다. 비워두면 부모/자식 계층에서 자동 탐색합니다.")]
-        [SerializeField] private KRWeaponVisual _visual;
-
-        [Tooltip("이 차지 공격이 Primary인지 Secondary인지 결정합니다. 수속성 우클릭 차지는 Secondary로 두세요.")]
-        [SerializeField] private KRAttackSlot _visualAttackSlot = KRAttackSlot.Secondary;
-
         [Tooltip("true면 차지 시작/충전 비율/발사/취소 애니메이션 신호를 KRWeaponVisual로 보냅니다.")]
         [SerializeField] private bool _playChargeVisual = true;
 

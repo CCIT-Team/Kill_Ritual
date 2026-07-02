@@ -43,9 +43,6 @@ namespace KillRitual.Player.Combat
         [Min(0.01f)]
         [SerializeField] private float _weaponSwitchLockFallbackSeconds = 0.1f;
 
-        [Tooltip("Legacy 옵션입니다. 퀵스왑 구조에서는 사용하지 않습니다. 값이 켜져 있어도 현재 로직에는 영향을 주지 않습니다.")]
-        [SerializeField] private bool _blockWeaponSwitchWhileFireButtonHeld = false;
-
         [Header("퀵스왑 입력 정리")]
         [Tooltip("무기 전환 당시 눌려 있던 마우스 버튼은 손을 뗄 때까지 새 무기에 전달하지 않습니다. Equip이 공격 모션으로 덮이는 문제를 막습니다.")]
         [SerializeField] private bool _suppressHeldFireInputAfterSwitch = true;

@@ -1,7 +1,6 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;            // UI의 Image, Text를 다루기 위해 필요합니다.
+using UnityEngine.UI;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Interfaces;
 
@@ -9,19 +8,13 @@ namespace KillRitual.Player
 {
     /// <summary>
     /// 플레이어의 체력과 피격 반응을 담당합니다.
-    ///   1. 체력 관리 (몬스터가 이 컴포넌트로 데미지를 보내면 체력을 깎습니다)
-    ///   2. 체력바 UI 갱신 (유니티에서 만든 Image의 fillAmount를 체력 비율에 맞춰 조절)
-    ///   3. 피격 시 화면 빨간 효과 (선택: 유니티에서 만든 빨간 Image의 투명도를 잠깐 올림)
-    ///   4. 체력이 0이 되면 게임오버 화면 호출
     ///
-    /// [체력바를 코드로 그리지 않고 UI로 만든 이유]
-    /// 이전에는 코드(OnGUI)로 화면에 직접 막대를 그렸지만, 그러면 팀원이 위치나 색을
-    /// 유니티 화면에서 조절할 수 없었습니다. 이제는 유니티에서 UI 오브젝트(Image)를 직접 만들고,
-    /// 이 스크립트는 그 Image를 "체력만큼 채우는" 역할만 합니다. 위치·색·크기는 전부
-    /// 유니티 화면에서 드래그와 클릭으로 조절할 수 있습니다.
-    ///
-    /// [연결 방법 요약] 유니티에서 Image 하나를 체력바로 만들고, 그 Image를 아래 _healthBarFill
-    /// 슬롯에 끌어다 넣으면 됩니다. (자세한 절차는 대화 설명 참고)
+    /// 체력바 처리 방식:
+    ///   1. Image.fillAmount를 사용하지 않습니다.
+    ///   2. Sliced Image의 RectTransform Width를 직접 조절합니다.
+    ///   3. Fill / Follow Bar는 오른쪽 기준으로 고정됩니다.
+    ///   4. 체력이 줄어들면 왼쪽에서 오른쪽 방향으로 깎입니다.
+    ///   5. Follow Bar는 실제 체력바보다 늦게 따라옵니다.
     /// </summary>
     public sealed class KRPlayerDamageFeedback : MonoBehaviour, IDamageable
     {
@@ -31,38 +24,54 @@ namespace KillRitual.Player
         [SerializeField] private float _maxHealth = 100f;
 
         [Header("체력바 UI 연결")]
-        [Tooltip("체력에 따라 채워질 막대 Image입니다. 유니티에서 만든 체력바(초록 막대) Image를 여기에 넣으세요. " +
-                 "이 Image의 Image Type은 'Filled'여야 fillAmount로 조절됩니다.")]
+        [Tooltip("체력바 전체 너비 기준이 되는 RectTransform입니다. 보통 Background를 넣으세요.")]
+        [SerializeField] private RectTransform _healthBarWidthReference;
+
+        [Tooltip("현재 체력을 표시하는 실제 Fill Image입니다. Image Type은 Sliced로 설정하세요.")]
         [SerializeField] private Image _healthBarFill;
 
-        [Tooltip("체력 숫자를 표시할 Text(선택). 없으면 비워두세요. 예: '72 / 100'")]
-        [SerializeField] private Text _healthText;
+        [Tooltip("체력 감소량을 보여주는 뒤따라오는 바입니다. Fill 뒤, Background 앞에 배치하세요. Image Type은 Sliced로 설정하세요.")]
+        [SerializeField] private Image _healthBarFollow;
+
+        [Tooltip("체력바가 가득 찼을 때의 너비입니다. 0이면 Width Reference의 현재 너비를 자동으로 사용합니다.")]
+        [Min(0f)]
+        [SerializeField] private float _healthBarMaxWidth = 0f;
+
+        [Tooltip("실행 시 Fill / Follow의 Anchor와 Pivot을 오른쪽 기준으로 강제 설정합니다.")]
+        [SerializeField] private bool _forceRightAligned = true;
+
+        [Tooltip("체력 감소 후 Follow Bar가 움직이기 전 대기 시간입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _followDelay = 0.15f;
+
+        [Tooltip("Follow Bar가 현재 체력바 위치까지 줄어드는 시간입니다.")]
+        [Min(0.01f)]
+        [SerializeField] private float _followCatchUpDuration = 0.18f;
 
         [Header("게임오버 연결")]
         [Tooltip("게임오버 화면을 그리는 KRGameOverUI 컴포넌트. 비워두면 자동으로 씬에서 찾습니다.")]
         [SerializeField] private KRGameOverUI _gameOverUI;
 
-        [Header("피격 화면 효과 (선택)")]
-        [Tooltip("피격 시 잠깐 빨갛게 보일 전체화면 Image(선택). 유니티에서 반투명 빨간 Image를 만들어 넣으면 " +
-                 "맞을 때마다 잠깐 나타났다 사라집니다. 없으면 비워두세요.")]
+        [Header("피격 화면 효과")]
+        [Tooltip("피격 시 잠깐 빨갛게 보일 전체화면 Image입니다.")]
         [SerializeField] private Image _damageOverlay;
 
         [Tooltip("피격 효과가 사라지는 속도. 클수록 빨리 옅어집니다.")]
         [Min(0.1f)]
         [SerializeField] private float _fadeSpeed = 3f;
 
-        // 현재 체력. 인스펙터에 노출하지 않고 내부에서만 관리합니다.
         private float _health;
-
-        // 피격 효과의 현재 진하기(0~1). 맞으면 1이 되고 시간이 지나며 0으로 줄어듭니다.
         private float _overlayAlpha;
 
-        // IDamageable 구현
+        private RectTransform _healthBarFillRect;
+        private RectTransform _healthBarFollowRect;
+
+        private Coroutine _followCoroutine;
+
         public bool IsDead => _health <= 0f;
-        public bool IsGroggy => false; // 플레이어는 그로기 개념을 쓰지 않습니다.
+        public bool IsGroggy => false;
         public Vector3 Position => transform.position;
 
-        // 외부에서 체력을 읽고 싶을 때 사용할 수 있는 공개 프로퍼티(디버그/다른 UI용).
         public float CurrentHealth => _health;
         public float MaxHealth => _maxHealth;
 
@@ -70,18 +79,28 @@ namespace KillRitual.Player
         {
             _health = _maxHealth;
 
+            CacheHealthBarReferences();
+
             if (_gameOverUI == null)
             {
                 _gameOverUI = FindObjectOfType<KRGameOverUI>();
             }
 
-            UpdateHealthBar();   // 시작할 때 체력바를 가득 찬 상태로 맞춥니다.
+            UpdateHealthBar(true);
             HideOverlayInstantly();
+        }
+
+        private void OnDisable()
+        {
+            if (_followCoroutine != null)
+            {
+                StopCoroutine(_followCoroutine);
+                _followCoroutine = null;
+            }
         }
 
         private void Update()
         {
-            // 피격 빨간 효과가 켜져 있으면 시간이 지나며 서서히 옅어지게 합니다.
             if (_damageOverlay != null && _overlayAlpha > 0f)
             {
                 _overlayAlpha = Mathf.Max(0f, _overlayAlpha - _fadeSpeed * Time.deltaTime);
@@ -89,7 +108,6 @@ namespace KillRitual.Player
             }
         }
 
-        /// <summary>몬스터가 데미지를 줄 때 호출됩니다.</summary>
         public void TakeDamage(KRDamageContext context)
         {
             if (IsDead)
@@ -97,11 +115,15 @@ namespace KillRitual.Player
                 return;
             }
 
+            float previousHealth = _health;
             _health = Mathf.Max(0f, _health - context.DamageAmount);
 
-            UpdateHealthBar();
+            bool healthReduced = _health < previousHealth;
 
-            // 피격 효과를 최대로 켭니다(이후 Update에서 서서히 옅어집니다).
+            // Fill은 즉시 줄어듦.
+            // Follow는 데미지를 받았을 때만 늦게 따라옴.
+            UpdateHealthBar(!healthReduced);
+
             if (_damageOverlay != null)
             {
                 _overlayAlpha = 1f;
@@ -117,33 +139,228 @@ namespace KillRitual.Player
         public void Execute()
         {
             _health = 0f;
-            UpdateHealthBar();
+            UpdateHealthBar(false);
             TriggerGameOver();
         }
-        /// <summary>처형 보상 등 외부에서 체력을 회복시킬 때 호출합니다.</summary>
+
         public void Heal(float amount)
         {
-            if (IsDead) return;
+            if (IsDead)
+            {
+                return;
+            }
 
             _health = Mathf.Min(_maxHealth, _health + amount);
-            UpdateHealthBar(); // HP바도 즉시 갱신
+
+            // 회복 시에는 손실 표시가 필요 없으므로 Fill / Follow 둘 다 즉시 맞춤.
+            UpdateHealthBar(true);
         }
 
-        /// <summary>체력바 Image의 채움 정도와 숫자 텍스트를 현재 체력에 맞춰 갱신합니다.</summary>
-        private void UpdateHealthBar()
+        private void CacheHealthBarReferences()
+        {
+            if (_healthBarFill != null)
+            {
+                _healthBarFillRect = _healthBarFill.rectTransform;
+            }
+
+            if (_healthBarFollow != null)
+            {
+                _healthBarFollowRect = _healthBarFollow.rectTransform;
+            }
+
+            if (_forceRightAligned)
+            {
+                ForceRightAligned(_healthBarFillRect);
+                ForceRightAligned(_healthBarFollowRect);
+            }
+
+            Canvas.ForceUpdateCanvases();
+
+            if (_healthBarMaxWidth <= 0f)
+            {
+                _healthBarMaxWidth = GetReferenceWidth();
+            }
+
+            if (_healthBarMaxWidth <= 0.01f)
+            {
+                _healthBarMaxWidth = 100f;
+                Debug.LogWarning("[KRPlayerDamageFeedback] 체력바 최대 너비를 가져오지 못했습니다. _healthBarWidthReference에 Background를 연결하거나 _healthBarMaxWidth를 직접 입력하세요.");
+            }
+
+            SetBarWidth(_healthBarFillRect, _healthBarMaxWidth);
+            SetBarWidth(_healthBarFollowRect, _healthBarMaxWidth);
+        }
+
+        private float GetReferenceWidth()
+        {
+            if (_healthBarWidthReference != null)
+            {
+                float referenceWidth = Mathf.Abs(_healthBarWidthReference.rect.width);
+
+                if (referenceWidth > 0.01f)
+                {
+                    return referenceWidth;
+                }
+
+                referenceWidth = Mathf.Abs(_healthBarWidthReference.sizeDelta.x);
+
+                if (referenceWidth > 0.01f)
+                {
+                    return referenceWidth;
+                }
+            }
+
+            // Reference가 없을 경우에만 Fill에서 가져옴.
+            // 하지만 이 방식은 Fill이 이미 줄어든 상태면 잘못된 값을 가져올 수 있음.
+            if (_healthBarFillRect != null)
+            {
+                float fillWidth = Mathf.Abs(_healthBarFillRect.rect.width);
+
+                if (fillWidth > 0.01f)
+                {
+                    return fillWidth;
+                }
+
+                fillWidth = Mathf.Abs(_healthBarFillRect.sizeDelta.x);
+
+                if (fillWidth > 0.01f)
+                {
+                    return fillWidth;
+                }
+            }
+
+            return 0f;
+        }
+
+        private void ForceRightAligned(RectTransform rect)
+        {
+            if (rect == null)
+            {
+                return;
+            }
+
+            Vector2 size = rect.sizeDelta;
+            Vector2 anchoredPosition = rect.anchoredPosition;
+
+            rect.anchorMin = new Vector2(1f, rect.anchorMin.y);
+            rect.anchorMax = new Vector2(1f, rect.anchorMax.y);
+            rect.pivot = new Vector2(1f, rect.pivot.y);
+
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchoredPosition;
+        }
+
+        private void UpdateHealthBar(bool followInstantly)
         {
             float ratio = _maxHealth > 0f ? Mathf.Clamp01(_health / _maxHealth) : 0f;
+            float targetWidth = GetWidthFromRatio(ratio);
+
+            SetBarWidth(_healthBarFillRect, targetWidth);
 
             if (_healthBarFill != null)
             {
-                // fillAmount는 0(빈 칸)~1(가득 참) 사이 값입니다. 체력 비율을 그대로 넣습니다.
-                _healthBarFill.fillAmount = ratio;
+                _healthBarFill.gameObject.SetActive(ratio > 0f);
             }
 
-            if (_healthText != null)
+            UpdateFollowBar(targetWidth, ratio, followInstantly);
+        }
+
+        private float GetWidthFromRatio(float ratio)
+        {
+            ratio = Mathf.Clamp01(ratio);
+            return Mathf.Clamp(_healthBarMaxWidth * ratio, 0f, _healthBarMaxWidth);
+        }
+
+        private void UpdateFollowBar(float targetWidth, float targetRatio, bool instant)
+        {
+            if (_healthBarFollowRect == null)
             {
-                _healthText.text = Mathf.CeilToInt(_health) + " / " + Mathf.CeilToInt(_maxHealth);
+                return;
             }
+
+            if (_followCoroutine != null)
+            {
+                StopCoroutine(_followCoroutine);
+                _followCoroutine = null;
+            }
+
+            if (instant)
+            {
+                SetBarWidth(_healthBarFollowRect, targetWidth);
+
+                if (_healthBarFollow != null)
+                {
+                    _healthBarFollow.gameObject.SetActive(targetRatio > 0f);
+                }
+
+                return;
+            }
+
+            if (_healthBarFollow != null)
+            {
+                _healthBarFollow.gameObject.SetActive(true);
+            }
+
+            _followCoroutine = StartCoroutine(FollowBarRoutine(targetWidth, targetRatio));
+        }
+
+        private IEnumerator FollowBarRoutine(float targetWidth, float targetRatio)
+        {
+            yield return new WaitForSeconds(_followDelay);
+
+            float startWidth = GetCurrentWidth(_healthBarFollowRect);
+            startWidth = Mathf.Clamp(startWidth, 0f, _healthBarMaxWidth);
+
+            float elapsed = 0f;
+
+            while (elapsed < _followCatchUpDuration)
+            {
+                elapsed += Time.deltaTime;
+
+                float t = Mathf.Clamp01(elapsed / _followCatchUpDuration);
+                float width = Mathf.Lerp(startWidth, targetWidth, t);
+
+                SetBarWidth(_healthBarFollowRect, width);
+
+                yield return null;
+            }
+
+            SetBarWidth(_healthBarFollowRect, targetWidth);
+
+            if (_healthBarFollow != null)
+            {
+                _healthBarFollow.gameObject.SetActive(targetRatio > 0f);
+            }
+
+            _followCoroutine = null;
+        }
+
+        private float GetCurrentWidth(RectTransform rect)
+        {
+            if (rect == null)
+            {
+                return 0f;
+            }
+
+            float width = Mathf.Abs(rect.rect.width);
+
+            if (width <= 0.01f)
+            {
+                width = Mathf.Abs(rect.sizeDelta.x);
+            }
+
+            return Mathf.Clamp(width, 0f, _healthBarMaxWidth);
+        }
+
+        private void SetBarWidth(RectTransform rect, float width)
+        {
+            if (rect == null)
+            {
+                return;
+            }
+
+            width = Mathf.Clamp(width, 0f, _healthBarMaxWidth);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
         }
 
         private void TriggerGameOver()
@@ -158,11 +375,6 @@ namespace KillRitual.Player
             }
         }
 
-        // ------------------------------------------------------------------
-        // 피격 빨간 화면 효과 헬퍼 (선택 기능 — _damageOverlay가 연결됐을 때만 동작)
-        // ------------------------------------------------------------------
-
-        /// <summary>빨간 오버레이 Image의 투명도(알파)를 설정합니다.</summary>
         private void SetOverlayAlpha(float alpha)
         {
             if (_damageOverlay == null)
@@ -175,7 +387,6 @@ namespace KillRitual.Player
             _damageOverlay.color = c;
         }
 
-        /// <summary>시작 시 빨간 효과를 완전히 투명하게(안 보이게) 만듭니다.</summary>
         private void HideOverlayInstantly()
         {
             _overlayAlpha = 0f;
