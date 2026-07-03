@@ -33,6 +33,9 @@ namespace KillRitual.Player.Combat
         [Tooltip("플레이어 카메라. 히트스톱/카메라 킥에 사용합니다. 비워두면 Camera.main을 사용합니다.")]
         [SerializeField] private Camera _playerCamera;
 
+        [Tooltip("흡혼 애니메이션을 재생할 Animator. 비워두면 부모 계층에서 자동 탐색합니다.")]
+        [SerializeField] private Animator _animator;
+
         [Header("돌진 설정")]
         [Tooltip("적 앞에서 멈추는 거리. 너무 작으면 적을 관통합니다.")]
         [Min(0.1f)]
@@ -96,6 +99,11 @@ namespace KillRitual.Player.Combat
         [Range(0f, 1f)]
         [SerializeField] private float _guaranteedHealthRatio = 0.50f;
 
+        // Animator 파라미터 ID — string 비교 대신 int로 캐싱해 성능을 높입니다.
+        private static readonly int kWindUpHash = Animator.StringToHash("AbsorptionWindUp");
+        private static readonly int kStrikeHash = Animator.StringToHash("AbsorptionStrike");
+        private static readonly int kRecoverHash = Animator.StringToHash("AbsorptionRecover");
+
         /// <summary>현재 처형 가능한 대상이 존 안에 있는지 여부. KRCombatDebugOverlay 참조용.</summary>
         public bool HasExecutableTarget => _absorptionZone != null && _absorptionZone.HasTarget;
 
@@ -115,6 +123,9 @@ namespace KillRitual.Player.Combat
 
             if (_playerCamera == null)
                 _playerCamera = Camera.main;
+
+            if (_animator == null)
+                _animator = GetComponentInParent<Animator>();
         }
 
         private void Update()
@@ -134,9 +145,9 @@ namespace KillRitual.Player.Combat
         {
             IsExecuting = true;
 
-            // ① 도움닫기 — 무적 시작 + 적 앞으로 돌진
+            // ① 도움닫기 — 무적 시작 + 애니메이션
             SetInvincible(true);
-            // TODO: 도움닫기 애니메이션 트리거
+            _animator?.SetTrigger(kWindUpHash);
 
             yield return StartCoroutine(LungeToTarget(target));
 
@@ -148,19 +159,20 @@ namespace KillRitual.Player.Combat
                 yield break;
             }
 
-            // ② 돌입 처치 — 히트스톱 + 카메라 킥
+            // ② 돌입 처치 — 히트스톱 + 카메라 킥 + 애니메이션
             EnemyGrade grade = GetGrade(target);
             target.Execute();
+            _animator?.SetTrigger(kStrikeHash);
 
             StartCoroutine(HitStop());
             StartCoroutine(CameraKick());
 
             yield return new WaitForSeconds(_strikeDuration);
 
-            // ③ 회복 — 무적 해제
+            // ③ 회복 — 무적 해제 + 애니메이션
             SetInvincible(false);
+            _animator?.SetTrigger(kRecoverHash);
             ApplyHeal(CalculateHeal(grade));
-            // TODO: 체력 회복 이펙트
 
             yield return new WaitForSeconds(_recoveryDuration);
 
@@ -220,23 +232,38 @@ namespace KillRitual.Player.Combat
             if (_playerCamera == null) yield break;
 
             Transform camTransform = _playerCamera.transform;
-            float elapsed = 0f;
-            float kickAngle = _cameraKickAmount;
 
-            while (elapsed < _cameraKickDuration)
+            // 시작 시점의 로컬 회전을 저장합니다.
+            Quaternion originalRotation = camTransform.localRotation;
+
+            // 아래로 킥할 목표 회전
+            Quaternion kickRotation = originalRotation * Quaternion.Euler(_cameraKickAmount, 0f, 0f);
+
+            float elapsed = 0f;
+            float halfDuration = _cameraKickDuration * 0.5f;
+
+            // 전반부: 원래 → 킥 방향으로 이동
+            while (elapsed < halfDuration)
             {
                 elapsed += Time.unscaledDeltaTime;
-                float t = elapsed / _cameraKickDuration;
-
-                // 처음에 kickAngle만큼 아래로 눌렸다가 서서히 복구됩니다.
-                float currentKick = Mathf.Lerp(kickAngle, 0f, t);
-                camTransform.localEulerAngles = new Vector3(
-                    camTransform.localEulerAngles.x + currentKick * Time.unscaledDeltaTime * 60f,
-                    camTransform.localEulerAngles.y,
-                    camTransform.localEulerAngles.z);
-
+                float t = Mathf.Clamp01(elapsed / halfDuration);
+                camTransform.localRotation = Quaternion.Lerp(originalRotation, kickRotation, t);
                 yield return null;
             }
+
+            elapsed = 0f;
+
+            // 후반부: 킥 방향 → 원래 회전으로 복구
+            while (elapsed < halfDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / halfDuration);
+                camTransform.localRotation = Quaternion.Lerp(kickRotation, originalRotation, t);
+                yield return null;
+            }
+
+            // 완전히 원래 회전으로 복구
+            camTransform.localRotation = originalRotation;
         }
 
         // ── 체력 회복 계산 ─────────────────────────────────────────────

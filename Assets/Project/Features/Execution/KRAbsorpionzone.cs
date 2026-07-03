@@ -32,20 +32,39 @@ namespace KillRitual.Player.Combat
             IDamageable damageable = other.GetComponentInParent<IDamageable>();
             if (damageable == null || damageable.IsDead || !damageable.IsGroggy) return;
 
-            _candidates.Add(damageable);
+            if (_candidates.Add(damageable))
+            {
+                var outline = other.GetComponentInParent<KillRitual.Enemies.KRGroggyOutline>();
+                outline?.SetInRange(true);
+            }
         }
 
         private void OnTriggerExit(Collider other)
         {
             IDamageable damageable = other.GetComponentInParent<IDamageable>();
-            if (damageable != null)
-                _candidates.Remove(damageable);
+            if (damageable == null) return;
+
+            if (_candidates.Remove(damageable))
+            {
+                // 처형 가능 범위에서 벗어난 순간 범위 이탈을 알립니다.
+                if (other.GetComponentInParent<KillRitual.Enemies.KRGroggyOutline>() is { } outline)
+                    outline.SetInRange(false);
+            }
         }
 
         private void LateUpdate()
         {
-            // 죽었거나 그로기가 풀린 후보를 매 프레임 정리합니다.
-            _candidates.RemoveWhere(c => c == null || c.IsDead || !c.IsGroggy);
+            // 죽었거나 그로기가 풀린 후보를 정리하고 테두리도 끕니다.
+            _candidates.RemoveWhere(c =>
+            {
+                if (c == null || c.IsDead || !c.IsGroggy)
+                {
+                    if (c is KillRitual.Enemies.KREnemyBase enemy)
+                        enemy.GetComponent<KillRitual.Enemies.KRGroggyOutline>()?.SetInRange(false);
+                    return true;
+                }
+                return false;
+            });
         }
 
         /// <summary>현재 존 안에 처형 가능한 대상이 있는지 여부.</summary>

@@ -110,11 +110,8 @@ namespace KillRitual.Player
 
         public void TakeDamage(KRDamageContext context)
         {
-            if (IsDead)
-            {
-                return;
-                if (_isInvincible) return;
-            }
+            if (IsDead) return;
+            if (_isInvincible) return;
 
             float previousHealth = _health;
             _health = Mathf.Max(0f, _health - context.DamageAmount);

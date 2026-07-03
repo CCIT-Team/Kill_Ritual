@@ -1,39 +1,28 @@
-// Assets/Project/Scripts/03_Weapons/KRExplosionFlash.cs
+ï»¿// Assets/Project/Features/Weapons/KRExplosionFlash.cs
 using UnityEngine;
 
 namespace KillRitual.Weapons
 {
     /// <summary>
-    /// º°µµÀÇ ÆÄÆ¼Å¬ ½Ã½ºÅÛÀÌ³ª ¸ÓÆ¼¸®¾ó ¿¡¼ÂÀ» ¹Ì¸® ¸¸µé¾îµÎÁö ¾Ê¾Æµµ ¹Ù·Î »ç¿ëÇÒ ¼ö ÀÖ´Â
-    /// °£´ÜÇÑ Æø¹ß ½Ã°¢È¿°úÀÔ´Ï´Ù. ±¸Ã¼°¡ ºü¸£°Ô Ä¿Áö¸é¼­ Åõ¸íÇØÁö´Ù°¡ ½º½º·Î »ç¶óÁı´Ï´Ù.
-    ///
-    /// [»ç¿ë ¹æ¹ı]
-    ///   1. Hierarchy ¿ìÅ¬¸¯ ¡æ 3D Object ¡æ Sphere »ı¼º
-    ///   2. ±× SphereÀÇ Collider ÄÄÆ÷³ÍÆ®´Â Á¦°Å (¼ø¼ö ½Ã°¢È¿°úÀÌ¹Ç·Î Ãæµ¹ ÆÇÁ¤ÀÌ ÇÊ¿ä ¾øÀ½)
-    ///   3. ÀÌ ÄÄÆ÷³ÍÆ®(KRExplosionFlash)¸¦ ºÎÂø
-    ///   4. ÇÁ¸®ÆÕÀ¸·Î ¸¸µé¾î¼­ KRProjectileWeaponÀÇ "Explosion Vfx Prefab" ½½·Ô¿¡ ¿¬°á
-    ///
-    /// ¸ÓÆ¼¸®¾óÀº Awake¿¡¼­ ·±Å¸ÀÓ¿¡ Á÷Á¢ »ı¼ºÇÏ¹Ç·Î, ÀÎ½ºÆåÅÍ¿¡¼­ ¼ÎÀÌ´õ³ª ¸ÓÆ¼¸®¾óÀ»
-    /// µû·Î ¼³Á¤ÇÏÁö ¾Ê¾Æµµ ¾ËÆÄ ºí·»µù(Åõ¸íµµ º¯È­)ÀÌ Á¤»ó µ¿ÀÛÇÕ´Ï´Ù.
-    /// ³ªÁß¿¡ ½ÇÁ¦ ÆÄÆ¼Å¬ ÀÌÆåÆ®·Î ±³Ã¼ÇÏ°í ½Í´Ù¸é, ÀÌ ÄÄÆ÷³ÍÆ®°¡ ºÙÀº ÇÁ¸®ÆÕÀ»
-    /// ÆÄÆ¼Å¬ ÇÁ¸®ÆÕÀ¸·Î ±×´ë·Î ¹Ù²ã¼­ °°Àº ½½·Ô¿¡ ¿¬°áÇÏ¸é µË´Ï´Ù.
+    /// ë³„ë„ì˜ íŒŒí‹°í´ ì‹œìŠ¤í…œì´ë‚˜ ë¨¸í‹°ë¦¬ì–¼ ì—ì…‹ì„ ë¯¸ë¦¬ ë§Œë“¤ì–´ë‘ì§€ ì•Šì•„ë„ ë°”ë¡œ ì‚¬ìš©í•  ìˆ˜ ìˆëŠ”
+    /// ê°„ë‹¨í•œ í­ë°œ ì‹œê°íš¨ê³¼ì…ë‹ˆë‹¤. êµ¬ì²´ê°€ ë¹ ë¥´ê²Œ ì»¤ì§€ë©´ì„œ íˆ¬ëª…í•´ì§€ë‹¤ê°€ ìŠ¤ìŠ¤ë¡œ ì‚¬ë¼ì§‘ë‹ˆë‹¤.
     /// </summary>
     [RequireComponent(typeof(Renderer))]
     public sealed class KRExplosionFlash : MonoBehaviour
     {
-        [Tooltip("¿ÏÀüÈ÷ »ç¶óÁö±â±îÁö °É¸®´Â ½Ã°£(ÃÊ)")]
+        [Tooltip("ì™„ì „íˆ ì‚¬ë¼ì§€ê¸°ê¹Œì§€ ê±¸ë¦¬ëŠ” ì‹œê°„(ì´ˆ)")]
         [Min(0.05f)]
         [SerializeField] private float _duration = 0.35f;
 
-        [Tooltip("½ÃÀÛ ½Ã ±¸Ã¼ÀÇ ·ÎÄÃ ½ºÄÉÀÏ")]
+        [Tooltip("ì‹œì‘ ì‹œ êµ¬ì²´ì˜ ë¡œì»¬ ìŠ¤ì¼€ì¼")]
         [Min(0.01f)]
         [SerializeField] private float _startScale = 0.1f;
 
-        [Tooltip("ÃÖ´ë·Î Ä¿Á³À» ¶§ÀÇ ·ÎÄÃ ½ºÄÉÀÏ. Æø¹ß ¹İ°æ°ú ºñ½ÁÇÏ°Ô ¸ÂÃß¸é ÀÚ¿¬½º·´½À´Ï´Ù.")]
+        [Tooltip("ìµœëŒ€ë¡œ ì»¤ì¡Œì„ ë•Œì˜ ë¡œì»¬ ìŠ¤ì¼€ì¼")]
         [Min(0.01f)]
         [SerializeField] private float _endScale = 5f;
 
-        [Tooltip("ÇÃ·¡½Ã »ö»ó. È­(ûı)´Â ÁÖÈ², ±İ(ÑÑ) BFG´Â ³ì»ö °è¿­ µî ¼Ó¼º¿¡ ¸Â°Ô ÇÁ¸®ÆÕÀ» µû·Î ¸¸µé¾îµÎ¸é ÁÁ½À´Ï´Ù.")]
+        [Tooltip("í”Œë˜ì‹œ ìƒ‰ìƒ")]
         [SerializeField] private Color _color = new Color(1f, 0.55f, 0.1f);
 
         private Renderer _renderer;
@@ -44,10 +33,16 @@ namespace KillRitual.Weapons
         {
             _renderer = GetComponent<Renderer>();
 
-            // ¾ËÆÄ ºí·»µùÀÌ °¡´ÉÇÑ ¼ÎÀÌ´õ¸¦ ÇÁ·ÎÁ§Æ® ·»´õ ÆÄÀÌÇÁ¶óÀÎ¿¡ ¸Â°Ô ¼ø¼­´ë·Î Å½»öÇÕ´Ï´Ù.
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit")
-                          ?? Shader.Find("Standard")
-                          ?? Shader.Find("Sprites/Default");
+            // Built-in ë Œë” íŒŒì´í”„ë¼ì¸ ê¸°ì¤€ìœ¼ë¡œ Standard ì…°ì´ë”ë§Œ íƒìƒ‰í•©ë‹ˆë‹¤.
+            // URP ì…°ì´ë”ëŠ” Built-inì—ì„œ ì¶©ëŒì„ ì¼ìœ¼í‚¬ ìˆ˜ ìˆìœ¼ë¯€ë¡œ ì œì™¸í•©ë‹ˆë‹¤.
+            Shader shader = Shader.Find("Standard")
+                         ?? Shader.Find("Sprites/Default");
+
+            if (shader == null)
+            {
+                Debug.LogWarning("[KRExplosionFlash] ì…°ì´ë”ë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.");
+                return;
+            }
 
             _runtimeMaterial = new Material(shader);
             ConfigureTransparency(_runtimeMaterial);
@@ -58,20 +53,31 @@ namespace KillRitual.Weapons
         }
 
         /// <summary>
-        /// URP Lit / Standard ¼ÎÀÌ´õ ¸ğµÎ¿¡¼­ Åõ¸íµµ°¡ Á¤»ó µ¿ÀÛÇÏµµ·Ï ÇÊ¿äÇÑ Å°¿öµå¿Í
-        /// ºí·»µå ¸ğµå¸¦ ¼³Á¤ÇÕ´Ï´Ù. ¼ÎÀÌ´õ¿¡ ÇØ´ç ÇÁ·ÎÆÛÆ¼°¡ ¾øÀ¸¸é ¾ÈÀüÇÏ°Ô °Ç³Ê¶İ´Ï´Ù.
+        /// Built-in Standard ì…°ì´ë”ì—ì„œ íˆ¬ëª…ë„ê°€ ì •ìƒ ë™ì‘í•˜ë„ë¡ ì„¤ì •í•©ë‹ˆë‹¤.
+        /// _Mode = 3(Transparent), í‚¤ì›Œë“œ ì„¤ì •, ë¸”ë Œë“œ ëª¨ë“œë¥¼ ëª¨ë‘ ì ìš©í•©ë‹ˆë‹¤.
         /// </summary>
         private static void ConfigureTransparency(Material mat)
         {
-            if (mat.HasProperty("_Surface")) mat.SetFloat("_Surface", 1f); // URP: 0=Opaque, 1=Transparent
+            // Built-in Standard ì…°ì´ë” íˆ¬ëª… ëª¨ë“œ
+            // 0=Opaque, 1=Cutout, 2=Fade, 3=Transparent
+            if (mat.HasProperty("_Mode"))
+                mat.SetFloat("_Mode", 3f);
+
+            if (mat.HasProperty("_SrcBlend"))
+                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+
+            if (mat.HasProperty("_DstBlend"))
+                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+
+            if (mat.HasProperty("_ZWrite"))
+                mat.SetInt("_ZWrite", 0);
+
+            // Standard ì…°ì´ë” íˆ¬ëª…ë„ í‚¤ì›Œë“œ â€” ì…‹ ë‹¤ ì •í™•íˆ ì„¤ì •í•´ì•¼ í•©ë‹ˆë‹¤.
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 
             mat.SetOverrideTag("RenderType", "Transparent");
-
-            if (mat.HasProperty("_SrcBlend")) mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            if (mat.HasProperty("_DstBlend")) mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            if (mat.HasProperty("_ZWrite")) mat.SetInt("_ZWrite", 0);
-
-            mat.EnableKeyword("_ALPHABLEND_ON");
             mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
 
@@ -80,29 +86,24 @@ namespace KillRitual.Weapons
             _elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(_elapsed / _duration);
 
-            // ÀÌÁî¾Æ¿ô: ÃÊ¹İ¿¡ ºü¸£°Ô Ä¿Áö´Ù°¡ Á¡Á¡ Ä¿Áö´Â ¼Óµµ°¡ ÁÙ¾îµì´Ï´Ù (Æø¹ß Ãæ°İÆÄ ´À³¦).
+            // ì´ì¦ˆì•„ì›ƒ: ì´ˆë°˜ì— ë¹ ë¥´ê²Œ ì»¤ì§€ë‹¤ê°€ ì ì  ì»¤ì§€ëŠ” ì†ë„ê°€ ì¤„ì–´ë“­ë‹ˆë‹¤.
             float scaleT = 1f - Mathf.Pow(1f - t, 2f);
             float scale = Mathf.Lerp(_startScale, _endScale, scaleT);
             transform.localScale = Vector3.one * scale;
 
-            // ÈÄ¹İ¿¡ ±Ş°İÈ÷ Åõ¸íÇØÁöµµ·Ï ¾ËÆÄ¸¦ Á¦°ö °î¼±À¸·Î °¨¼è½ÃÅµ´Ï´Ù.
+            // í›„ë°˜ì— ê¸‰ê²©íˆ íˆ¬ëª…í•´ì§‘ë‹ˆë‹¤.
             Color c = _color;
             c.a = Mathf.Lerp(1f, 0f, t * t);
             _runtimeMaterial.color = c;
 
             if (_elapsed >= _duration)
-            {
                 Destroy(gameObject);
-            }
         }
 
         private void OnDestroy()
         {
-            // ·±Å¸ÀÓ¿¡ Á÷Á¢ »ı¼ºÇÑ ¸ÓÆ¼¸®¾óÀº ÀÚµ¿À¸·Î Á¤¸®µÇÁö ¾ÊÀ¸¹Ç·Î ¸í½ÃÀûÀ¸·Î ÇØÁ¦ÇÕ´Ï´Ù.
             if (_runtimeMaterial != null)
-            {
                 Destroy(_runtimeMaterial);
-            }
         }
     }
 }

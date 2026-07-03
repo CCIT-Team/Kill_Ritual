@@ -43,7 +43,6 @@ namespace KillRitual.Enemies
         [Header("색상 (등급/상태 시각화)")]
         [SerializeField] protected Color _baseColor = Color.gray;
         [SerializeField] protected Color _hitFlashColor = Color.white;
-        [SerializeField] protected Color _groggyColor = new Color(1f, 0.5f, 0f);
 
         [Min(0.01f)]
         [SerializeField] protected float _hitFlashDuration = 0.08f;
@@ -117,6 +116,9 @@ namespace KillRitual.Enemies
 
             _ownColliders = GetComponentsInChildren<Collider>(includeInactive: false);
             _groggyOutline = GetComponent<KRGroggyOutline>();
+            // 없으면 자동으로 추가
+            if (_groggyOutline == null)
+                _groggyOutline = gameObject.AddComponent<KRGroggyOutline>();
         }
 
         private void OnEnable()
@@ -270,10 +272,8 @@ namespace KillRitual.Enemies
 
         private void UpdateColorFeedback()
         {
-            Color targetColor;
-            if (Time.time < _hitFlashEndTime) targetColor = _hitFlashColor;
-            else if (_isGroggy) targetColor = _groggyColor;
-            else targetColor = _baseColor;
+            // 그로기 상태의 시각 피드백은 색상 변경이 아닌 KRGroggyOutline(셰이더 테두리)으로 처리합니다.
+            Color targetColor = Time.time < _hitFlashEndTime ? _hitFlashColor : _baseColor;
             ApplyColor(targetColor);
         }
 
