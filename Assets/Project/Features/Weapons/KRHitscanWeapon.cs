@@ -2,6 +2,7 @@
 using UnityEngine;
 using KillRitual.Core.Interfaces;
 using KillRitual.Core.Damage;
+using KillRitual.Core.Audio;
 
 namespace KillRitual.Weapons
 {
@@ -19,6 +20,12 @@ namespace KillRitual.Weapons
     /// </summary>
     public class KRHitscanWeapon : KRWeaponBase
     {
+        private enum KRFireAudioSlot
+        {
+            AttackType1,
+            AttackType2
+        }
+
         [Header("산탄/탄퍼짐")]
         [Tooltip("1회 발사당 생성되는 펠릿(레이) 개수. 1이면 일반 단발 무기, 2 이상이면 샷건류입니다. " +
                  "KRRampingHitscanWeapon에서는 가속 시작 시점(최저 가속)의 펠릿 수로 사용됩니다.")]
@@ -50,6 +57,28 @@ namespace KillRitual.Weapons
         [Tooltip("이 무기의 트레이서 색상")]
         [SerializeField] private Color _tracerColor = Color.white;
 
+        [Header("오디오")]
+        [Tooltip("이 KRHitscanWeapon 인스턴스가 공격 유형 I인지, 공격 유형 II인지 지정합니다. " +
+                 "좌클릭용 무기 프리팹이면 AttackType1, 우클릭용 무기 프리팹이면 AttackType2로 설정합니다.")]
+        [SerializeField] private KRFireAudioSlot _fireAudioSlot = KRFireAudioSlot.AttackType1;
+
+        [Tooltip("공격 유형 I 발사음. 예: 화(火) 샷건, 목(木) 정밀소총, 토(土) 기본 연사.")]
+        [SerializeField] private AudioClip _attackType1FireClip;
+
+        [Tooltip("공격 유형 II 발사음. 예: 화(火) 슈퍼 샷건, 목(木) 스나이퍼, 토(土) 분쇄기.")]
+        [SerializeField] private AudioClip _attackType2FireClip;
+
+        [Tooltip("발사음 볼륨. 최종 크기는 AudioMixer의 SFX 볼륨에도 영향을 받습니다.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _fireAudioVolume = 1f;
+
+        [Tooltip("발사음 피치 랜덤 범위. 반복 사격 시 완전히 같은 소리로 들리는 것을 줄입니다.")]
+        [SerializeField] private Vector2 _fireAudioPitchRange = new Vector2(0.98f, 1.02f);
+
+        [Tooltip("체크하면 1인칭 무기처럼 화면 중앙에서 나는 2D 사운드로 출력합니다. " +
+                 "체크 해제하면 FirePoint 위치에서 나는 3D 사운드로 출력합니다.")]
+        [SerializeField] private bool _playFireAudioAs2D = true;
+
         // 인스턴스 버퍼로 선언합니다. KRRampingHitscanWeapon처럼 코루틴으로 펠릿을 순차 발사할 때,
         // yield 사이 프레임에 다른 무기 인스턴스가 static 버퍼를 덮어써서 결과가 오염되는 문제를
         // 방지합니다. 단일 무기는 한 번에 하나의 레이캐스트만 수행하므로 인스턴스 버퍼로도 충분합니다.
@@ -58,6 +87,10 @@ namespace KillRitual.Weapons
         protected override void DoFire(float damagePerPellet)
         {
             Transform fp = ResolveFirePoint();
+            if (fp == null) return;
+
+            PlayFireAudio(fp.position);
+
             int pellets = Mathf.Max(1, GetCurrentPelletCount());
             float spread = GetCurrentSpreadAngle();
 
@@ -65,6 +98,56 @@ namespace KillRitual.Weapons
             {
                 FireSinglePellet(fp, damagePerPellet, spread, p, pellets);
             }
+        }
+
+        /// <summary>
+        /// 현재 무기의 공격 유형 I / II 설정에 따라 발사음을 출력합니다.
+        /// KRRampingHitscanWeapon처럼 DoFire를 오버라이드하는 자식 클래스에서도 호출할 수 있도록 protected로 둡니다.
+        /// </summary>
+        protected void PlayFireAudio(Vector3 worldPosition)
+        {
+            AudioClip clip = ResolveFireAudioClip();
+            if (clip == null) return;
+
+            float pitch = ResolveFireAudioPitch();
+
+            if (KRAudioManager.HasInstance)
+            {
+                if (_playFireAudioAs2D)
+                    KRAudioManager.Instance.PlaySFX2D(clip, _fireAudioVolume, pitch);
+                else
+                    KRAudioManager.Instance.PlaySFXAt(clip, worldPosition, _fireAudioVolume, pitch);
+
+                return;
+            }
+
+            // 전역 매니저가 아직 씬에 없을 때도 프로토타입 단계에서 최소한 소리가 나도록 하는 폴백입니다.
+            // 단, 이 방식은 AudioMixer를 거치지 않고 pitch도 적용되지 않습니다.
+            AudioSource.PlayClipAtPoint(clip, worldPosition, _fireAudioVolume);
+        }
+
+        private AudioClip ResolveFireAudioClip()
+        {
+            return _fireAudioSlot switch
+            {
+                KRFireAudioSlot.AttackType1 => _attackType1FireClip,
+                KRFireAudioSlot.AttackType2 => _attackType2FireClip,
+                _ => null
+            };
+        }
+
+        private float ResolveFireAudioPitch()
+        {
+            float min = Mathf.Min(_fireAudioPitchRange.x, _fireAudioPitchRange.y);
+            float max = Mathf.Max(_fireAudioPitchRange.x, _fireAudioPitchRange.y);
+
+            min = Mathf.Max(0.01f, min);
+            max = Mathf.Max(0.01f, max);
+
+            if (Mathf.Approximately(min, max))
+                return min;
+
+            return Random.Range(min, max);
         }
 
         /// <summary>
@@ -157,8 +240,10 @@ namespace KillRitual.Weapons
             return hit.point;
         }
 
-        /// <summary>콘(원뿔) 내부의 무작위 산탄 방향을 계산합니다. 자식 클래스가 결정론적 패턴(부채꼴 등)의
-        /// 폴백이나 보조 계산용으로 재사용할 수 있도록 protected로 둡니다.</summary>
+        /// <summary>
+        /// 콘(원뿔) 내부의 무작위 산탄 방향을 계산합니다. 자식 클래스가 결정론적 패턴(부채꼴 등)의
+        /// 폴백이나 보조 계산용으로 재사용할 수 있도록 protected로 둡니다.
+        /// </summary>
         protected static Vector3 ApplySpreadJitter(Vector3 forward, float spreadAngleDegrees)
         {
             if (spreadAngleDegrees <= 0f) return forward;
