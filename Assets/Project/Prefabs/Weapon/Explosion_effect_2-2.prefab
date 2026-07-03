@@ -101,6 +101,8 @@ MonoBehaviour:
   _startScale: 1
   _endScale: 6
   _color: {r: 0.3446065, g: 0.444095, b: 0.9056604, a: 0}
+  _startAlpha: 0.129
+  _endAlpha: 0
 --- !u!1001 &1082607297595997504
 PrefabInstance:
   m_ObjectHideFlags: 0
