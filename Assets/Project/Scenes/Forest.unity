@@ -36575,6 +36575,81 @@ Terrain:
   m_EnableHeightmapRayTracing: 1
   m_EnableTreesAndDetailsRayTracing: 0
   m_TreeMotionVectorModeOverride: 3
+--- !u!1 &1601457785
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1601457786}
+  - component: {fileID: 1601457787}
+  m_Layer: 20
+  m_Name: CameraShake
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1601457786
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1601457785}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5810641065198157323}
+  m_Father: {fileID: 7287944024032713230}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1601457787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1601457785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d2e158eafd48a142b4fc67ba10bfbec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _profiles:
+  - id: 2-1
+    duration: 0.05
+    frequency: 30
+    pitchAmount: 0.3
+    yawAmount: 0.5
+    rollAmount: 0.8
+    horizontalAmount: 0.05
+    verticalAmount: 0.05
+    forwardAmount: 0.1
+  - id: Default
+    duration: 0.2
+    frequency: 30
+    pitchAmount: 1
+    yawAmount: 0.5
+    rollAmount: 0.8
+    horizontalAmount: 0.05
+    verticalAmount: 0.5
+    forwardAmount: 1
+  - id: 1-2
+    duration: 0.2
+    frequency: 30
+    pitchAmount: 1
+    yawAmount: 0.5
+    rollAmount: 0.8
+    horizontalAmount: 0.1
+    verticalAmount: 0.8
+    forwardAmount: 2
+  _globalRotationScale: 1
+  _globalPositionScale: 1
 --- !u!1 &1606793010
 GameObject:
   m_ObjectHideFlags: 0
@@ -40188,13 +40263,14 @@ GameObject:
   - component: {fileID: 1060930997633850359}
   - component: {fileID: 7396712537777576071}
   - component: {fileID: 2911861740476828017}
+  - component: {fileID: 7396712537777576072}
   m_Layer: 0
   m_Name: FireHand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!222 &430583164056158380
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -86483,13 +86559,14 @@ GameObject:
   - component: {fileID: 5264066733974508207}
   - component: {fileID: 1153495912824843004}
   - component: {fileID: 396709609}
+  - component: {fileID: 5264066733974508208}
   m_Layer: 0
   m_Name: WoodHand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &4776030422851669763
 GameObject:
   m_ObjectHideFlags: 0
@@ -87828,6 +87905,20 @@ Transform:
   - {fileID: 415666126605129167}
   m_Father: {fileID: 800214394568745487}
   m_LocalEulerAnglesHint: {x: -2.633, y: 0, z: 0}
+--- !u!114 &5264066733974508208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4775619222609856533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e56149e54b85c6f4bb5be0aa24473980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _cameraShake: {fileID: 1601457787}
+  _defaultShakeId: Default
 --- !u!4 &5267837044346613561
 Transform:
   m_ObjectHideFlags: 0
@@ -89308,8 +89399,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4189308710471679150}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.86, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.8600004, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -89319,7 +89410,7 @@ Transform:
   - {fileID: 1978910930}
   - {fileID: 1397750782}
   - {fileID: 464927147}
-  m_Father: {fileID: 7287944024032713230}
+  m_Father: {fileID: 1601457786}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &5826206593713003388
 Transform:
@@ -102593,7 +102684,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5810641065198157323}
+  - {fileID: 1601457786}
   - {fileID: 800214394568745487}
   m_Father: {fileID: 8239827595318725245}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -103047,6 +103138,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7396712537777576072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 428686061361348941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e56149e54b85c6f4bb5be0aa24473980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _cameraShake: {fileID: 1601457787}
+  _defaultShakeId: Default
 --- !u!1 &7397738333545710852
 GameObject:
   m_ObjectHideFlags: 0
@@ -126974,6 +127079,7 @@ GameObject:
   - component: {fileID: 8637319364955613280}
   - component: {fileID: 7715070983801432493}
   - component: {fileID: 4221027684821644026}
+  - component: {fileID: 8977429563851698908}
   - component: {fileID: 8977429563851698907}
   m_Layer: 0
   m_Name: WaterHand
@@ -127078,6 +127184,20 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &8977429563851698908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8977429563851698906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e56149e54b85c6f4bb5be0aa24473980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _cameraShake: {fileID: 1601457787}
+  _defaultShakeId: Default
 --- !u!1 &8978658010984089870
 GameObject:
   m_ObjectHideFlags: 0
