@@ -67,7 +67,7 @@ namespace KillRitual.Player
         private RectTransform _healthBarFollowRect;
 
         private Coroutine _followCoroutine;
-
+        private bool _isInvincible;
         public bool IsDead => _health <= 0f;
         public bool IsGroggy => false;
         public Vector3 Position => transform.position;
@@ -110,10 +110,8 @@ namespace KillRitual.Player
 
         public void TakeDamage(KRDamageContext context)
         {
-            if (IsDead)
-            {
-                return;
-            }
+            if (IsDead) return;
+            if (_isInvincible) return;
 
             float previousHealth = _health;
             _health = Mathf.Max(0f, _health - context.DamageAmount);
@@ -154,6 +152,11 @@ namespace KillRitual.Player
 
             // 회복 시에는 손실 표시가 필요 없으므로 Fill / Follow 둘 다 즉시 맞춤.
             UpdateHealthBar(true);
+        }
+        /// <summary>흡혼 시퀀스 중 무적 상태를 설정합니다.</summary>
+        public void SetInvincible(bool invincible)
+        {
+            _isInvincible = invincible;
         }
 
         private void CacheHealthBarReferences()

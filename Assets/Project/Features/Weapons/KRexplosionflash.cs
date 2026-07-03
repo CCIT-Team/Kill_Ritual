@@ -1,43 +1,29 @@
-// Assets/Project/Scripts/03_Weapons/KRExplosionFlash.cs
+ï»¿// Assets/Project/Features/Weapons/KRExplosionFlash.cs
 using UnityEngine;
 
 namespace KillRitual.Weapons
 {
     /// <summary>
-    /// °£´ÜÇÑ Æø¹ß ÇÃ·¡½Ã ½Ã°¢È¿°ú.
-    /// ±¸Ã¼°¡ ºü¸£°Ô Ä¿Áö¸é¼­ Åõ¸íÇØÁö´Ù°¡ »ç¶óÁı´Ï´Ù.
-    ///
-    /// Built-in Render Pipeline ±âÁØ.
-    /// URP ¼ÎÀÌ´õ¸¦ Ã£Áö ¾Ê½À´Ï´Ù.
+    /// ë³„ë„ì˜ íŒŒí‹°í´ ì‹œìŠ¤í…œì´ë‚˜ ë¨¸í‹°ë¦¬ì–¼ ì—ì…‹ì„ ë¯¸ë¦¬ ë§Œë“¤ì–´ë‘ì§€ ì•Šì•„ë„ ë°”ë¡œ ì‚¬ìš©í•  ìˆ˜ ìˆëŠ”
+    /// ê°„ë‹¨í•œ í­ë°œ ì‹œê°íš¨ê³¼ì…ë‹ˆë‹¤. êµ¬ì²´ê°€ ë¹ ë¥´ê²Œ ì»¤ì§€ë©´ì„œ íˆ¬ëª…í•´ì§€ë‹¤ê°€ ìŠ¤ìŠ¤ë¡œ ì‚¬ë¼ì§‘ë‹ˆë‹¤.
     /// </summary>
     [RequireComponent(typeof(Renderer))]
     public sealed class KRExplosionFlash : MonoBehaviour
     {
-        [Header("Lifetime")]
-        [Tooltip("¿ÏÀüÈ÷ »ç¶óÁö±â±îÁö °É¸®´Â ½Ã°£(ÃÊ)")]
+        [Tooltip("ì™„ì „íˆ ì‚¬ë¼ì§€ê¸°ê¹Œì§€ ê±¸ë¦¬ëŠ” ì‹œê°„(ì´ˆ)")]
         [Min(0.05f)]
         [SerializeField] private float _duration = 0.35f;
 
-        [Header("Scale")]
-        [Tooltip("½ÃÀÛ ½Ã ±¸Ã¼ÀÇ ·ÎÄÃ ½ºÄÉÀÏ")]
+        [Tooltip("ì‹œì‘ ì‹œ êµ¬ì²´ì˜ ë¡œì»¬ ìŠ¤ì¼€ì¼")]
         [Min(0.01f)]
         [SerializeField] private float _startScale = 0.1f;
 
-        [Tooltip("ÃÖ´ë·Î Ä¿Á³À» ¶§ÀÇ ·ÎÄÃ ½ºÄÉÀÏ")]
+        [Tooltip("ìµœëŒ€ë¡œ ì»¤ì¡Œì„ ë•Œì˜ ë¡œì»¬ ìŠ¤ì¼€ì¼")]
         [Min(0.01f)]
         [SerializeField] private float _endScale = 5f;
 
-        [Header("Color")]
-        [Tooltip("ÇÃ·¡½Ã »ö»ó")]
-        [SerializeField] private Color _color = new Color(1f, 0.55f, 0.1f, 1f);
-
-        [Tooltip("½ÃÀÛ Åõ¸íµµ. 1ÀÌ¸é ºÒÅõ¸í, 0ÀÌ¸é ¿ÏÀü Åõ¸í")]
-        [Range(0f, 1f)]
-        [SerializeField] private float _startAlpha = 0.45f;
-
-        [Tooltip("³¡ Åõ¸íµµ. º¸Åë 0À¸·Î µÓ´Ï´Ù.")]
-        [Range(0f, 1f)]
-        [SerializeField] private float _endAlpha = 0f;
+        [Tooltip("í”Œë˜ì‹œ ìƒ‰ìƒ")]
+        [SerializeField] private Color _color = new Color(1f, 0.55f, 0.1f);
 
         private Renderer _renderer;
         private Material _runtimeMaterial;
@@ -47,29 +33,33 @@ namespace KillRitual.Weapons
         {
             _renderer = GetComponent<Renderer>();
 
+            // Built-in ë Œë” íŒŒì´í”„ë¼ì¸ ê¸°ì¤€ìœ¼ë¡œ Standard ì…°ì´ë”ë§Œ íƒìƒ‰í•©ë‹ˆë‹¤.
+            // URP ì…°ì´ë”ëŠ” Built-inì—ì„œ ì¶©ëŒì„ ì¼ìœ¼í‚¬ ìˆ˜ ìˆìœ¼ë¯€ë¡œ ì œì™¸í•©ë‹ˆë‹¤.
             Shader shader = Shader.Find("Standard")
-                          ?? Shader.Find("Legacy Shaders/Transparent/Diffuse")
-                          ?? Shader.Find("Sprites/Default");
+                         ?? Shader.Find("Sprites/Default");
+
+            if (shader == null)
+            {
+                Debug.LogWarning("[KRExplosionFlash] ì…°ì´ë”ë¥¼ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.");
+                return;
+            }
 
             _runtimeMaterial = new Material(shader);
-            ConfigureBuiltInTransparency(_runtimeMaterial);
-
-            Color startColor = _color;
-            startColor.a = _startAlpha;
-
-            _runtimeMaterial.color = startColor;
+            ConfigureTransparency(_runtimeMaterial);
+            _runtimeMaterial.color = _color;
             _renderer.material = _runtimeMaterial;
 
             transform.localScale = Vector3.one * _startScale;
         }
 
-        private static void ConfigureBuiltInTransparency(Material mat)
+        /// <summary>
+        /// Built-in Standard ì…°ì´ë”ì—ì„œ íˆ¬ëª…ë„ê°€ ì •ìƒ ë™ì‘í•˜ë„ë¡ ì„¤ì •í•©ë‹ˆë‹¤.
+        /// _Mode = 3(Transparent), í‚¤ì›Œë“œ ì„¤ì •, ë¸”ë Œë“œ ëª¨ë“œë¥¼ ëª¨ë‘ ì ìš©í•©ë‹ˆë‹¤.
+        /// </summary>
+        private static void ConfigureTransparency(Material mat)
         {
-            if (mat == null) return;
-
-            mat.SetOverrideTag("RenderType", "Transparent");
-
-            // Built-in Standard ShaderÀÇ Rendering Mode = Transparent
+            // Built-in Standard ì…°ì´ë” íˆ¬ëª… ëª¨ë“œ
+            // 0=Opaque, 1=Cutout, 2=Fade, 3=Transparent
             if (mat.HasProperty("_Mode"))
                 mat.SetFloat("_Mode", 3f);
 
@@ -82,10 +72,12 @@ namespace KillRitual.Weapons
             if (mat.HasProperty("_ZWrite"))
                 mat.SetInt("_ZWrite", 0);
 
+            // Standard ì…°ì´ë” íˆ¬ëª…ë„ í‚¤ì›Œë“œ â€” ì…‹ ë‹¤ ì •í™•íˆ ì„¤ì •í•´ì•¼ í•©ë‹ˆë‹¤.
             mat.DisableKeyword("_ALPHATEST_ON");
             mat.EnableKeyword("_ALPHABLEND_ON");
             mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 
+            mat.SetOverrideTag("RenderType", "Transparent");
             mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
 
@@ -94,30 +86,24 @@ namespace KillRitual.Weapons
             _elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(_elapsed / _duration);
 
+            // ì´ì¦ˆì•„ì›ƒ: ì´ˆë°˜ì— ë¹ ë¥´ê²Œ ì»¤ì§€ë‹¤ê°€ ì ì  ì»¤ì§€ëŠ” ì†ë„ê°€ ì¤„ì–´ë“­ë‹ˆë‹¤.
             float scaleT = 1f - Mathf.Pow(1f - t, 2f);
             float scale = Mathf.Lerp(_startScale, _endScale, scaleT);
             transform.localScale = Vector3.one * scale;
 
-            Color currentColor = _color;
-
-            // Ã³À½ºÎÅÍ ¹İÅõ¸íÇÏ°Ô ½ÃÀÛÇØ¼­ 0À¸·Î »ç¶óÁü
-            currentColor.a = Mathf.Lerp(_startAlpha, _endAlpha, t * t);
-
-            if (_runtimeMaterial != null)
-                _runtimeMaterial.color = currentColor;
+            // í›„ë°˜ì— ê¸‰ê²©íˆ íˆ¬ëª…í•´ì§‘ë‹ˆë‹¤.
+            Color c = _color;
+            c.a = Mathf.Lerp(1f, 0f, t * t);
+            _runtimeMaterial.color = c;
 
             if (_elapsed >= _duration)
-            {
                 Destroy(gameObject);
-            }
         }
 
         private void OnDestroy()
         {
             if (_runtimeMaterial != null)
-            {
                 Destroy(_runtimeMaterial);
-            }
         }
     }
 }
