@@ -40194,7 +40194,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!222 &430583164056158380
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -66553,8 +66553,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1915178514026969438}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.014633047, y: -0.12402049, z: -0.13142076, w: 0.9834294}
-  m_LocalPosition: {x: -0.000013260169, y: 0.26244462, z: 0.0000030146912}
+  m_LocalRotation: {x: 0.60322803, y: -0.44584852, z: -0.5142434, w: 0.4157989}
+  m_LocalPosition: {x: -0.000011794267, y: 0.2624425, z: 0.000004503876}
   m_LocalScale: {x: 0.99999994, y: 0.9999999, z: 0.9999999}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -66564,7 +66564,7 @@ Transform:
   - {fileID: 1181121082888521008}
   - {fileID: 2232835741321786525}
   m_Father: {fileID: 5976630675524119533}
-  m_LocalEulerAnglesHint: {x: -3.519, y: -13.918, z: -14.794}
+  m_LocalEulerAnglesHint: {x: -182.47, y: -277.207, z: 75.114}
 --- !u!4 &2991612662344735948
 Transform:
   m_ObjectHideFlags: 0
@@ -90918,8 +90918,8 @@ TrailRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0
-        value: 1
+        time: 0.008403778
+        value: 0.38607597
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -120807,7 +120807,7 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 1
+        value: 0.5
         inSlope: 0
         outSlope: 0
         tangentMode: 0
