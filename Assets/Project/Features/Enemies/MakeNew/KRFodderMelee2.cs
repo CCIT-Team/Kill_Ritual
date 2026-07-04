@@ -35,6 +35,28 @@ namespace KillRitual.Enemies
         [Min(0f)]
         [SerializeField] private float _attackRangeBuffer = 0.2f;
 
+        [Header("애니메이션 (선택)")]
+        [Tooltip("이 몬스터의 애니메이션을 재생하는 Animator 컴포넌트입니다. " +
+                 "보통 자식 오브젝트(모델)에 붙어있는 Animator를 여기로 드래그해서 연결하세요. " +
+                 "비워두면 애니메이션 없이도 정상 동작합니다(에러 안 남).")]
+        [SerializeField] private Animator _animator;
+
+        // Animator 파라미터 이름. Animator Controller에서 만든 이름과 반드시 똑같아야 합니다.
+        // (문자열을 매번 비교하는 것보다 빠르게 하려고 미리 정수 ID로 변환해둡니다.)
+        private static readonly int AnimParamIsMoving = Animator.StringToHash("IsMoving");
+        private static readonly int AnimParamAttack = Animator.StringToHash("Attack");
+
+        [Header("공격 판정 위치 보정")]
+        [Tooltip("공격 판정 구(Gizmo)와 데미지가 발생하는 지점의 높이를 위로 올리는 보정값입니다. " +
+                 "몬스터 발밑(원점) 기준이 아니라 몸통/가슴 높이쯤에서 공격이 나가는 것처럼 보이게 하고 싶을 때 조절하세요. " +
+                 "0으로 두면 기존과 동일하게 발밑 기준입니다.")]
+        [SerializeField] private float _attackHeightOffset = 1f;
+
+        // 공격 이펙트/데미지 컨텍스트의 기준점. 매번 새로 계산하지 않도록 프로퍼티로 뽑아둡니다.
+        // (실제 "사거리 판정" 자체는 부모 클래스의 DistanceToPlayer()가 하므로 이 보정값은 영향을 주지 않고,
+        //  씬 뷰에 보이는 구의 위치와 데미지 이펙트가 나가는 지점만 올려줍니다.)
+        private Vector3 AttackOrigin => transform.position + Vector3.up * _attackHeightOffset;
+
         // 다음 공격이 가능한 시각. Time.time과 비교해서 쿨다운을 판단합니다.
         private float _nextAttackTime;
 
@@ -55,6 +77,7 @@ namespace KillRitual.Enemies
             {
                 _state = EnemyState.Idle;
                 StopMoving();
+                SetAnimatorMoving(false); // Idle로 돌아가니 걷기 애니메이션을 끕니다.
                 return;
             }
 
@@ -64,11 +87,13 @@ namespace KillRitual.Enemies
             {
                 // 아직 멀리 있으면 플레이어를 향해 계속 걸어갑니다.
                 MoveTowards(_player.position);
+                SetAnimatorMoving(true); // 걷는 중이므로 Walk 애니메이션 재생.
             }
             else
             {
                 // 사거리 안에 들어왔으면 멈추고 공격 상태로 전환합니다.
                 StopMoving();
+                SetAnimatorMoving(false); // 멈췄으니 Walk를 끕니다(Idle로 전환됨).
                 _state = EnemyState.Attack;
             }
         }
@@ -102,6 +127,7 @@ namespace KillRitual.Enemies
             if (Time.time >= _nextAttackTime)
             {
                 PerformMeleeAttack();
+                SetAnimatorAttackTrigger(); // 공격 애니메이션 재생 신호.
                 _nextAttackTime = Time.time + _attackCooldown;
             }
         }
@@ -140,10 +166,36 @@ namespace KillRitual.Enemies
             var context = new KRDamageContext(
                 _attackDamage,
                 KRDamageType.Fire,
-                transform.position,
-                (_player.position - transform.position).normalized);
+                AttackOrigin,
+                (_player.position - AttackOrigin).normalized);
 
             target.TakeDamage(context);
+        }
+
+        // ------------------------------------------------------------------
+        // 애니메이션 헬퍼 (Animator가 연결 안 돼있어도 에러 없이 그냥 무시됩니다)
+        // ------------------------------------------------------------------
+
+        /// <summary>걷는 중인지(Walk ↔ Idle) Animator에게 알려줍니다.</summary>
+        private void SetAnimatorMoving(bool isMoving)
+        {
+            if (_animator == null)
+            {
+                return;
+            }
+
+            _animator.SetBool(AnimParamIsMoving, isMoving);
+        }
+
+        /// <summary>공격한 순간(Attack 애니메이션 1회 재생)을 Animator에게 알려줍니다.</summary>
+        private void SetAnimatorAttackTrigger()
+        {
+            if (_animator == null)
+            {
+                return;
+            }
+
+            _animator.SetTrigger(AnimParamAttack);
         }
 
         /// <summary>
@@ -155,7 +207,7 @@ namespace KillRitual.Enemies
             base.OnDrawGizmosSelected();
 
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, _attackRange);
+            Gizmos.DrawWireSphere(AttackOrigin, _attackRange);
         }
     }
 }
