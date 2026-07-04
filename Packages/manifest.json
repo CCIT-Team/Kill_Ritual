@@ -17,6 +17,7 @@
     "com.unity.postprocessing": "3.4.0",
     "com.unity.probuilder": "5.2.4",
     "com.unity.render-pipelines.core": "14.0.12",
+    "com.unity.render-pipelines.high-definition": "14.0.12",
     "com.unity.render-pipelines.universal": "14.0.12",
     "com.unity.searcher": "4.9.2",
     "com.unity.settings-manager": "2.1.0",
