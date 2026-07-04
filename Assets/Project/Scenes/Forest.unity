@@ -24330,7 +24330,7 @@ SkinnedMeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1009970194}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -65395,7 +65395,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2358150535287640844
 Transform:
   m_ObjectHideFlags: 0
@@ -85284,7 +85284,7 @@ SkinnedMeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1478355598060083922}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -120119,10 +120119,56 @@ MonoBehaviour:
   _characterController: {fileID: 3035604140273674254}
   _playerCamera: {fileID: 5550698195158795362}
   _animator: {fileID: 3162887813081771272}
+  _cameraStepRoot: {fileID: 7287944024032713230}
+  _cameraKickRoot: {fileID: 1601457786}
+  _executionHandRoot: {fileID: 2355106738452494269}
+  _executionHandRenderers:
+  - {fileID: 4382601533384535309}
+  - {fileID: 1009970196}
+  _weaponHandsToHideDuringAbsorption: []
+  _forceExecutionHandRootActive: 1
+  _forceAnimatorAlwaysAnimate: 1
+  _useUnscaledAnimatorDuringExecution: 1
+  _windUpTriggerName: AbsorptionWindUp
+  _strikeTriggerName: AbsorptionStrike
+  _recoverTriggerName: AbsorptionRecover
   _lungeStopDistance: 0.8
-  _lungeMinFrames: 5
-  _lungeMaxFrames: 10
+  _lungeMinDuration: 0.12
+  _lungeMaxDuration: 0.24
   _lungeMaxDistanceRef: 5
+  _lungeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _rotateTowardTargetDuringLunge: 1
+  _lungeTurnSpeed: 18
+  _groundStickVelocity: -2
+  _gravity: -35
+  _smoothCameraOverSteps: 1
+  _cameraStepCompensation: 0.85
+  _cameraStepReturnSpeed: 18
+  _impactByAnimationEvent: 1
+  _impactFallbackTime: 0.12
   _cameraKickAmount: 3
   _cameraKickDuration: 0.15
   _hitStopTimeScale: 0.05
