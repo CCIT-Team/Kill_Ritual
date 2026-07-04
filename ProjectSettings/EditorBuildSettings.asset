@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/Temple.unity
     guid: c058c43ee26b0f4408bce9b5e7844b5c
   - enabled: 1
-    path: Assets/Project/Scenes/Forest.unity
+    path: Assets/Project/Scenes/Level01.unity
     guid: b0ab193be514f444c9b3bb892d00bb17
   - enabled: 1
     path: Assets/Project/Scenes/GameOver.unity
