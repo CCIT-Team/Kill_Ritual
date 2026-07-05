@@ -71,16 +71,7 @@ namespace KillRitual.Player.Combat
                  "속성마다 다른 최대 탄약량을 줄 수 있습니다(예: 금(金) BFG는 적게, 목(木) 정밀소총은 많게).")]
         [SerializeField] private float[] _maxResourcePerElement = new float[] { 100f, 100f, 100f, 100f, 100f };
 
-        [Header("처형 (Execution)")]
-        [Tooltip("그로기 상태인 대상을 처형할 수 있는 최대 거리.")]
-        [SerializeField] private float _executionRange = 3f;
-
-        [Tooltip("FirePoint 정면 기준 처형 판정 콘(원뿔)의 전체 각도(도). 시야 밖(예: 등 뒤)의 그로기 대상은 처형되지 않습니다.")]
-        [Range(1f, 180f)]
-        [SerializeField] private float _executionConeAngleDegrees = 100f;
-
-        [Header("처형 보상(Absorption) 연동")]
-        [Tooltip("04_Execution 계열(KREnemyEntity 등)이 발행하는 KRExecutionSuccessEvent를 구독해 체력/자원을 회복합니다.")]
+        [Tooltip("처형 보상(Absorption) 연동 여부.")]
         [SerializeField] private bool _subscribeToExecutionRewards = true;
 
         private static readonly KeyCode[] _weaponKeys =
@@ -101,7 +92,6 @@ namespace KillRitual.Player.Combat
             KRDamageType.Metal
         };
 
-        private static readonly Collider[] _executionOverlapBuffer = new Collider[16];
         private static readonly RaycastHit[] _aimRaycastBuffer = new RaycastHit[8];
 
         private KRResourceWallet _resourceWallet;
@@ -119,21 +109,9 @@ namespace KillRitual.Player.Combat
         {
             get
             {
-                if (_activeFirePoint != null)
-                {
-                    return _activeFirePoint;
-                }
-
-                if (_firePoint != null)
-                {
-                    return _firePoint;
-                }
-
-                if (_playerCamera != null)
-                {
-                    return _playerCamera.transform;
-                }
-
+                if (_activeFirePoint != null) return _activeFirePoint;
+                if (_firePoint != null) return _firePoint;
+                if (_playerCamera != null) return _playerCamera.transform;
                 return transform;
             }
         }
@@ -142,17 +120,21 @@ namespace KillRitual.Player.Combat
         public LayerMask HitscanLayerMask => _damageableLayerMask;
         public LayerMask ExplosionLayerMask => _explosionLayerMask;
         public IDamageable Owner => this;
-
         public KRDamageType CurrentElement => _currentElement;
-
         public float AttackMultiplier => _playerStats != null ? _playerStats.AttackMultiplier : 1f;
         public float AttackSpeedMultiplier => _playerStats != null ? _playerStats.AttackSpeedMultiplier : 1f;
-
         public bool IsDead => _playerStats != null && _playerStats.IsDead;
         public bool IsGroggy => false;
         public Vector3 Position => transform.position;
-
-        public bool HasExecutableTargetNearby => FindNearestExecutableTarget() != null;
+        /// <summary>처형 가능한 대상이 근처에 있는지 여부. KRAbsorptionSystem에 위임합니다.</summary>
+        public bool HasExecutableTargetNearby
+        {
+            get
+            {
+                var absorption = GetComponent<KRAbsorptionSystem>();
+                return absorption != null && absorption.HasExecutableTarget;
+            }
+        }
 
         public Vector3 GetAimDirection(Vector3 muzzleOrigin, float maxRange)
         {
@@ -166,11 +148,7 @@ namespace KillRitual.Player.Combat
             Vector3 camForward = _playerCamera.transform.forward;
 
             int hitCount = Physics.RaycastNonAlloc(
-                camPos,
-                camForward,
-                _aimRaycastBuffer,
-                maxRange,
-                _damageableLayerMask);
+                camPos, camForward, _aimRaycastBuffer, maxRange, _damageableLayerMask);
 
             int closestIndex = FindClosestAimHitIndex(hitCount);
 
@@ -211,11 +189,7 @@ namespace KillRitual.Player.Combat
 
         public float GetResourceRatio(KRDamageType element)
         {
-            if (_resourceWallet == null)
-            {
-                return 0f;
-            }
-
+            if (_resourceWallet == null) return 0f;
             float max = _resourceWallet.GetMax(element);
             return max > 0f ? _resourceWallet.Get(element) / max : 0f;
         }
@@ -233,89 +207,60 @@ namespace KillRitual.Player.Combat
         private void Awake()
         {
             if (_playerStats == null)
-            {
                 _playerStats = GetComponentInParent<KRPlayerStats>();
-            }
 
             _resourceWallet = new KRResourceWallet(_maxResourcePerElement);
 
             if (_playerCamera == null)
-            {
                 _playerCamera = Camera.main;
-            }
 
             if (_firePoint == null)
-            {
                 _firePoint = _playerCamera != null ? _playerCamera.transform : transform;
-            }
 
             _currentElement = KRDamageType.Fire;
             _activeFirePoint = ResolveFirePoint(mouseButton: 0, _currentElement);
 
             _isWeaponSwitchLocked = false;
             _weaponSwitchUnlockTime = 0f;
-
             _suppressMouse0UntilRelease = false;
             _suppressMouse1UntilRelease = false;
 
             ApplyWeaponVisualRootState(_currentElement);
 
             KRWeaponVisual initialVisual = GetWeaponVisual(_currentElement);
-
             if (_playEquipOnSwitch)
-            {
                 initialVisual?.PlayEquipImmediately();
-            }
         }
 
         private void OnEnable()
         {
             if (_subscribeToExecutionRewards)
-            {
                 KRManagers.Event.Subscribe<KRExecutionSuccessEvent>(OnExecutionSuccess);
-            }
         }
 
         private void OnDisable()
         {
             if (_subscribeToExecutionRewards)
-            {
                 KRManagers.Event.Unsubscribe<KRExecutionSuccessEvent>(OnExecutionSuccess);
-            }
         }
 
         private void Update()
         {
             UpdateWeaponSwitchLockFallback();
-
             HandleFireButton(mouseButton: 0, weaponArray: _typeOneWeapons);
             HandleFireButton(mouseButton: 1, weaponArray: _typeTwoWeapons);
-
             HandleWeaponSelectionInput();
-
-            HandleExecutionInput();
         }
 
         private void HandleWeaponSelectionInput()
         {
             for (int i = 0; i < _weaponKeys.Length; i++)
             {
-                if (!Input.GetKeyDown(_weaponKeys[i]))
-                {
-                    continue;
-                }
+                if (!Input.GetKeyDown(_weaponKeys[i])) continue;
 
                 var newElement = (KRDamageType)i;
-
-                if (newElement == _currentElement)
-                {
-                    continue;
-                }
-
-                if (IsWeaponSwitchLocked())
-                {
-                    continue;
-                }
+                if (newElement == _currentElement) continue;
+                if (IsWeaponSwitchLocked()) continue;
 
                 SwitchElement(newElement);
             }
@@ -325,141 +270,79 @@ namespace KillRitual.Player.Combat
         {
             KRDamageType previousElement = _currentElement;
 
-            // 1. 이전 무기의 게임플레이 상태 취소.
-            // HoldAuto는 발사 중지, ChargeRelease는 발사하지 않고 차지 취소.
             GetWeapon(_typeOneWeapons, previousElement)?.NotifyCancelled();
             GetWeapon(_typeTwoWeapons, previousElement)?.NotifyCancelled();
 
-            // 2. 이전 손 Animator는 Rebind하지 말고 Idle 상태로만 정리.
             KRWeaponVisual previousVisual = GetWeaponVisual(previousElement);
             previousVisual?.PlayIdleImmediately();
 
-            // 3. 전환 당시 누르고 있던 마우스 버튼은 새 무기에 넘기지 않도록 잠금.
             if (_suppressHeldFireInputAfterSwitch)
             {
                 _suppressMouse0UntilRelease = Input.GetMouseButton(0);
                 _suppressMouse1UntilRelease = Input.GetMouseButton(1);
             }
 
-            // 4. 현재 속성 변경.
             _currentElement = newElement;
-
-            // 5. 현재 속성의 기본 FirePoint를 유형I 기준으로 미리 잡아둔다.
-            // 실제 발사 시에는 HandleFireButton에서 좌/우클릭에 맞게 다시 선택된다.
             _activeFirePoint = ResolveFirePoint(mouseButton: 0, _currentElement);
 
-            // 6. 손 루트 교체.
             ApplyWeaponVisualRootState(_currentElement);
 
-            // 7. 새 손은 Equip 처음부터 시작.
             if (_playEquipOnSwitch)
-            {
-                KRWeaponVisual newVisual = GetWeaponVisual(_currentElement);
-                newVisual?.PlayEquipImmediately();
-            }
+                GetWeaponVisual(_currentElement)?.PlayEquipImmediately();
             else
-            {
-                KRWeaponVisual newVisual = GetWeaponVisual(_currentElement);
-                newVisual?.ClearAllTriggers();
-            }
+                GetWeaponVisual(_currentElement)?.ClearAllTriggers();
 
-            // 8. 숫자키 스팸 방지용 아주 짧은 잠금.
             BeginWeaponSwitchLock();
         }
 
         private void BeginWeaponSwitchLock()
         {
-            if (!_lockWeaponSwitchDuringEquip)
-            {
-                return;
-            }
-
+            if (!_lockWeaponSwitchDuringEquip) return;
             _isWeaponSwitchLocked = true;
             _weaponSwitchUnlockTime = Time.time + _weaponSwitchLockFallbackSeconds;
         }
 
         private bool IsWeaponSwitchLocked()
         {
-            if (!_lockWeaponSwitchDuringEquip)
-            {
-                return false;
-            }
-
-            if (!_isWeaponSwitchLocked)
-            {
-                return false;
-            }
-
+            if (!_lockWeaponSwitchDuringEquip) return false;
+            if (!_isWeaponSwitchLocked) return false;
             if (Time.time >= _weaponSwitchUnlockTime)
             {
                 _isWeaponSwitchLocked = false;
                 return false;
             }
-
             return true;
         }
 
         private void UpdateWeaponSwitchLockFallback()
         {
-            if (!_isWeaponSwitchLocked)
-            {
-                return;
-            }
-
-            if (Time.time >= _weaponSwitchUnlockTime)
-            {
+            if (_isWeaponSwitchLocked && Time.time >= _weaponSwitchUnlockTime)
                 _isWeaponSwitchLocked = false;
-            }
         }
 
-        public void UnlockWeaponSwitch()
-        {
-            _isWeaponSwitchLocked = false;
-        }
+        public void UnlockWeaponSwitch() => _isWeaponSwitchLocked = false;
 
         private void ApplyWeaponVisualRootState(KRDamageType activeElement)
         {
+            if (_weaponVisualRoots == null) return;
             int activeIndex = (int)activeElement;
-
-            if (_weaponVisualRoots == null)
-            {
-                return;
-            }
 
             for (int i = 0; i < _weaponVisualRoots.Length; i++)
             {
                 GameObject root = _weaponVisualRoots[i];
-
-                if (root == null)
-                {
-                    continue;
-                }
-
+                if (root == null) continue;
                 bool shouldBeActive = i == activeIndex;
-
                 if (root.activeSelf != shouldBeActive)
-                {
                     root.SetActive(shouldBeActive);
-                }
             }
         }
 
         private KRWeaponVisual GetWeaponVisual(KRDamageType element)
         {
             int idx = (int)element;
-
-            if (_weaponVisualRoots == null || idx < 0 || idx >= _weaponVisualRoots.Length)
-            {
-                return null;
-            }
-
+            if (_weaponVisualRoots == null || idx < 0 || idx >= _weaponVisualRoots.Length) return null;
             GameObject root = _weaponVisualRoots[idx];
-
-            if (root == null)
-            {
-                return null;
-            }
-
+            if (root == null) return null;
             return root.GetComponentInChildren<KRWeaponVisual>(true);
         }
 
@@ -482,7 +365,6 @@ namespace KillRitual.Player.Combat
             }
 
             int otherButton = mouseButton == 0 ? 1 : 0;
-
             if (Input.GetMouseButton(otherButton))
             {
                 weapon.NotifyReleased();
@@ -490,82 +372,42 @@ namespace KillRitual.Player.Combat
             }
 
             if (Input.GetMouseButton(mouseButton))
-            {
                 weapon.NotifyHeld();
-            }
             else
-            {
                 weapon.NotifyReleased();
-            }
         }
 
         private Transform ResolveFirePoint(int mouseButton, KRDamageType element)
         {
-            Transform[] firePointArray = mouseButton == 0
-                ? _typeOneFirePoints
-                : _typeTwoFirePoints;
-
+            Transform[] firePointArray = mouseButton == 0 ? _typeOneFirePoints : _typeTwoFirePoints;
             int idx = (int)element;
 
             if (firePointArray != null && idx >= 0 && idx < firePointArray.Length)
             {
                 Transform specificFirePoint = firePointArray[idx];
-
-                if (specificFirePoint != null)
-                {
-                    return specificFirePoint;
-                }
+                if (specificFirePoint != null) return specificFirePoint;
             }
 
-            if (_firePoint != null)
-            {
-                return _firePoint;
-            }
-
-            if (_playerCamera != null)
-            {
-                return _playerCamera.transform;
-            }
-
+            if (_firePoint != null) return _firePoint;
+            if (_playerCamera != null) return _playerCamera.transform;
             return transform;
         }
 
         private bool IsFireInputSuppressed(int mouseButton)
         {
-            if (!_suppressHeldFireInputAfterSwitch)
-            {
-                return false;
-            }
+            if (!_suppressHeldFireInputAfterSwitch) return false;
 
             if (mouseButton == 0)
             {
-                if (!_suppressMouse0UntilRelease)
-                {
-                    return false;
-                }
-
-                if (!Input.GetMouseButton(0))
-                {
-                    _suppressMouse0UntilRelease = false;
-                    return false;
-                }
-
+                if (!_suppressMouse0UntilRelease) return false;
+                if (!Input.GetMouseButton(0)) { _suppressMouse0UntilRelease = false; return false; }
                 return true;
             }
 
             if (mouseButton == 1)
             {
-                if (!_suppressMouse1UntilRelease)
-                {
-                    return false;
-                }
-
-                if (!Input.GetMouseButton(1))
-                {
-                    _suppressMouse1UntilRelease = false;
-                    return false;
-                }
-
+                if (!_suppressMouse1UntilRelease) return false;
+                if (!Input.GetMouseButton(1)) { _suppressMouse1UntilRelease = false; return false; }
                 return true;
             }
 
@@ -574,15 +416,8 @@ namespace KillRitual.Player.Combat
 
         private void ClearSuppressionIfReleased(int mouseButton)
         {
-            if (mouseButton == 0 && !Input.GetMouseButton(0))
-            {
-                _suppressMouse0UntilRelease = false;
-            }
-
-            if (mouseButton == 1 && !Input.GetMouseButton(1))
-            {
-                _suppressMouse1UntilRelease = false;
-            }
+            if (mouseButton == 0 && !Input.GetMouseButton(0)) _suppressMouse0UntilRelease = false;
+            if (mouseButton == 1 && !Input.GetMouseButton(1)) _suppressMouse1UntilRelease = false;
         }
 
         private static KRWeaponBase GetWeapon(KRWeaponBase[] array, KRDamageType element)
@@ -591,106 +426,21 @@ namespace KillRitual.Player.Combat
             return array != null && idx >= 0 && idx < array.Length ? array[idx] : null;
         }
 
-        private void HandleExecutionInput()
-        {
-            if (!Input.GetKeyDown(KeyCode.E))
-            {
-                return;
-            }
-
-            IDamageable target = FindNearestExecutableTarget();
-
-            if (target == null)
-            {
-                return;
-            }
-
-            target.Execute();
-        }
-
-        private IDamageable FindNearestExecutableTarget()
-        {
-            Transform executionOrigin = _firePoint != null ? _firePoint : FirePoint;
-
-            if (executionOrigin == null)
-            {
-                return null;
-            }
-
-            int count = Physics.OverlapSphereNonAlloc(
-                executionOrigin.position,
-                _executionRange,
-                _executionOverlapBuffer,
-                _damageableLayerMask);
-
-            IDamageable best = null;
-            float bestDistance = float.MaxValue;
-            float halfAngleCos = Mathf.Cos(_executionConeAngleDegrees * 0.5f * Mathf.Deg2Rad);
-
-            for (int i = 0; i < count; i++)
-            {
-                IDamageable candidate = _executionOverlapBuffer[i].GetComponentInParent<IDamageable>();
-
-                if (candidate == null || ReferenceEquals(candidate, this) || candidate.IsDead || !candidate.IsGroggy)
-                {
-                    continue;
-                }
-
-                Vector3 toTarget = candidate.Position - executionOrigin.position;
-                float distance = toTarget.magnitude;
-
-                if (distance <= 0.0001f)
-                {
-                    continue;
-                }
-
-                Vector3 direction = toTarget / distance;
-                float dot = Vector3.Dot(executionOrigin.forward, direction);
-
-                if (dot < halfAngleCos)
-                {
-                    continue;
-                }
-
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    best = candidate;
-                }
-            }
-
-            return best;
-        }
-
         private void OnExecutionSuccess(KRExecutionSuccessEvent evt)
         {
             _playerStats?.HealByPercent(evt.RecoverHealthAmount);
-
-            if (_resourceWallet == null)
-            {
-                return;
-            }
-
+            if (_resourceWallet == null) return;
             for (int i = 0; i < _allElements.Length; i++)
-            {
                 _resourceWallet.Refill(_allElements[i], evt.RecoverAmmoAmount);
-            }
         }
 
         public void TakeDamage(KRDamageContext context)
         {
-            if (IsDead)
-            {
-                return;
-            }
-
+            if (IsDead) return;
             _playerStats?.ApplyDamage(context.DamageAmount);
         }
 
-        public void Execute()
-        {
-            _playerStats?.Kill();
-        }
+        public void Execute() => _playerStats?.Kill();
 
         private sealed class KRResourceWallet
         {
@@ -702,33 +452,19 @@ namespace KillRitual.Player.Combat
                 for (int i = 0; i < kElementCount; i++)
                 {
                     float max = (maxPerElement != null && i < maxPerElement.Length)
-                        ? maxPerElement[i]
-                        : 100f;
-
+                        ? maxPerElement[i] : 100f;
                     _maxPerElement[i] = max;
                     _pool[i] = max;
                 }
             }
 
-            public float Get(KRDamageType element)
-            {
-                return _pool[(int)element];
-            }
-
-            public float GetMax(KRDamageType element)
-            {
-                return _maxPerElement[(int)element];
-            }
+            public float Get(KRDamageType element) => _pool[(int)element];
+            public float GetMax(KRDamageType element) => _maxPerElement[(int)element];
 
             public bool TryConsume(KRDamageType element, float amount)
             {
                 int idx = (int)element;
-
-                if (_pool[idx] < amount)
-                {
-                    return false;
-                }
-
+                if (_pool[idx] < amount) return false;
                 _pool[idx] -= amount;
                 return true;
             }
