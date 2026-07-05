@@ -161,7 +161,7 @@ namespace KillRitual.Player.Combat
 
             // ② 돌입 처치 — 히트스톱 + 카메라 킥 + 애니메이션
             EnemyGrade grade = GetGrade(target);
-            target.Execute();
+            target.Execute(KillRitual.Core.Interfaces.ExecutionSource.Absorption);
             _animator?.SetTrigger(kStrikeHash);
 
             StartCoroutine(HitStop());

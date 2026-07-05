@@ -134,12 +134,12 @@ namespace KillRitual.Player
             }
         }
 
-        public void Execute()
+        public void Execute(ExecutionSource source = ExecutionSource.Default)
         {
             _health = 0f;
             UpdateHealthBar(false);
             TriggerGameOver();
-        }
+        }   
 
         public void Heal(float amount)
         {
