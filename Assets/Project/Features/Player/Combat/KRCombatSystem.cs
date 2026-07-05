@@ -440,7 +440,9 @@ namespace KillRitual.Player.Combat
             _playerStats?.ApplyDamage(context.DamageAmount);
         }
 
-        public void Execute() => _playerStats?.Kill();
+        public void Execute(KillRitual.Core.Interfaces.ExecutionSource source
+            = KillRitual.Core.Interfaces.ExecutionSource.Default)
+            => _playerStats?.Kill();
 
         private sealed class KRResourceWallet
         {

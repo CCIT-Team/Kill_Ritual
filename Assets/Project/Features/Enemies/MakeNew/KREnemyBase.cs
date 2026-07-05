@@ -88,17 +88,33 @@ namespace KillRitual.Enemies
                 EnterGroggy();
         }
 
-        public void Execute()
+        public void Execute(KillRitual.Core.Interfaces.ExecutionSource source
+            = KillRitual.Core.Interfaces.ExecutionSource.Default)
         {
             if (IsDead) return;
 
-            var combatSystem = GameObject.FindGameObjectWithTag("Player")
-                ?.GetComponentInParent<KillRitual.Player.Combat.KRCombatSystem>();
-            GetComponent<KillRitual.Items.KRDropSpawner>()
-                ?.SpawnDrops(transform.position, combatSystem?.CurrentElement
-                ?? KRDamageType.Fire);
+            switch (source)
+            {
+                case KillRitual.Core.Interfaces.ExecutionSource.Absorption:
+                    // 흡혼 — 체력 회복은 KRAbsorptionSystem이 이미 처리합니다.
+                    // 탄약 드롭 없음.
+                    break;
 
-            Debug.Log($"[KREnemyBase] {name} 처형됨");
+                case KillRitual.Core.Interfaces.ExecutionSource.Jakdu:
+                    // 작두 — 탄약 오브 드롭.
+                    var combatSystem = GameObject.FindGameObjectWithTag("Player")
+                        ?.GetComponentInParent<KillRitual.Player.Combat.KRCombatSystem>();
+                    GetComponent<KillRitual.Items.KRDropSpawner>()
+                        ?.SpawnDrops(transform.position, combatSystem?.CurrentElement
+                        ?? KRDamageType.Fire);
+                    break;
+
+                default:
+                    // 기타 — 기존 방식 그대로 (테스트 등)
+                    break;
+            }
+
+            Debug.Log($"[KREnemyBase] {name} 처형됨 ({source})");
             EnterDead();
         }
 
@@ -115,8 +131,10 @@ namespace KillRitual.Enemies
             ApplyColor(_baseColor);
 
             _ownColliders = GetComponentsInChildren<Collider>(includeInactive: false);
+
+            // KRGroggyOutline이 없으면 자동으로 추가합니다.
+            // 적마다 수동으로 컴포넌트를 붙일 필요가 없습니다.
             _groggyOutline = GetComponent<KRGroggyOutline>();
-            // 없으면 자동으로 추가
             if (_groggyOutline == null)
                 _groggyOutline = gameObject.AddComponent<KRGroggyOutline>();
         }
