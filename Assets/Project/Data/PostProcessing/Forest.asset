@@ -96,7 +96,7 @@ MonoBehaviour:
     value: 0.09
   contrast:
     overrideState: 1
-    value: 13.3
+    value: 24.7
   mixerRedOutRedIn:
     overrideState: 1
     value: 100
@@ -1356,6 +1356,7 @@ MonoBehaviour:
   - {fileID: 6369141532154172976}
   - {fileID: 6253916149569032173}
   - {fileID: 4735390766110604563}
+  - {fileID: 3967193140280290460}
 --- !u!114 &729811808625395331
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -1403,6 +1404,32 @@ MonoBehaviour:
   dirtIntensity:
     overrideState: 0
     value: 0
+--- !u!114 &3967193140280290460
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6050e2d5de785ce4d931e4dbdbf2d755, type: 3}
+  m_Name: ChromaticAberration
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  spectralLut:
+    overrideState: 0
+    value: {fileID: 0}
+    defaultState: 1
+  intensity:
+    overrideState: 1
+    value: 0
+  fastMode:
+    overrideState: 0
+    value: 0
 --- !u!114 &4735390766110604563
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -1424,7 +1451,7 @@ MonoBehaviour:
     value: 1
   intensity:
     overrideState: 1
-    value: 0.53
+    value: 0.87
   color:
     overrideState: 1
     value: {r: 0.21509439, g: 0.21509439, b: 0.21509439, a: 1}
@@ -1576,19 +1603,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 556797029e73b2347956b6579e77e05b, type: 3}
   m_Name: DepthOfField
   m_EditorClassIdentifier: 
-  active: 0
+  active: 1
   enabled:
     overrideState: 1
-    value: 1
+    value: 0
   focusDistance:
     overrideState: 1
     value: 3.85
   aperture:
     overrideState: 1
-    value: 12.83
+    value: 13.7
   focalLength:
     overrideState: 1
-    value: 79
+    value: 76.1
   kernelSize:
     overrideState: 1
     value: 1
@@ -1647,7 +1674,7 @@ MonoBehaviour:
     value: 1
   intensity:
     overrideState: 1
-    value: -8
+    value: -9.4
   intensityX:
     overrideState: 0
     value: 1
