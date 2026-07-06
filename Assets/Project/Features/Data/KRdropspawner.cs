@@ -85,18 +85,14 @@ namespace KillRitual.Items
                 _playerFeedback?.Heal(_healthRestoreOnExecute);
             }
 
-            // 탄약 오브 — 5속성 전부 드롭합니다.
+            // 탄약 오브 — currentElement 하나만 드롭합니다. (이전에는 5속성 전부 드롭하는 버그가 있었습니다.)
             Vector3 spawnBase = GetSpawnPosition();
 
-            if (_ammoOrbPrefabs != null)
+            int idx = (int)currentElement;
+            if (_ammoOrbPrefabs != null && idx >= 0 && idx < _ammoOrbPrefabs.Length
+                && _ammoOrbPrefabs[idx] != null && Random.value <= _ammoOrbChance)
             {
-                for (int i = 0; i < _ammoOrbPrefabs.Length; i++)
-                {
-                    if (_ammoOrbPrefabs[i] != null && Random.value <= _ammoOrbChance)
-                    {
-                        SpawnOrb(_ammoOrbPrefabs[i], spawnBase);
-                    }
-                }
+                SpawnOrb(_ammoOrbPrefabs[idx], spawnBase);
             }
         }
 

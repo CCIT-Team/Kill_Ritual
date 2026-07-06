@@ -4,11 +4,11 @@ using UnityEngine;
 namespace KillRitual.Weapons.Visual
 {
     /// <summary>
-    /// ¹«·É ÆĞ¸µ ½Ã°¢ ¿¬Ãâ Àü¿ë ÄÄÆ÷³ÍÆ®.
+    /// ï¿½ï¿½ï¿½ï¿½ ï¿½Ğ¸ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®.
     /// 
-    /// Idle ¸ğ¼Ç ¾øÀÌ Parry ¸ğ¼Ç¸¸ 1È¸ Àç»ıÇÏ´Â ±¸Á¶.
-    /// Æò»ó½Ã¿¡´Â ¿ÀºêÁ§Æ®¸¦ ²ôÁö ¾Ê°í Renderer¸¸ ²ô¸ç,
-    /// Animator´Â ºñÈ°¼ºÈ­ÇØ¼­ ½ÃÀÛ ½ÃÁ¡ÀÇ ÀÚµ¿ »ùÇÃ¸µÀ» ¸·´Â´Ù.
+    /// Idle ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Parry ï¿½ï¿½Ç¸ï¿½ 1È¸ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½.
+    /// ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê°ï¿½ Rendererï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½,
+    /// Animatorï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½È­ï¿½Ø¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ ï¿½ï¿½ï¿½Ã¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â´ï¿½.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRMuryeongVisual : MonoBehaviour
@@ -35,6 +35,15 @@ namespace KillRitual.Weapons.Visual
 
         private int _parryStateHash;
         private Coroutine _hideRoutine;
+
+        /// <summary>
+        /// [2026-07-06 ì¶”ê°€] ë¬´ë ¹(ë°©ìš¸)ì´ ì‹¤ì œë¡œ ë‹¤ì‹œ ìˆ¨ê²¨ì§€ëŠ” ì‹œì (HideNow() í˜¸ì¶œ ì‹œì )ì— ë°œí–‰ë©ë‹ˆë‹¤.
+        /// ìë™ íƒ€ì´ë¨¸(HideAfterDelay)ì™€ ì• ë‹ˆë©”ì´ì…˜ ì´ë²¤íŠ¸(AnimEvent_HideMuryeong) ë‘ ê²½ë¡œ ëª¨ë‘
+        /// HideNow()ë¥¼ ê±°ì¹˜ë¯€ë¡œ, ì´ ì´ë²¤íŠ¸ í•˜ë‚˜ë¡œ ë‘ ê²½ë¡œë¥¼ ì „ë¶€ ì»¤ë²„í•©ë‹ˆë‹¤.
+        /// KRMuryeongControllerê°€ ì´ ì´ë²¤íŠ¸ë¥¼ êµ¬ë…í•´ì„œ, ë¬´ë ¹ ì‚¬ìš© ì¤‘ ìˆ¨ê²¨ë’€ë˜ ì›ë˜ ë¬´ê¸° ì†ì„
+        /// ì •í™•íˆ ë¬´ë ¹ì´ ì‚¬ë¼ì§€ëŠ” ìˆœê°„ì— ë‹¤ì‹œ ë³´ì—¬ì¤ë‹ˆë‹¤.
+        /// </summary>
+        public event System.Action OnHidden;
 
         private void Awake()
         {
@@ -85,7 +94,7 @@ namespace KillRitual.Weapons.Visual
         {
             if (_animator == null)
             {
-                Debug.LogWarning("[KRMuryeongVisual] Animator°¡ ¾ø½À´Ï´Ù.", this);
+                Debug.LogWarning("[KRMuryeongVisual] Animatorï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.", this);
                 return;
             }
 
@@ -101,8 +110,8 @@ namespace KillRitual.Weapons.Visual
             if (_disableAnimatorWhileHidden)
                 _animator.enabled = true;
 
-            // Trigger¸¦ ¾²Áö ¾Ê°í Parry »óÅÂ¸¦ 0ÇÁ·¹ÀÓºÎÅÍ Á÷Á¢ Àç»ıÇÑ´Ù.
-            // ÀÌ ¹æ½ÄÀÌ Idle ¾ø´Â 1È¸¼º º¸Á¶¹«±â ¿¬Ãâ¿¡´Â ´õ ¾ÈÁ¤ÀûÀÌ´Ù.
+            // Triggerï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê°ï¿½ Parry ï¿½ï¿½ï¿½Â¸ï¿½ 0ï¿½ï¿½ï¿½ï¿½ï¿½Óºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
+            // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Idle ï¿½ï¿½ï¿½ï¿½ 1È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½â¿¡ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì´ï¿½.
             _animator.Play(_parryStateHash, 0, 0f);
             _animator.Update(0f);
 
@@ -125,6 +134,9 @@ namespace KillRitual.Weapons.Visual
 
             if (_disableAnimatorWhileHidden && _animator != null)
                 _animator.enabled = false;
+
+            // [2026-07-06 ì¶”ê°€] ì‹¤ì œë¡œ ìˆ¨ê²¨ì§„ ì‹œì ì— êµ¬ë…ì(KRMuryeongController ë“±)ì—ê²Œ ì•Œë¦½ë‹ˆë‹¤.
+            OnHidden?.Invoke();
         }
 
         public void SetVisible(bool visible)
@@ -157,7 +169,7 @@ namespace KillRitual.Weapons.Visual
         }
 
         /// <summary>
-        /// ÆĞ¸µ ¾Ö´Ï¸ŞÀÌ¼Ç Áß ÀÌÆåÆ®°¡ ³ª¿Í¾ß ÇÏ´Â ÇÁ·¹ÀÓ¿¡ Animation Event·Î È£Ãâ.
+        /// ï¿½Ğ¸ï¿½ ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½Í¾ï¿½ ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ Animation Eventï¿½ï¿½ È£ï¿½ï¿½.
         /// </summary>
         public void AnimEvent_PlayShockwave()
         {
@@ -178,8 +190,8 @@ namespace KillRitual.Weapons.Visual
         }
 
         /// <summary>
-        /// ÆĞ¸µ ¾Ö´Ï¸ŞÀÌ¼Ç ¸¶Áö¸· ÇÁ·¹ÀÓ¿¡ Animation Event·Î È£Ãâ °¡´É.
-        /// Auto Hide Delay¸¦ ¾²´Â °æ¿ì¿¡´Â ÇÊ¼ö ¾Æ´Ô.
+        /// ï¿½Ğ¸ï¿½ ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ Animation Eventï¿½ï¿½ È£ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
+        /// Auto Hide Delayï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ì¿¡ï¿½ï¿½ ï¿½Ê¼ï¿½ ï¿½Æ´ï¿½.
         /// </summary>
         public void AnimEvent_HideMuryeong()
         {

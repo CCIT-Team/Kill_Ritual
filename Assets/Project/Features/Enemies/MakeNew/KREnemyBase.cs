@@ -241,8 +241,34 @@ namespace KillRitual.Enemies
             for (int i = 0; i < colliders.Length; i++)
                 colliders[i].enabled = false;
 
+            // [2026-07-06 추가] 작두 자원 보충 — 처치 수단과 무관하게(총격/작두/기타) 적이 죽을 때마다
+            // 작두 충전량을 1 회복시킵니다. KRExecutionSuccessEvent를 쓰지 않는 이유는, 그 이벤트가
+            // 현재 프로젝트 어디에서도 Publish(발행)되지 않는 미사용 이벤트이기 때문입니다
+            // (KRExecutionSuccessEvent.cs 주석엔 "KREnemyEntity가 발행"이라 적혀 있으나 그 클래스는
+            // 더 이상 존재하지 않습니다). 그래서 여기서 KRJakduSystem을 직접 찾아 호출합니다.
+            RefillJakduResourceOnKill();
+
             OnDeath();
             Destroy(gameObject, _despawnDelay);
+        }
+
+        /// <summary>
+        /// 적 처치 시 플레이어의 작두(Jakdu) 자원을 1 회복시킵니다.
+        /// _player는 Start()에서 "Player" 태그로 이미 캐싱해 둔 참조를 그대로 재사용합니다
+        /// (FindGameObjectWithTag를 매 처치마다 반복 호출하지 않기 위함).
+        /// </summary>
+        private void RefillJakduResourceOnKill()
+        {
+            if (_player == null) return;
+
+            // [2026-07-06 추가] 작두가 방금 자기 자신의 판정으로 처치한 대상이면 재충전하지 않습니다.
+            // 안 그러면 "작두 자원 소모 → 작두로 처치 → 같은 프레임에 자원 재충전"이 반복되어
+            // 작두가 사실상 자원을 소모하지 않는 것처럼 느껴지는 자기환급 버그가 생깁니다.
+            // (다른 무기/시스템으로 처치했을 때는 그대로 작두 자원이 재충전됩니다.)
+            if (KillRitual.Player.Combat.KRJakduSystem.IsSelfExecuting) return;
+
+            var jakduSystem = _player.GetComponentInChildren<KillRitual.Player.Combat.KRJakduSystem>(true);
+            jakduSystem?.AddResource(1);
         }
 
         protected virtual void OnDeath() { }

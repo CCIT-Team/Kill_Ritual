@@ -36,10 +36,16 @@ namespace KillRitual.Player.Combat
         [Tooltip("흡혼 애니메이션을 재생할 Animator. 비워두면 부모 계층에서 자동 탐색합니다.")]
         [SerializeField] private Animator _animator;
 
+        [Tooltip("플레이어의 KRCombatSystem. 흡혼(맨손 처형) 중 장착 무기 모델을 숨기는 데 사용합니다. " +
+                 "비워두면 같은 오브젝트에서 자동 탐색합니다.")]
+        [SerializeField] private KRCombatSystem _combatSystem;
+
         [Header("돌진 설정")]
-        [Tooltip("적 앞에서 멈추는 거리. 너무 작으면 적을 관통합니다.")]
+        [Tooltip("적 앞에서 멈추는 거리. 너무 작으면 주먹/손 모델이 적 몸 안으로 파고들어 " +
+                 "가려 보이는(관통) 문제가 생깁니다. [2026-07-06 변경] 0.8 → 1.3으로 늘려서 " +
+                 "펀치가 적보다 앞에서 자연스럽게 보이도록 여유를 더 줬습니다.")]
         [Min(0.1f)]
-        [SerializeField] private float _lungeStopDistance = 0.8f;
+        [SerializeField] private float _lungeStopDistance = 1.3f;
 
         [Tooltip("돌진 최소 프레임 수. 플레이어와 적이 가장 가까울 때 적용됩니다.")]
         [Min(1)]
@@ -110,6 +116,16 @@ namespace KillRitual.Player.Combat
         /// <summary>현재 흡혼 시퀀스가 실행 중인지 여부.</summary>
         public bool IsExecuting { get; private set; }
 
+        /// <summary>
+        /// [2026-07-06 추가] AbsorptionSequence 진행 중에만 유효한, 이번 흡혼의 처치 대상입니다.
+        /// NotifyPunchImpact()가 애니메이션 이벤트(코루틴 바깥)에서 호출되기 때문에, 코루틴의
+        /// 지역 변수 대신 필드에 저장해둬야 접근할 수 있습니다.
+        /// </summary>
+        private IDamageable _pendingImpactTarget;
+
+        /// <summary>이번 흡혼 1회당 NotifyPunchImpact()가 중복 실행되지 않도록 막는 플래그입니다.</summary>
+        private bool _impactApplied;
+
         private void Awake()
         {
             if (_damageFeedback == null)
@@ -126,6 +142,9 @@ namespace KillRitual.Player.Combat
 
             if (_animator == null)
                 _animator = GetComponentInParent<Animator>();
+
+            if (_combatSystem == null)
+                _combatSystem = GetComponent<KRCombatSystem>();
         }
 
         private void Update()
@@ -145,6 +164,10 @@ namespace KillRitual.Player.Combat
         {
             IsExecuting = true;
 
+            // [2026-07-06 추가] 흡혼(맨손 처형) 중에는 장착 중이던 원소 무기 모델이 화면에
+            // 겹쳐 보이면 안 되므로, 시퀀스 시작 시 숨기고 끝나면 다시 보여줍니다.
+            _combatSystem?.SetCurrentWeaponVisualActive(false);
+
             // ① 도움닫기 — 무적 시작 + 애니메이션
             SetInvincible(true);
             _animator?.SetTrigger(kWindUpHash);
@@ -155,28 +178,55 @@ namespace KillRitual.Player.Combat
             if (target.IsDead)
             {
                 SetInvincible(false);
+                _combatSystem?.SetCurrentWeaponVisualActive(true);
                 IsExecuting = false;
                 yield break;
             }
 
-            // ② 돌입 처치 — 히트스톱 + 카메라 킥 + 애니메이션
-            EnemyGrade grade = GetGrade(target);
-            target.Execute(KillRitual.Core.Interfaces.ExecutionSource.Absorption);
+            // ② 돌입 처치 — 여기서는 애니메이션만 트리거합니다.
+            // [2026-07-06 변경] 실제 처치(target.Execute)/히트스톱/카메라 킥은 더 이상 도움닫기가
+            // 끝나자마자 즉시 실행하지 않습니다. Punch.anim의 타격 프레임에 있는 애니메이션 이벤트가
+            // NotifyPunchImpact()를 호출할 때 실행되며(KRPunchImpactRelay가 PunchHand → 여기로 중계),
+            // 처치 타이밍이 코루틴 타이머 근사치가 아니라 실제 주먹이 닿는 애니메이션 프레임에 맞습니다.
+            _pendingImpactTarget = target;
+            _impactApplied = false;
             _animator?.SetTrigger(kStrikeHash);
 
-            StartCoroutine(HitStop());
-            StartCoroutine(CameraKick());
-
             yield return new WaitForSeconds(_strikeDuration);
+
+            // 안전장치: 애니메이션 이벤트가 어떤 이유로든(이벤트 씹힘, Animator 미할당 등) 오지 않았을
+            // 경우를 대비해, strike 구간이 끝날 때까지 호출이 안 됐으면 여기서 강제로 한 번 실행합니다.
+            if (!_impactApplied)
+                NotifyPunchImpact();
 
             // ③ 회복 — 무적 해제 + 애니메이션
             SetInvincible(false);
             _animator?.SetTrigger(kRecoverHash);
-            ApplyHeal(CalculateHeal(grade));
+            ApplyHeal(CalculateHeal(GetGrade(target)));
 
             yield return new WaitForSeconds(_recoveryDuration);
 
+            _combatSystem?.SetCurrentWeaponVisualActive(true);
+            _pendingImpactTarget = null;
             IsExecuting = false;
+        }
+
+        /// <summary>
+        /// Punch.anim의 타격 프레임에서 KRPunchImpactRelay(PunchHand에 부착)를 통해 호출됩니다.
+        /// 실제 처치 판정과 히트스톱/카메라 킥을 여기서 실행합니다. AbsorptionSequence()의 안전장치를
+        /// 통해서도 호출될 수 있으므로, _impactApplied로 중복 실행을 막습니다.
+        /// </summary>
+        public void NotifyPunchImpact()
+        {
+            if (_impactApplied) return;
+            if (_pendingImpactTarget == null || _pendingImpactTarget.IsDead) return;
+
+            _impactApplied = true;
+
+            _pendingImpactTarget.Execute(KillRitual.Core.Interfaces.ExecutionSource.Absorption);
+
+            StartCoroutine(HitStop());
+            StartCoroutine(CameraKick());
         }
 
         /// <summary>

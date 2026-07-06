@@ -460,6 +460,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ec54ef92712b6b4798e135593fe39f6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8214783802188779336}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1ec54ef92712b6b4798e135593fe39f6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7805014316604724335}
   m_SourcePrefab: {fileID: 100100000, guid: 1ec54ef92712b6b4798e135593fe39f6, type: 3}
 --- !u!95 &2254516857712762709 stripped
 Animator:
@@ -545,6 +548,30 @@ CapsuleCollider:
   m_Height: 2.4
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &7805014316604724335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4819514997704286101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5826c3ac5a83a442877027098823f13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _healthRestoreOnExecute: 25
+  _ammoOrbPrefabs:
+  - {fileID: 4674817366920187620, guid: e0ad2817a280c934ebb65638f86ee0a9, type: 3}
+  - {fileID: 2100269200738529668, guid: 7706137ffd313494c9ec904a1fb8fc89, type: 3}
+  - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
+  - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
+  - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
+  _ammoOrbChance: 1
+  _spreadRadius: 0.5
+  _spawnHeightOffset: 0.8
+  _bounceUpForce: 4
+  _bounceOutwardForce: 3
 --- !u!4 &5307927531379524911 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1ec54ef92712b6b4798e135593fe39f6, type: 3}

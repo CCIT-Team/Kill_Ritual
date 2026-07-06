@@ -322,6 +322,24 @@ namespace KillRitual.Player.Combat
 
         public void UnlockWeaponSwitch() => _isWeaponSwitchLocked = false;
 
+        /// <summary>
+        /// [2026-07-06 추가] 현재 장착 중인 원소 무기의 시각 오브젝트(_weaponVisualRoots)만 강제로
+        /// 켜고 끕니다. 흡혼(KRAbsorptionSystem)처럼 맨손 처형 애니메이션을 쓰는 처형기가 실행되는
+        /// 동안, 손에 들고 있던 무기 모델이 화면에 그대로 겹쳐 보이지 않도록 하기 위한 용도입니다.
+        /// 무기 전환(SwitchElement) 로직과는 무관하며, _currentElement 값 자체는 바뀌지 않습니다.
+        /// </summary>
+        public void SetCurrentWeaponVisualActive(bool active)
+        {
+            if (_weaponVisualRoots == null) return;
+
+            int idx = (int)_currentElement;
+            if (idx < 0 || idx >= _weaponVisualRoots.Length) return;
+
+            GameObject root = _weaponVisualRoots[idx];
+            if (root != null && root.activeSelf != active)
+                root.SetActive(active);
+        }
+
         private void ApplyWeaponVisualRootState(KRDamageType activeElement)
         {
             if (_weaponVisualRoots == null) return;
