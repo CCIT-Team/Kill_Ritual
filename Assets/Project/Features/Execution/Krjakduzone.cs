@@ -6,16 +6,16 @@ using KillRitual.Core.Interfaces;
 namespace KillRitual.Player.Combat
 {
     /// <summary>
-    /// ÀÛµÎ ÆÇÁ¤ Àü¿ë Æ®¸®°Å Á¸ÀÔ´Ï´Ù.
-    /// Æò¼Ò¿¡´Â ºñÈ°¼ºÈ­ »óÅÂÀÌ¸ç, ÀÛµÎ ¹ßµ¿ ½Ã 1ÇÁ·¹ÀÓ¸¸ È°¼ºÈ­ÇØ ¹üÀ§ ³» ÀûÀ» ¼öÁıÇÕ´Ï´Ù.
+    /// ï¿½Ûµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ô´Ï´ï¿½.
+    /// ï¿½ï¿½Ò¿ï¿½ï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½, ï¿½Ûµï¿½ ï¿½ßµï¿½ ï¿½ï¿½ 1ï¿½ï¿½ï¿½ï¿½ï¿½Ó¸ï¿½ È°ï¿½ï¿½È­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
     ///
-    /// [¼³Á¤ ¹æ¹ı]
-    /// 1. Player ÇÏÀ§¿¡ ºó GameObject »ı¼º ¡æ ÀÌ¸§ "JakduZone"
-    /// 2. Box Collider Ãß°¡ ¡æ Is Trigger = true
-    /// 3. ÀÌ ÄÄÆ÷³ÍÆ® Ãß°¡
-    /// 4. Box Collider Å©±â/À§Ä¡¸¦ ¾À ºä¿¡¼­ Á¶Àı (ÇÃ·¹ÀÌ¾î Á¤¸éÀ¸·Î ¹èÄ¡)
-    /// 5. Layer ¡æ ExecutionZone ¶Ç´Â Ignore Raycast
-    /// 6. ½ÃÀÛ ½Ã ºñÈ°¼ºÈ­ »óÅÂ·Î µÑ °Í (KRJakduSystemÀÌ Á¦¾î)
+    /// [ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½]
+    /// 1. Player ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ GameObject ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ì¸ï¿½ "JakduZone"
+    /// 2. Box Collider ï¿½ß°ï¿½ ï¿½ï¿½ Is Trigger = true
+    /// 3. ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ß°ï¿½
+    /// 4. Box Collider Å©ï¿½ï¿½/ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ ï¿½ä¿¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡)
+    /// 5. Layer ï¿½ï¿½ ExecutionZone ï¿½Ç´ï¿½ Ignore Raycast
+    /// 6. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½È­ ï¿½ï¿½ï¿½Â·ï¿½ ï¿½ï¿½ ï¿½ï¿½ (KRJakduSystemï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
     /// </summary>
     [RequireComponent(typeof(Collider))]
     public sealed class KRJakduZone : MonoBehaviour
@@ -27,17 +27,31 @@ namespace KillRitual.Player.Combat
             _hits.Clear();
         }
 
+        // [2026-07-06 ì¶”ê°€] ì¡´ì´ í‰ì†Œ ë¹„í™œì„± ìƒíƒœì˜€ë‹¤ê°€ ë°œë™ ì‹œ ì¼œì§€ëŠ” êµ¬ì¡°ë¼,
+        // ì¼œì§€ëŠ” ìˆœê°„ ì´ë¯¸ ê²¹ì³ ìˆë˜ ì ì€ OnTriggerStayê°€ ì•„ë‹ˆë¼ OnTriggerEnterë¡œ ë“¤ì–´ì˜µë‹ˆë‹¤.
+        // ê¸°ì¡´ì—ëŠ” OnTriggerStayë§Œ ìˆì–´ì„œ ì´ ìµœì´ˆ ì ‘ì´‰ì„ ë†“ì¹˜ê³  ìˆì—ˆìŠµë‹ˆë‹¤.
+        private void OnTriggerEnter(Collider other)
+        {
+            RegisterHit(other);
+        }
+
         private void OnTriggerStay(Collider other)
+        {
+            RegisterHit(other);
+        }
+
+        /// <summary>ì½œë¼ì´ë”ì—ì„œ IDamageableì„ ì°¾ì•„ ìˆ˜ì§‘ ëª©ë¡ì— ì¶”ê°€í•©ë‹ˆë‹¤. Enter/Stayê°€ ë™ì¼ ë¡œì§ì„ ê³µìœ í•©ë‹ˆë‹¤.</summary>
+        private void RegisterHit(Collider other)
         {
             IDamageable damageable = other.GetComponentInParent<IDamageable>();
             if (damageable == null || damageable.IsDead) return;
-            // ÇÃ·¹ÀÌ¾î ÀÚ½Å Á¦¿Ü
+            // í”Œë ˆì´ì–´ ìì‹  ì œì™¸
             if (damageable is KRCombatSystem) return;
 
             _hits.Add(damageable);
         }
 
-        /// <summary>¼öÁıµÈ ÇÇ°İ ´ë»ó ¸ñ·ÏÀ» ¹İÈ¯ÇÕ´Ï´Ù.</summary>
+        /// <summary>ìˆ˜ì§‘ëœ í”¼ê²© ëŒ€ìƒ ëª©ë¡ì„ ë°˜í™˜í•©ë‹ˆë‹¤.</summary>
         public IReadOnlyCollection<IDamageable> GetHits() => _hits;
     }
 }

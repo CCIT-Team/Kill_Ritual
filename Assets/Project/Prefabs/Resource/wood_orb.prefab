@@ -121,8 +121,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _dropType: 3
   _restoreAmount: 25
-  _magnetRange: 6
-  _magnetSpeed: 8
   _collectRange: 0.5
   _lifetime: 12
 --- !u!54 &3940415239536454945
