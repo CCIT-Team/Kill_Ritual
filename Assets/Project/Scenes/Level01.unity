@@ -21149,6 +21149,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 64548257788387558, guid: 77a6bbb4e632ad445906875ad8b8d28a, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -28152,6 +28156,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6400000, guid: d9d1fbfcf69364ffd8f9c6ade9ce90fe, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -28671,6 +28679,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4436089584454788, guid: 78619024aa8ea134aad7e42921d39694, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 64177853700896266, guid: 78619024aa8ea134aad7e42921d39694, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -94248,6 +94260,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6400000, guid: d9d1fbfcf69364ffd8f9c6ade9ce90fe, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -96268,7 +96284,7 @@ MonoBehaviour:
   _characterController: {fileID: 1260905890}
   _playerCamera: {fileID: 1006283753}
   _animator: {fileID: 718311484}
-  _combatSystem: {fileID: 0}
+  _combatSystem: {fileID: 1260905887}
   _lungeStopDistance: 0.8
   _lungeMinFrames: 5
   _lungeMaxFrames: 10
@@ -96277,9 +96293,9 @@ MonoBehaviour:
   _cameraKickDuration: 0.15
   _hitStopTimeScale: 0.05
   _hitStopDuration: 0.08
-  _windUpDuration: 0.6
+  _windUpDuration: 0.3
   _strikeDuration: 0.3
-  _recoveryDuration: 0.5
+  _recoveryDuration: 0.01
   _healRatioFodder: 0.1
   _healRatioHeavy: 0.2
   _healRatioElite: 0.3
@@ -147752,6 +147768,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 64165156625808316, guid: 0ff16db581cedc04e93c3356ce3008a0, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -158492,6 +158512,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: d9d1fbfcf69364ffd8f9c6ade9ce90fe, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6400000, guid: d9d1fbfcf69364ffd8f9c6ade9ce90fe, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
