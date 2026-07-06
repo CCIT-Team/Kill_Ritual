@@ -151,6 +151,13 @@ namespace KillRitual.Player.Combat
         /// </summary>
         public static bool IsSelfExecuting { get; private set; }
 
+        /// <summary>
+        /// [2026-07-06 추가] 작두 시퀀스(감속→판정→반발)가 지금 진행 중인지 여부입니다.
+        /// 플레이어 이동 스크립트(KRPlayerMotor)가 이 값을 보고 작두 사용 중 이동 속도를
+        /// 감속시키는 데 사용합니다.
+        /// </summary>
+        public bool IsActing => _isActing;
+
         private void Awake()
         {
             if (_jakduZone == null)
@@ -217,9 +224,11 @@ namespace KillRitual.Player.Combat
         {
             _isActing = true;
 
-            // [2026-07-06 변경] 자원 소모 시점을 여기서 아래(실제 판정 이후)로 옮겼습니다.
-            // 기존엔 발동 즉시 무조건 1을 소모해서, 앞에 적이 하나도 없는 "허공 헛스윙"에도
-            // 자원이 깎이는 문제가 있었습니다. 이제는 실제로 유효한 대상을 맞췄을 때만 소모합니다.
+            // [2026-07-06 재변경] 기획 확인 결과 "적에게 적중하지 않아도(허공에 휘둘러도) 자원을
+            // 소모하는 게 맞는 디자인"이라고 합니다. 한때 "맞췄을 때만 소모"하도록 바꿨던 걸
+            // 되돌려서, 발동 즉시 무조건 1을 소모합니다(적중 여부와 무관).
+            _currentResource--;
+            UpdateJakduUI();
 
             // [2026-07-06 추가] 작두 애니메이션 트리거 — 평소 꺼져있던 샤먼소드 손을 보여주고
             // Swing 클립을 처음부터 재생합니다.
@@ -245,13 +254,10 @@ namespace KillRitual.Player.Combat
 
                 System.Collections.Generic.IReadOnlyCollection<IDamageable> hits = _jakduZone.GetHits();
 
-                // [2026-07-06 추가] 존에 걸린 것 중 실제로 피해를 줄 수 있는(살아있는) 대상이
-                // 하나라도 있을 때만 자원을 소모합니다. 허공에 휘두른 경우엔 소모하지 않습니다.
+                // 자원은 이미 위에서 소모했습니다(적중 여부와 무관). 여기서는 실제로 피해를 줄 수
+                // 있는(살아있는) 대상이 하나라도 있을 때만 피해/드롭 처리를 진행합니다.
                 if (HasValidTarget(hits))
                 {
-                    _currentResource--;
-                    UpdateJakduUI();
-
                     ApplyHits(hits, dropElement);
                 }
 
