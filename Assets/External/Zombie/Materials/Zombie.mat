@@ -73,12 +73,17 @@ Material:
     - _DstBlend: 0
     - _EdgeEmission: 2.5
     - _EdgeWidth: 0.001
+    - _EraseAmount: 0
+    - _EraseDirection: 1
+    - _EraseMaxY: 2
+    - _EraseMinY: -1
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Metallic: 0
     - _Mode: 0
     - _NoiseScale: 18
+    - _NoiseStrength: 0.5
     - _NormalPush: 0.04
     - _OcclusionStrength: 1
     - _Parallax: 0.02

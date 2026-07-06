@@ -7,16 +7,16 @@ Shader "KillRitual/BuiltIn/BodyDisintegrate"
 
         _Alpha ("Alpha", Range(0,1)) = 1
 
+        [Header(Noisy Erase)]
         _DissolveAmount ("Dissolve Amount", Range(0,1)) = 0
+        _EraseMinY ("Erase Min Y", Float) = -1
+        _EraseMaxY ("Erase Max Y", Float) = 2
+        _EraseDirection ("Erase Direction 0 BottomToTop 1 TopToBottom", Range(0,1)) = 1
+
         _NoiseScale ("Noise Scale", Float) = 18
-        _EdgeWidth ("Edge Width", Range(0.001, 0.25)) = 0.06
+        _NoiseStrength ("Noise Strength", Range(0,0.5)) = 0.12
 
-        _EdgeColor ("Edge Color", Color) = (1.0, 0.65, 0.25, 1.0)
-        _EdgeEmission ("Edge Emission", Float) = 2.5
-
-        _NormalPush ("Normal Push", Float) = 0.04
-        _UpPush ("Up Push", Float) = 0.08
-
+        [Header(Standard)]
         _Metallic ("Metallic", Range(0,1)) = 0
         _Smoothness ("Smoothness", Range(0,1)) = 0.25
     }
@@ -25,19 +25,17 @@ Shader "KillRitual/BuiltIn/BodyDisintegrate"
     {
         Tags
         {
-            "RenderType" = "Transparent"
-            "Queue" = "Transparent"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest"
             "IgnoreProjector" = "True"
         }
 
         LOD 250
         Cull Back
-
-        ZWrite Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        ZWrite On
 
         CGPROGRAM
-        #pragma surface surf Standard fullforwardshadows alpha:fade addshadow vertex:vert
+        #pragma surface surf Standard fullforwardshadows addshadow vertex:vert
         #pragma target 3.0
 
         sampler2D _MainTex;
@@ -45,22 +43,21 @@ Shader "KillRitual/BuiltIn/BodyDisintegrate"
         fixed4 _Color;
         float _Alpha;
 
+        float _DissolveAmount;
+        float _EraseMinY;
+        float _EraseMaxY;
+        float _EraseDirection;
+
+        float _NoiseScale;
+        float _NoiseStrength;
+
         half _Metallic;
         half _Smoothness;
-
-        float _DissolveAmount;
-        float _NoiseScale;
-        float _EdgeWidth;
-
-        fixed4 _EdgeColor;
-        float _EdgeEmission;
-
-        float _NormalPush;
-        float _UpPush;
 
         struct Input
         {
             float2 uv_MainTex;
+            float3 localPos;
             float3 worldPos;
         };
 
@@ -101,54 +98,61 @@ Shader "KillRitual/BuiltIn/BodyDisintegrate"
 
         float GetDissolveActive()
         {
-            // DissolveAmount가 0일 때 edge emission / vertex push가 보이지 않게 막는다.
-            // 0.01 이전까지는 사실상 꺼지고, 이후부터 서서히 살아난다.
+            // DissolveAmount가 0일 때는 노이즈가 삭제선에 영향을 주지 않게 한다.
             return smoothstep(0.01, 0.06, _DissolveAmount);
         }
 
-        void vert(inout appdata_full v)
+        float GetEraseCoord(float localY)
         {
-            float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+            float heightRange = max(_EraseMaxY - _EraseMinY, 0.0001);
+            float height01 = saturate((localY - _EraseMinY) / heightRange);
+
+            // 0 = 아래에서 위로 삭제
+            // 1 = 위에서 아래로 삭제
+            return lerp(height01, 1.0 - height01, _EraseDirection);
+        }
+
+        float GetNoisyThreshold(float3 worldPos)
+        {
+            float active = GetDissolveActive();
+
             float noise = ValueNoise(worldPos * _NoiseScale);
+            float noiseOffset = (noise - 0.5) * _NoiseStrength * active;
 
-            float dissolveActive = GetDissolveActive();
+            return saturate(_DissolveAmount + noiseOffset);
+        }
 
-            float edge = 1.0 - saturate(abs(noise - _DissolveAmount) / max(_EdgeWidth, 0.0001));
-            edge *= dissolveActive;
+        void vert(inout appdata_full v, out Input o)
+        {
+            UNITY_INITIALIZE_OUTPUT(Input, o);
 
-            float motion = saturate(_DissolveAmount * 1.35) * dissolveActive;
-
-            v.vertex.xyz += v.normal * edge * _NormalPush * motion;
-            v.vertex.y += edge * _UpPush * motion;
+            o.localPos = v.vertex.xyz;
+            o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
         }
 
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
-            float noise = ValueNoise(IN.worldPos * _NoiseScale);
-
-            // DissolveAmount가 0일 때는 절대 표면을 자르지 않는다.
-            // 0보다 커진 뒤부터만 clip을 적용한다.
-            float dissolveCut = max(_DissolveAmount, -0.01);
-            clip(noise - dissolveCut);
-
             fixed4 albedo = tex2D(_MainTex, IN.uv_MainTex) * _Color;
 
-            float dissolveActive = GetDissolveActive();
+            float eraseCoord = GetEraseCoord(IN.localPos.y);
+            float threshold = GetNoisyThreshold(IN.worldPos);
 
-            float edge = 1.0 - saturate(abs(noise - _DissolveAmount) / max(_EdgeWidth, 0.0001));
-            edge *= dissolveActive;
+            // 핵심:
+            // 높이 방향으로 사라지되, 삭제 경계만 노이즈로 흔들린다.
+            // 색 변화, 발광, 경계선 효과 없음.
+            clip(eraseCoord - threshold);
+
+            float finalAlpha = saturate(albedo.a * _Alpha);
+            clip(finalAlpha - 0.01);
 
             o.Albedo = albedo.rgb;
             o.Metallic = _Metallic;
             o.Smoothness = _Smoothness;
-
-            // DissolveAmount가 0이면 발광도 0.
-            o.Emission = _EdgeColor.rgb * edge * _EdgeEmission;
-
-            o.Alpha = saturate(albedo.a * _Alpha);
+            o.Emission = 0;
+            o.Alpha = 1;
         }
         ENDCG
     }
 
-    FallBack "Legacy Shaders/Transparent/Diffuse"
+    FallBack "Legacy Shaders/Transparent/Cutout/Diffuse"
 }
