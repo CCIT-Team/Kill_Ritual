@@ -1,4 +1,5 @@
 using KillRitual.Core.Damage;
+using KillRitual.Player.Combat;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -9,27 +10,27 @@ namespace KillRitual.Player
     /// <summary>
     /// 현재 장착된 오행 속성의 잔탄(자원)량과 속성 UI를 HUD에 표시합니다.
     ///
-    /// 1. 잔탄 비율에 따라 막대 Image의 fillAmount를 조절합니다.
-    /// 2. 잔탄 숫자를 현재 탄약만 표시합니다. 예: "73"
-    /// 3. 무기를 전환하면 해당 속성의 잔탄, 로고, 밑줄 색, 텍스트 색이 자동 갱신됩니다.
-    /// 4. 잔탄이 경고 비율 이하로 떨어지면 잔탄 막대만 경고색으로 바뀝니다.
+    /// 중요:
+    /// 이 UI는 숫자키 1/2/3/4/5 슬롯 순서를 직접 보지 않습니다.
+    /// KRCombatSystem.CurrentElement가 현재 어떤 속성인지 알려주면,
+    /// 그 속성에 맞는 로고, 밑줄 색, 텍스트 색, 탄약량을 표시합니다.
     ///
-    /// [연결 방법 요약]
-    /// Ammo 오브젝트에 이 스크립트를 붙이고,
-    /// _combatSystem에 KRCombatSystem,
-    /// _ammoBarFill에 잔탄 Bar Image,
-    /// _ammoText에 탄약 Text,
-    /// _elementLogoImage에 속성 로고 Image,
-    /// _elementUnderlineImage에 밑줄 Image를 넣으면 됩니다.
+    /// 따라서 _elementVisualSettings의 리스트 순서는 슬롯 순서가 아닙니다.
+    /// 각 항목의 Element 값과 LogoSprite/ElementColor가 정확히 맞아야 합니다.
     ///
-    /// _elementVisualSettings에는 속성별 로고와 색을 등록합니다.
+    /// 예:
+    /// Element = Fire  → 화 로고 / 화 색
+    /// Element = Water → 수 로고 / 수 색
+    /// Element = Wood  → 목 로고 / 목 색
+    /// Element = Earth → 토 로고 / 토 색
+    /// Element = Metal → 금 로고 / 금 색
     /// </summary>
     public sealed class KRAmmoUI : MonoBehaviour
     {
         [System.Serializable]
         private struct ElementVisualSetting
         {
-            [Tooltip("이 설정이 적용될 오행 속성입니다.")]
+            [Tooltip("이 설정이 적용될 오행 속성입니다. 숫자키 슬롯 번호가 아니라 실제 속성값입니다.")]
             public KRDamageType Element;
 
             [Tooltip("현재 속성이 이 값일 때 표시할 로고 Sprite입니다.")]
@@ -41,7 +42,7 @@ namespace KillRitual.Player
 
         [Header("Combat System 연결")]
         [Tooltip("플레이어의 KRCombatSystem 컴포넌트를 여기에 넣으세요. 비워두면 부모 계층에서 자동으로 찾습니다.")]
-        [SerializeField] private KillRitual.Player.Combat.KRCombatSystem _combatSystem;
+        [SerializeField] private KRCombatSystem _combatSystem;
 
         [Header("잔탄 막대 UI 연결")]
         [Tooltip("잔탄에 따라 채워질 막대 Image입니다. Image Type은 'Filled'여야 fillAmount로 조절됩니다.")]
@@ -58,7 +59,7 @@ namespace KillRitual.Player
         [SerializeField] private Image _elementUnderlineImage;
 
         [Header("속성별 시각 설정")]
-        [Tooltip("속성별 로고와 UI 색을 등록합니다.")]
+        [Tooltip("속성별 로고와 UI 색을 등록합니다. 리스트 순서는 슬롯 순서가 아닙니다. Element 값이 기준입니다.")]
         [SerializeField] private List<ElementVisualSetting> _elementVisualSettings = new List<ElementVisualSetting>();
 
         [Header("경고 설정")]
@@ -66,23 +67,40 @@ namespace KillRitual.Player
         [Range(0f, 1f)]
         [SerializeField] private float _lowAmmoWarningRatio = 0.25f;
 
-        [SerializeField] private Color _normalColor = Color.white;
+        [Tooltip("잔탄이 충분할 때 잔탄 막대에 적용할 기본 색입니다. 속성 색이 아니라 막대 기본색입니다.")]
+        [SerializeField] private Color _normalAmmoBarColor = Color.white;
+
+        [Tooltip("잔탄이 부족할 때 잔탄 막대에 적용할 경고 색입니다.")]
         [SerializeField] private Color _lowAmmoColor = new Color(1f, 0.3f, 0.3f);
+
+        [Header("디버그")]
+        [Tooltip("켜면 현재 UI가 읽고 있는 CurrentElement와 탄약량을 콘솔에 출력합니다.")]
+        [SerializeField] private bool _debugCurrentElement;
+
+        private readonly Dictionary<KRDamageType, ElementVisualSetting> _visualSettingMap
+            = new Dictionary<KRDamageType, ElementVisualSetting>();
 
         private KRDamageType _lastElement;
         private bool _hasLastElement;
 
-        private Color _currentElementColor;
+        private Color _currentElementColor = Color.white;
 
         private void Awake()
         {
-            _currentElementColor = _normalColor;
+            CacheCombatSystem();
+            RebuildVisualSettingMap();
 
-            if (_combatSystem == null)
-            {
-                _combatSystem = GetComponentInParent<KillRitual.Player.Combat.KRCombatSystem>();
-            }
+            _currentElementColor = _normalAmmoBarColor;
 
+            UpdateAmmoUI(forceVisualRefresh: true);
+        }
+
+        private void OnEnable()
+        {
+            CacheCombatSystem();
+            RebuildVisualSettingMap();
+
+            _hasLastElement = false;
             UpdateAmmoUI(forceVisualRefresh: true);
         }
 
@@ -91,12 +109,51 @@ namespace KillRitual.Player
             UpdateAmmoUI(forceVisualRefresh: false);
         }
 
+        private void CacheCombatSystem()
+        {
+            if (_combatSystem != null) return;
+
+            _combatSystem = GetComponentInParent<KRCombatSystem>();
+        }
+
+        /// <summary>
+        /// 인스펙터의 속성별 UI 설정을 빠르게 찾기 위한 맵으로 변환합니다.
+        /// 같은 Element가 중복 등록되어 있으면 첫 번째 항목만 사용하고 이후 항목은 무시합니다.
+        /// </summary>
+        private void RebuildVisualSettingMap()
+        {
+            _visualSettingMap.Clear();
+
+            if (_elementVisualSettings == null) return;
+
+            for (int i = 0; i < _elementVisualSettings.Count; i++)
+            {
+                ElementVisualSetting setting = _elementVisualSettings[i];
+
+                if (_visualSettingMap.ContainsKey(setting.Element))
+                {
+                    Debug.LogWarning(
+                        $"[KRAmmoUI] ElementVisualSettings에 중복 속성이 있습니다. " +
+                        $"Element: {setting.Element}, Index: {i}. 첫 번째 설정만 사용합니다.",
+                        this);
+
+                    continue;
+                }
+
+                _visualSettingMap.Add(setting.Element, setting);
+            }
+        }
+
         /// <summary>
         /// 잔탄 막대, 숫자 텍스트, 속성 로고, 밑줄 색을 현재 상태에 맞춰 갱신합니다.
         /// </summary>
         private void UpdateAmmoUI(bool forceVisualRefresh)
         {
-            if (_combatSystem == null) return;
+            if (_combatSystem == null)
+            {
+                CacheCombatSystem();
+                if (_combatSystem == null) return;
+            }
 
             KRDamageType element = _combatSystem.CurrentElement;
 
@@ -115,7 +172,7 @@ namespace KillRitual.Player
             float ratio = max > 0f ? Mathf.Clamp01(amount / max) : 0f;
 
             bool isLowAmmo = ratio <= _lowAmmoWarningRatio;
-            Color ammoBarColor = isLowAmmo ? _lowAmmoColor : _normalColor;
+            Color ammoBarColor = isLowAmmo ? _lowAmmoColor : _normalAmmoBarColor;
 
             if (_ammoBarFill != null)
             {
@@ -125,12 +182,15 @@ namespace KillRitual.Player
 
             if (_ammoText != null)
             {
-                // 기존 "73 / 100" 표시 제거.
-                // 현재 탄약만 표시.
                 _ammoText.text = Mathf.CeilToInt(amount).ToString();
-
-                // 탄약 텍스트 색은 언더라인과 동일하게 현재 속성 색을 따라갑니다.
                 _ammoText.color = _currentElementColor;
+            }
+
+            if (_debugCurrentElement)
+            {
+                Debug.Log(
+                    $"[KRAmmoUI] CurrentElement: {element}, Ammo: {amount:0.##}/{max:0.##}, Ratio: {ratio:0.##}",
+                    this);
             }
         }
 
@@ -162,38 +222,56 @@ namespace KillRitual.Player
                 return;
             }
 
-            // 해당 속성 설정이 없을 때의 기본 처리.
-            _currentElementColor = _normalColor;
+            ApplyFallbackVisual(element);
+        }
+
+        private void ApplyFallbackVisual(KRDamageType element)
+        {
+            _currentElementColor = _normalAmmoBarColor;
 
             if (_elementLogoImage != null)
             {
+                _elementLogoImage.sprite = null;
                 _elementLogoImage.enabled = false;
             }
 
             if (_elementUnderlineImage != null)
             {
-                _elementUnderlineImage.color = _normalColor;
+                _elementUnderlineImage.color = _normalAmmoBarColor;
             }
 
             if (_ammoText != null)
             {
-                _ammoText.color = _normalColor;
+                _ammoText.color = _normalAmmoBarColor;
             }
+
+            Debug.LogWarning(
+                $"[KRAmmoUI] 현재 속성에 해당하는 UI 설정을 찾지 못했습니다. Element: {element}. " +
+                $"_elementVisualSettings에 해당 속성의 로고와 색을 등록하세요.",
+                this);
         }
 
         private bool TryGetElementVisualSetting(KRDamageType element, out ElementVisualSetting setting)
         {
-            for (int i = 0; i < _elementVisualSettings.Count; i++)
+            if (_visualSettingMap.Count <= 0)
             {
-                if (_elementVisualSettings[i].Element.Equals(element))
-                {
-                    setting = _elementVisualSettings[i];
-                    return true;
-                }
+                RebuildVisualSettingMap();
             }
 
-            setting = default;
-            return false;
+            return _visualSettingMap.TryGetValue(element, out setting);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            RebuildVisualSettingMap();
+
+            if (!Application.isPlaying)
+                return;
+
+            _hasLastElement = false;
+            UpdateAmmoUI(forceVisualRefresh: true);
+        }
+#endif
     }
 }
