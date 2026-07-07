@@ -40,16 +40,29 @@ namespace KillRitual.Enemies
         [Min(0f)]
         [SerializeField] protected float _moveSpeed = 3.5f;
 
-        [Header("색상 (등급/상태 시각화)")]
-        [SerializeField] protected Color _baseColor = Color.gray;
+        [Header("피격 깜빡임 (Hit Flash)")]
+        [Tooltip("맞았을 때 잠깐 곱해질 색입니다. 각 파츠(Renderer)의 원래 색은 자동으로 저장되어 " +
+                 "평소에는 그대로 유지되고, 피격 순간에만 이 색으로 바뀌었다가 복귀합니다.")]
         [SerializeField] protected Color _hitFlashColor = Color.white;
 
         [Min(0.01f)]
         [SerializeField] protected float _hitFlashDuration = 0.08f;
 
+        [Header("피격 파티클 이펙트")]
+        [Tooltip("맞았을 때 생성할 파티클 프리팹입니다 (예: FX_BloodHit). 비워두면 파티클 없이도 정상 동작합니다.")]
+        [SerializeField] protected ParticleSystem _hitEffectPrefab;
+
+        [Tooltip("데미지 컨텍스트에 피격 위치 정보가 없을 경우(Origin이 Vector3.zero) 대신 사용할 " +
+                 "높이 보정값입니다. 몬스터 발밑이 아니라 몸통 높이쯤에서 파티클이 나오게 하고 싶을 때 조절하세요.")]
+        [SerializeField] protected float _hitEffectFallbackHeight = 1f;
+
         [Header("사망")]
         [Min(0f)]
         [SerializeField] protected float _despawnDelay = 0.5f;
+
+        [Header("모델 참조")]
+        [Tooltip("실제 캐릭터 메시가 들어있는 자식 오브젝트입니다. 파티클 등 다른 자식은 여기 안 넣으세요.")]
+        [SerializeField] private Transform _modelRoot;
 
         // ── 런타임 상태 ────────────────────────────────────────────────
         protected EnemyState _state = EnemyState.Idle;
@@ -58,14 +71,20 @@ namespace KillRitual.Enemies
         protected NavMeshAgent _agent;
         protected bool _hasSpottedPlayer;
 
-        private Renderer _renderer;
+        // 모델이 여러 파츠(자식 오브젝트)로 나뉘어 있을 수 있으므로 Renderer를 전부 캐싱합니다.
+        private Renderer[] _renderers;
+
+        // 각 Renderer가 원래(임포트된 모델/머티리얼 그대로) 갖고 있던 색.
+        // 이 값을 모르면 "평소 색"을 흰색이나 회색 같은 임의 값으로 잘못 덮어씌우게 됩니다.
+        private Color[] _originalColors;
+
         private MaterialPropertyBlock _mpb;
         private float _hitFlashEndTime;
         private float _groggyEndTime;
         private bool _isGroggy;
 
-        private static readonly int kBaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int kColorId = Shader.PropertyToID("_Color");
+        private static readonly int kBaseColorId = Shader.PropertyToID("_BaseColor"); // URP/Lit
+        private static readonly int kColorId = Shader.PropertyToID("_Color");         // Built-in/Standard
 
         private Collider[] _ownColliders;
         private KRGroggyOutline _groggyOutline;
@@ -75,12 +94,21 @@ namespace KillRitual.Enemies
         public bool IsGroggy => _isGroggy;
         public Vector3 Position => transform.position;
 
+        private void CacheRenderers()
+        {
+            // GetComponentsInChildren은 파티클처럼 나중에 붙는 자식까지 잡을 수 있으니,
+            // 캐릭터 "모델 루트" 오브젝트를 태그나 별도 참조로 명확히 지정해서 그 안에서만 찾습니다.
+            _renderers = GetComponentsInChildren<Renderer>(includeInactive: false);
+        }
+
         public void TakeDamage(KRDamageContext context)
         {
             if (IsDead) return;
 
             _health -= context.DamageAmount;
             _hitFlashEndTime = Time.time + _hitFlashDuration;
+
+            SpawnHitEffect(context);
 
             if (_health <= 0f) { EnterDead(); return; }
 
@@ -126,9 +154,27 @@ namespace KillRitual.Enemies
             _agent = GetComponent<NavMeshAgent>();
             _agent.speed = _moveSpeed;
 
-            _renderer = GetComponentInChildren<Renderer>();
+            Transform searchRoot = _modelRoot != null ? _modelRoot : transform;
+            _renderers = searchRoot.GetComponentsInChildren<Renderer>(includeInactive: false);
             _mpb = new MaterialPropertyBlock();
-            ApplyColor(_baseColor);
+
+            // 각 Renderer가 실제로 갖고 있던 원래 색을 읽어서 저장합니다.
+            // (텍스처 없이 _BaseColor/_Color 자체가 고유색인 머티리얼도 있으므로,
+            //  임의의 기본값(흰색/회색)을 쓰지 않고 반드시 머티리얼에서 직접 읽어옵니다.)
+            _originalColors = new Color[_renderers.Length];
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Material mat = _renderers[i] != null ? _renderers[i].sharedMaterial : null;
+
+                if (mat != null && mat.HasProperty(kBaseColorId))
+                    _originalColors[i] = mat.GetColor(kBaseColorId);
+                else if (mat != null && mat.HasProperty(kColorId))
+                    _originalColors[i] = mat.GetColor(kColorId);
+                else
+                    _originalColors[i] = Color.white;
+            }
+
+            ApplyHitFlash(false); // 시작 시엔 원래 색으로.
 
             _ownColliders = GetComponentsInChildren<Collider>(includeInactive: false);
 
@@ -273,6 +319,32 @@ namespace KillRitual.Enemies
 
         protected virtual void OnDeath() { }
 
+        // ── 피격 파티클 이펙트 ─────────────────────────────────────────
+
+        /// <summary>
+        /// 피격 순간 파티클 프리팹(예: 피 튀는 이펙트)을 생성합니다.
+        /// KRDamageContext의 HitPoint / Direction을 사용해 피격 위치와 방향을 정합니다.
+        /// HitPoint가 Vector3.zero(설정 안 됨)인 경우에만 몬스터 위치 + _hitEffectFallbackHeight로 대체합니다.
+        /// </summary>
+        private void SpawnHitEffect(KRDamageContext context)
+        {
+            if (_hitEffectPrefab == null) return;
+
+            Vector3 hitPoint = context.HitPoint != Vector3.zero
+                ? context.HitPoint
+                : transform.position + Vector3.up * _hitEffectFallbackHeight;
+
+            Quaternion hitRotation = context.Direction != Vector3.zero
+                ? Quaternion.LookRotation(-context.Direction)
+                : Quaternion.identity;
+
+            ParticleSystem fx = Instantiate(_hitEffectPrefab, hitPoint, hitRotation);
+            fx.Play();
+
+            float lifetime = fx.main.duration + fx.main.startLifetime.constantMax + 0.5f;
+            Destroy(fx.gameObject, lifetime);
+        }
+
         // ── 공용 유틸리티 ──────────────────────────────────────────────
 
         protected IDamageable FindPlayerDamageable(Transform playerTransform)
@@ -312,22 +384,35 @@ namespace KillRitual.Enemies
                 transform.rotation = Quaternion.LookRotation(toPlayer);
         }
 
-        // ── 색상 시각 피드백 ───────────────────────────────────────────
+        // ── 피격 깜빡임 (Hit Flash) ────────────────────────────────────
+        //
+        // 평소에는 각 파츠(Renderer)의 "원래 색"(Awake에서 캐싱한 _originalColors)을 그대로 유지하고,
+        // TakeDamage가 호출된 순간부터 _hitFlashDuration 동안만 _hitFlashColor로 바뀌었다가
+        // 자동으로 원래 색으로 복귀합니다. 코루틴 없이 시간 비교만으로 처리합니다.
 
         private void UpdateColorFeedback()
         {
             // 그로기 상태의 시각 피드백은 색상 변경이 아닌 KRGroggyOutline(셰이더 테두리)으로 처리합니다.
-            Color targetColor = Time.time < _hitFlashEndTime ? _hitFlashColor : _baseColor;
-            ApplyColor(targetColor);
+            bool isFlashing = Time.time < _hitFlashEndTime;
+            ApplyHitFlash(isFlashing);
         }
 
-        private void ApplyColor(Color color)
+        private void ApplyHitFlash(bool isFlashing)
         {
-            if (_renderer == null) return;
-            _renderer.GetPropertyBlock(_mpb);
-            _mpb.SetColor(kBaseColorId, color);
-            _mpb.SetColor(kColorId, color);
-            _renderer.SetPropertyBlock(_mpb);
+            if (_renderers == null) return;
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Renderer r = _renderers[i];
+                if (r == null) continue;
+
+                Color color = isFlashing ? _hitFlashColor : _originalColors[i];
+
+                r.GetPropertyBlock(_mpb);
+                _mpb.SetColor(kBaseColorId, color);
+                _mpb.SetColor(kColorId, color);
+                r.SetPropertyBlock(_mpb);
+            }
         }
 
         protected virtual void OnDrawGizmosSelected()
