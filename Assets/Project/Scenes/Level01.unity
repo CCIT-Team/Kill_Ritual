@@ -215,6 +215,81 @@ Terrain:
   m_EnableHeightmapRayTracing: 1
   m_EnableTreesAndDetailsRayTracing: 0
   m_TreeMotionVectorModeOverride: 3
+--- !u!1 &624140
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 624141}
+  - component: {fileID: 624143}
+  - component: {fileID: 624142}
+  m_Layer: 5
+  m_Name: Panel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &624141
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 624140}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.00015531458}
+  m_LocalScale: {x: 1.1768305, y: 1.1768306, z: 1.1768305}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 131207526}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 44.719482, y: 0}
+  m_SizeDelta: {x: 1820, y: 998.75}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &624142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 624140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.392}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &624143
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 624140}
+  m_CullTransparentMesh: 1
 --- !u!1 &2909796
 GameObject:
   m_ObjectHideFlags: 0
@@ -401,8 +476,8 @@ MonoBehaviour:
   _element: 2
   _weaponName: "\uBAA9_\uB3CC\uACA9\uC18C\uCD1D"
   _damage: 5
-  _range: 50
-  _cooldown: 0.3
+  _range: 100
+  _cooldown: 0.27
   _resourceCost: 1
   _inputType: 0
   _visual: {fileID: 1619752844}
@@ -411,7 +486,7 @@ MonoBehaviour:
   _pelletCount: 1
   _spreadAngleDegrees: 0
   _boxHeight: 1.5
-  _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
+  _tracerPrefab: {fileID: 7748489608522052705, guid: 1d3d73d5dc407974d8da20253bbc55db, type: 3}
   _tracerVisualSpeed: 250
   _tracerMaxVisualLength: 8
   _tracerColor: {r: 0.09201916, g: 0.33333334, b: 0, a: 1}
@@ -2112,7 +2187,7 @@ MonoBehaviour:
   _element: 2
   _weaponName: "\uC2A4\uB098\uC774\uD37C"
   _damage: 100
-  _range: 100
+  _range: 10000
   _cooldown: 1
   _resourceCost: 5
   _inputType: 0
@@ -2122,7 +2197,7 @@ MonoBehaviour:
   _pelletCount: 1
   _spreadAngleDegrees: 0
   _boxHeight: 1.5
-  _tracerPrefab: {fileID: 7748489608522052705, guid: 35339092bbc422e49aec0784573a53b4, type: 3}
+  _tracerPrefab: {fileID: 7748489608522052705, guid: e3931a537758cc943b1ad3c30cc50772, type: 3}
   _tracerVisualSpeed: 250
   _tracerMaxVisualLength: 8
   _tracerColor: {r: 0.7492038, g: 0.9622642, b: 0.52349585, a: 1}
@@ -3164,6 +3239,7 @@ RectTransform:
   m_LocalScale: {x: 0.84974, y: 0.84974, z: 0.84974}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 624141}
   - {fileID: 848348304}
   - {fileID: 1876200747}
   - {fileID: 1181307753}
@@ -3299,7 +3375,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 131207525}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -28796,7 +28872,7 @@ MonoBehaviour:
   _visualAttackSlot: 1
   _playVisualOnFire: 0
   _projectilePrefab: {fileID: 9195255059852538374, guid: a809a3e209cf7714b9060ff3f309f93b, type: 3}
-  _projectileSpeed: 20
+  _projectileSpeed: 50
   _gravityScale: 0
   _pierceCount: 10
   _explodesOnImpact: 1
@@ -83418,8 +83494,8 @@ MonoBehaviour:
     m_Bits: 4194304
   _maxResourcePerElement:
   - 20
-  - 100
-  - 180
+  - 50
+  - 150
   - 100
   - 100
   _subscribeToExecutionRewards: 1
@@ -108960,8 +109036,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 296398307}
-  - {fileID: 957328161}
   - {fileID: 1619752843}
+  - {fileID: 957328161}
   - {fileID: 733113925}
   - {fileID: 602561250}
   - {fileID: 718311482}
