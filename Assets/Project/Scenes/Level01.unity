@@ -73920,7 +73920,7 @@ MonoBehaviour:
   _playerCamera: {fileID: 1006283753}
   _shamanSwordVisualRoot: {fileID: 602561248}
   _shamanSwordAnimator: {fileID: 602561249}
-  _shamanSwordSwingClipLength: 1.17
+  _shamanSwordSwingClipLength: 0.33
   _jakduChargeUI: {fileID: 1260905881}
   _currentResource: 10
   _maxResource: 3

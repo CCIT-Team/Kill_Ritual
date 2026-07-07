@@ -62,14 +62,16 @@ namespace KillRitual.Player.Combat
         [SerializeField] private Animator _shamanSwordAnimator;
 
         [Tooltip("Swing.anim 클립 길이(초)입니다. 이 시간이 지나면 샤먼소드 손을 자동으로 다시 숨깁니다. " +
-                 "[2026-07-06 변경] 이제 이동 감속(①감속 단계)도 이 값만큼 지속됩니다 — 감속이 " +
-                 "\"애니메이션 시전 시간 동안\" 유지되도록 요청받아, 별도의 _slowDuration 대신 이 값을 " +
-                 "그대로 재사용합니다. Swing.anim을 다른 클립으로 바꾸면 이 값도 그 클립 길이에 맞춰 " +
-                 "같이 바꿔주세요(감속 지속시간도 자동으로 같이 바뀝니다). " +
-                 "[2026-07-06 정정] 실제 Swing.anim의 m_StopTime을 확인해보니 0.6초가 아니라 " +
-                 "1.1666666초였습니다(이전에 잘못 기재됨) — 그 값에 맞춰 수정했습니다.")]
+                 "이동 감속(①감속 단계)도 이 값만큼 지속됩니다 — 감속이 \"애니메이션 시전 시간 동안\" " +
+                 "유지되도록 요청받아, 별도의 _slowDuration 대신 이 값을 그대로 재사용합니다. " +
+                 "Swing.anim을 다른 클립으로 바꾸면 이 값도 그 클립 길이에 맞춰 같이 바꿔주세요 " +
+                 "(감속 지속시간 + 적 판정 타이밍이 자동으로 같이 바뀝니다). " +
+                 "[2026-07-06 재정정] Swing.anim의 실제 m_StopTime을 다시 확인해보니 1.1666666초가 " +
+                 "아니라 0.55초였습니다(적 반응이 스윙 동작이 끝난 뒤에도 한참 있다가 나오는 버그의 " +
+                 "원인 — 애니메이션은 0.55초에 끝났는데 코드는 1.17초까지 기다렸다가 판정했었음). " +
+                 "0.55초로 정정했습니다.")]
         [Min(0.01f)]
-        [SerializeField] private float _shamanSwordSwingClipLength = 1.17f;
+        [SerializeField] private float _shamanSwordSwingClipLength = 0.55f;
 
         [Header("UI")]
         [Tooltip("작두(처형) 자원의 현재 보유 개수만 텍스트로 표시할 UI입니다(Assets/Project/Features/UI/KRJakduChargeUI.cs, " +
