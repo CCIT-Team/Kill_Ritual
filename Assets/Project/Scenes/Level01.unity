@@ -77445,7 +77445,7 @@ MonoBehaviour:
   _playerCamera: {fileID: 1006283753}
   _shamanSwordVisualRoot: {fileID: 602561248}
   _shamanSwordAnimator: {fileID: 602561249}
-  _shamanSwordSwingClipLength: 1.17
+  _shamanSwordSwingClipLength: 0.33
   _jakduChargeUI: {fileID: 1260905881}
   _currentResource: 10
   _maxResource: 3
@@ -77467,7 +77467,6 @@ MonoBehaviour:
   - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
   - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
   _slowRatio: 0.914
-  _slowDuration: 0.3
   _reboundRatio: 1.3
   _reboundDuration: 0.5
 --- !u!114 &1260905883
@@ -77652,6 +77651,8 @@ MonoBehaviour:
   groundCheckInset: 0.03
   groundProbeDistance: 0.2
   maxRunSpeed: 35
+  slowRunSpeed: 0.5
+  jakduSystem: {fileID: 0}
   groundAcceleration: 60
   groundDeceleration: 100
   airAcceleration: 18
