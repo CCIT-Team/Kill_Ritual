@@ -8,6 +8,19 @@ using KillRitual.Player.Combat;
 
 namespace KillRitual.Player
 {
+    /// <summary>
+    /// 플레이어의 체력과 피격 반응을 담당합니다.
+    ///
+    /// 체력바 처리 방식:
+    ///   1. Image.fillAmount를 사용하지 않습니다.
+    ///   2. Sliced Image의 RectTransform Width를 직접 조절합니다.
+    ///   3. Fill / Follow Bar는 오른쪽 기준으로 고정됩니다.
+    ///   4. 체력이 줄어들면 왼쪽에서 오른쪽 방향으로 깎입니다.
+    ///   5. Follow Bar는 실제 체력바보다 늦게 따라옵니다.
+    ///
+    /// 무령 잔흔:
+    ///   - 무령 반사 성공 직후 일정 시간 동안 받는 피해를 KRMuryeongController에서 감산합니다.
+    /// </summary>
     public sealed class KRPlayerDamageFeedback : MonoBehaviour, IDamageable
     {
         [Header("체력")]
@@ -18,6 +31,10 @@ namespace KillRitual.Player
         [Header("무령 잔흔")]
         [Tooltip("무령 반사 성공 후 피해 감소를 적용할 컨트롤러입니다. 비워두면 부모/자식 계층에서 자동 탐색합니다.")]
         [SerializeField] private KRMuryeongController _muryeongController;
+
+        [Header("피격 콜라이더")]
+        [Tooltip("켜면 시작 시 플레이어 루트의 CapsuleCollider를 피격 판정용 Trigger로 강제 활성화합니다. 기존 판정을 건드리기 싫으면 끄세요.")]
+        [SerializeField] private bool _autoEnableHitCollider = false;
 
         [Header("체력바 UI 연결")]
         [Tooltip("체력바 전체 너비 기준이 되는 RectTransform입니다. 보통 Background를 넣으세요.")]
@@ -76,40 +93,21 @@ namespace KillRitual.Player
         {
             _health = _maxHealth;
 
-            EnsureHitColliderActive();
+            if (_autoEnableHitCollider)
+            {
+                EnsureHitColliderActive();
+            }
+
             CacheMuryeongController();
             CacheHealthBarReferences();
 
             if (_gameOverUI == null)
+            {
                 _gameOverUI = FindObjectOfType<KRGameOverUI>();
+            }
 
             UpdateHealthBar(true);
             HideOverlayInstantly();
-        }
-
-        private void CacheMuryeongController()
-        {
-            if (_muryeongController != null)
-                return;
-
-            _muryeongController = GetComponentInParent<KRMuryeongController>();
-
-            if (_muryeongController == null)
-                _muryeongController = GetComponentInChildren<KRMuryeongController>();
-        }
-
-        private void EnsureHitColliderActive()
-        {
-            CapsuleCollider hitCollider = GetComponent<CapsuleCollider>();
-            if (hitCollider == null)
-            {
-                Debug.LogWarning("[KRPlayerDamageFeedback] 피격 판정용 CapsuleCollider를 찾지 못했습니다 — " +
-                                  "레이캐스트 기반 투사체가 플레이어를 못 맞힐 수 있습니다.");
-                return;
-            }
-
-            hitCollider.enabled = true;
-            hitCollider.isTrigger = true;
         }
 
         private void OnDisable()
@@ -132,25 +130,62 @@ namespace KillRitual.Player
 
         public void TakeDamage(KRDamageContext context)
         {
+            float distanceFromPlayer = context.HitPoint != Vector3.zero
+                ? Vector3.Distance(transform.position, context.HitPoint)
+                : -1f;
+
             if (IsDead)
+            {
+                Debug.Log(
+                    $"[플레이어 피격] 무시(이미 사망) — 요청 데미지 {context.DamageAmount}, " +
+                    $"속성 {context.Type}, 피격지점 {context.HitPoint}, " +
+                    $"플레이어와 거리 {(distanceFromPlayer >= 0f ? distanceFromPlayer.ToString("F2") : "미기록")}m"
+                );
                 return;
+            }
 
             if (_isInvincible)
+            {
+                Debug.Log(
+                    $"[플레이어 피격] 무시(무적 상태) — 요청 데미지 {context.DamageAmount}, " +
+                    $"속성 {context.Type}, 피격지점 {context.HitPoint}, " +
+                    $"플레이어와 거리 {(distanceFromPlayer >= 0f ? distanceFromPlayer.ToString("F2") : "미기록")}m"
+                );
                 return;
+            }
 
-            float incomingDamage = context.DamageAmount;
+            float rawDamage = context.DamageAmount;
+            float incomingDamage = rawDamage;
 
             if (_muryeongController != null)
+            {
                 incomingDamage = _muryeongController.ModifyIncomingDamageByMuryeong(incomingDamage);
+            }
 
             if (incomingDamage <= 0f)
+            {
+                Debug.Log(
+                    $"[플레이어 피격] 무시(최종 피해 0 이하) — 원본 데미지 {rawDamage}, " +
+                    $"무령 적용 후 {incomingDamage}, 속성 {context.Type}, 피격지점 {context.HitPoint}"
+                );
                 return;
+            }
 
             float previousHealth = _health;
             _health = Mathf.Max(0f, _health - incomingDamage);
 
+            Debug.Log(
+                $"[플레이어 피격] 데미지 적용 — 원본 {rawDamage:F1} → 최종 {incomingDamage:F1}, " +
+                $"속성 {context.Type}, 체력 {previousHealth:F1} → {_health:F1} / {_maxHealth:F1}, " +
+                $"피격지점 {context.HitPoint}, 플레이어 위치 {transform.position}, " +
+                $"거리 {(distanceFromPlayer >= 0f ? distanceFromPlayer.ToString("F2") : "미기록")}m, " +
+                $"방향 {context.Direction}"
+            );
+
             bool healthReduced = _health < previousHealth;
 
+            // Fill은 즉시 줄어듦.
+            // Follow는 데미지를 받았을 때만 늦게 따라옴.
             UpdateHealthBar(!healthReduced);
 
             if (_damageOverlay != null)
@@ -160,7 +195,10 @@ namespace KillRitual.Player
             }
 
             if (_health <= 0f)
+            {
+                Debug.Log("[플레이어 피격] 체력 0 도달 — 게임오버 처리");
                 TriggerGameOver();
+            }
         }
 
         public void Execute(ExecutionSource source = ExecutionSource.Default)
@@ -173,28 +211,75 @@ namespace KillRitual.Player
         public void Heal(float amount)
         {
             if (IsDead)
+            {
                 return;
+            }
 
             if (amount <= 0f)
+            {
                 return;
+            }
 
             _health = Mathf.Min(_maxHealth, _health + amount);
 
+            // 회복 시에는 손실 표시가 필요 없으므로 Fill / Follow 둘 다 즉시 맞춤.
             UpdateHealthBar(true);
         }
 
+        /// <summary>흡혼 시퀀스 중 무적 상태를 설정합니다.</summary>
         public void SetInvincible(bool invincible)
         {
             _isInvincible = invincible;
         }
 
+        private void CacheMuryeongController()
+        {
+            if (_muryeongController != null)
+            {
+                return;
+            }
+
+            _muryeongController = GetComponentInParent<KRMuryeongController>();
+
+            if (_muryeongController == null)
+            {
+                _muryeongController = GetComponentInChildren<KRMuryeongController>(true);
+            }
+
+            if (_muryeongController == null)
+            {
+                Debug.LogWarning("[KRPlayerDamageFeedback] KRMuryeongController를 찾지 못했습니다. 무령 잔흔 피해 감소가 적용되지 않습니다.");
+            }
+        }
+
+        private void EnsureHitColliderActive()
+        {
+            CapsuleCollider hitCollider = GetComponent<CapsuleCollider>();
+
+            if (hitCollider == null)
+            {
+                Debug.LogWarning(
+                    "[KRPlayerDamageFeedback] 피격 판정용 CapsuleCollider를 찾지 못했습니다 — " +
+                    "레이캐스트 기반 투사체가 플레이어를 못 맞힐 수 있습니다."
+                );
+                return;
+            }
+
+            hitCollider.enabled = true;
+            hitCollider.isTrigger = true;
+        }
+
         private void CacheHealthBarReferences()
         {
             if (_healthBarFill != null)
+            {
                 _healthBarFillRect = _healthBarFill.rectTransform;
+            }
 
             if (_healthBarFollow != null)
+            {
                 _healthBarFollowRect = _healthBarFollow.rectTransform;
+            }
 
             if (_forceRightAligned)
             {
@@ -205,12 +290,17 @@ namespace KillRitual.Player
             Canvas.ForceUpdateCanvases();
 
             if (_healthBarMaxWidth <= 0f)
+            {
                 _healthBarMaxWidth = GetReferenceWidth();
+            }
 
             if (_healthBarMaxWidth <= 0.01f)
             {
                 _healthBarMaxWidth = 100f;
-                Debug.LogWarning("[KRPlayerDamageFeedback] 체력바 최대 너비를 가져오지 못했습니다. _healthBarWidthReference에 Background를 연결하거나 _healthBarMaxWidth를 직접 입력하세요.");
+                Debug.LogWarning(
+                    "[KRPlayerDamageFeedback] 체력바 최대 너비를 가져오지 못했습니다. " +
+                    "_healthBarWidthReference에 Background를 연결하거나 _healthBarMaxWidth를 직접 입력하세요."
+                );
             }
 
             SetBarWidth(_healthBarFillRect, _healthBarMaxWidth);
@@ -224,25 +314,35 @@ namespace KillRitual.Player
                 float referenceWidth = Mathf.Abs(_healthBarWidthReference.rect.width);
 
                 if (referenceWidth > 0.01f)
+                {
                     return referenceWidth;
+                }
 
                 referenceWidth = Mathf.Abs(_healthBarWidthReference.sizeDelta.x);
 
                 if (referenceWidth > 0.01f)
+                {
                     return referenceWidth;
+                }
             }
 
+            // Reference가 없을 경우에만 Fill에서 가져옴.
+            // 하지만 Fill이 이미 줄어든 상태면 잘못된 값을 가져올 수 있음.
             if (_healthBarFillRect != null)
             {
                 float fillWidth = Mathf.Abs(_healthBarFillRect.rect.width);
 
                 if (fillWidth > 0.01f)
+                {
                     return fillWidth;
+                }
 
                 fillWidth = Mathf.Abs(_healthBarFillRect.sizeDelta.x);
 
                 if (fillWidth > 0.01f)
+                {
                     return fillWidth;
+                }
             }
 
             return 0f;
@@ -251,7 +351,9 @@ namespace KillRitual.Player
         private void ForceRightAligned(RectTransform rect)
         {
             if (rect == null)
+            {
                 return;
+            }
 
             Vector2 size = rect.sizeDelta;
             Vector2 anchoredPosition = rect.anchoredPosition;
@@ -272,7 +374,9 @@ namespace KillRitual.Player
             SetBarWidth(_healthBarFillRect, targetWidth);
 
             if (_healthBarFill != null)
+            {
                 _healthBarFill.gameObject.SetActive(ratio > 0f);
+            }
 
             UpdateFollowBar(targetWidth, ratio, followInstantly);
         }
@@ -286,7 +390,9 @@ namespace KillRitual.Player
         private void UpdateFollowBar(float targetWidth, float targetRatio, bool instant)
         {
             if (_healthBarFollowRect == null)
+            {
                 return;
+            }
 
             if (_followCoroutine != null)
             {
@@ -299,13 +405,17 @@ namespace KillRitual.Player
                 SetBarWidth(_healthBarFollowRect, targetWidth);
 
                 if (_healthBarFollow != null)
+                {
                     _healthBarFollow.gameObject.SetActive(targetRatio > 0f);
+                }
 
                 return;
             }
 
             if (_healthBarFollow != null)
+            {
                 _healthBarFollow.gameObject.SetActive(true);
+            }
 
             _followCoroutine = StartCoroutine(FollowBarRoutine(targetWidth, targetRatio));
         }
@@ -334,7 +444,9 @@ namespace KillRitual.Player
             SetBarWidth(_healthBarFollowRect, targetWidth);
 
             if (_healthBarFollow != null)
+            {
                 _healthBarFollow.gameObject.SetActive(targetRatio > 0f);
+            }
 
             _followCoroutine = null;
         }
@@ -342,12 +454,16 @@ namespace KillRitual.Player
         private float GetCurrentWidth(RectTransform rect)
         {
             if (rect == null)
+            {
                 return 0f;
+            }
 
             float width = Mathf.Abs(rect.rect.width);
 
             if (width <= 0.01f)
+            {
                 width = Mathf.Abs(rect.sizeDelta.x);
+            }
 
             return Mathf.Clamp(width, 0f, _healthBarMaxWidth);
         }
@@ -355,7 +471,9 @@ namespace KillRitual.Player
         private void SetBarWidth(RectTransform rect, float width)
         {
             if (rect == null)
+            {
                 return;
+            }
 
             width = Mathf.Clamp(width, 0f, _healthBarMaxWidth);
             rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
@@ -376,7 +494,9 @@ namespace KillRitual.Player
         private void SetOverlayAlpha(float alpha)
         {
             if (_damageOverlay == null)
+            {
                 return;
+            }
 
             Color c = _damageOverlay.color;
             c.a = alpha;
