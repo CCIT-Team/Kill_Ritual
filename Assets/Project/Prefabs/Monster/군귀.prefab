@@ -1601,16 +1601,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grade: 0
-  _maxHealth: 350
+  _maxHealth: 500
   _groggyHealthRatio: 0.3
   _groggyDuration: 3
   _detectRange: 50
   _chaseForever: 1
   _moveSpeed: 5
+  _useOriginalMaterialColors: 1
   _baseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
   _hitFlashDuration: 0.08
+  _hitEffectPrefab: {fileID: 0}
+  _hitEffectFallbackHeight: 1
   _despawnDelay: 1.1
+  _modelRoot: {fileID: 0}
   _attackRange: 6
   _attackCooldown: 5
   _attackDamage: 15

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Interfaces;
+using KillRitual.CombatZones;
 
 namespace KillRitual.Enemies
 {

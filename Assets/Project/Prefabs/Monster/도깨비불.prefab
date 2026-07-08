@@ -14693,7 +14693,7 @@ MonoBehaviour:
   _groggyDuration: 3
   _detectRange: 80
   _chaseForever: 1
-  _moveSpeed: 6
+  _moveSpeed: 10
   _useOriginalMaterialColors: 1
   _baseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
