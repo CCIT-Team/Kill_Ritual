@@ -10,9 +10,11 @@ namespace KillRitual.Player.Combat
     /// 흡혼 시스템 — 그로기 상태의 적을 처형하고 체력을 회복하는 전담 컴포넌트입니다.
     ///
     /// 기준:
-    /// - 애니메이터 처리는 기존 코드 그대로 유지
-    /// - 돌진 이동 방식도 기존 코드 그대로 유지
-    /// - 추가된 것은 FOV 가속감 + 적 방향 Yaw 보정뿐
+    /// - 돌진 프레임 수를 계산한 뒤, 마지막 N프레임 전에 Strike + Execute를 선행 호출합니다.
+    /// - 예: 돌진 5프레임 / 선행 3프레임이면 2프레임째에 Strike + Execute 시작
+    /// - 예: 돌진 10프레임 / 선행 3프레임이면 7프레임째에 Strike + Execute 시작
+    /// - 돌진이 끝나는 순간 플레이어 주먹 완전 신전 + 적 사망 리액션이 맞도록 구성합니다.
+    /// - 그 순간 킬 슬로우모션과 카메라 킥을 시작합니다.
     /// </summary>
     public sealed class KRAbsorptionSystem : MonoBehaviour
     {
@@ -52,11 +54,19 @@ namespace KillRitual.Player.Combat
         [Min(0.1f)]
         [SerializeField] private float _lungeMaxDistanceRef = 5f;
 
+        [Header("타격 싱크 설정")]
+        [Tooltip("적 사망 애니메이션과 플레이어 Strike 애니메이션을 도착 몇 프레임 전에 미리 시작할지 정합니다. 적 리액션/주먹 신전이 3프레임 뒤에 나오면 3으로 둡니다.")]
+        [Min(0)]
+        [SerializeField] private int _preImpactLeadFrames = 3;
+
+        [Tooltip("돌진이 끝나는 프레임에 슬로우모션과 카메라 킥을 시작합니다.")]
+        [SerializeField] private bool _playImpactEffectOnLungeEnd = true;
+
         [Header("카메라 시선 보정")]
         [Tooltip("돌진 중 Player 몸체의 Y축만 적 방향으로 돌립니다. Animator와 손 리그는 건드리지 않습니다.")]
         [SerializeField] private bool _lookAtTargetDuringLunge = true;
 
-        [Tooltip("타격 직전에 Player 몸체 방향을 적에게 즉시 맞춥니다.")]
+        [Tooltip("타격 선행 프레임에 Player 몸체 방향을 적에게 즉시 맞춥니다.")]
         [SerializeField] private bool _snapYawBeforeStrike = true;
 
         [Tooltip("몸체가 적 방향으로 돌아가는 속도입니다.")]
@@ -83,29 +93,40 @@ namespace KillRitual.Player.Combat
         [Min(0f)]
         [SerializeField] private float _cameraKickAmount = 5f;
 
-        [Tooltip("카메라 킥이 복구되는 시간(초).")]
+        [Tooltip("카메라 킥이 복구되는 시간(초, 실제 시간 기준).")]
         [Min(0.01f)]
         [SerializeField] private float _cameraKickDuration = 0.2f;
 
-        [Header("히트스톱 설정")]
-        [Tooltip("처치 순간 시간이 느려지는 배율. 현재 인스펙터 값 기준.")]
-        [Range(0f, 1f)]
-        [SerializeField] private float _hitStopTimeScale = 0.8f;
+        [Header("킬 슬로우모션 설정")]
+        [Tooltip("처치 순간 킬 슬로우모션을 사용할지 여부입니다.")]
+        [SerializeField] private bool _useKillSlowMotion = true;
 
-        [Tooltip("히트스톱 지속 시간(초, 실제 시간 기준).")]
-        [Min(0.01f)]
-        [SerializeField] private float _hitStopDuration = 0.2f;
+        [Tooltip("가장 느려졌을 때의 시간 배율입니다. 0.10이면 90% 느려진 상태입니다.")]
+        [Range(0.01f, 1f)]
+        [SerializeField] private float _killSlowMinScale = 0.10f;
+
+        [Tooltip("최소 시간 배율까지 내려가는 시간입니다. 60fps 기준 5프레임은 약 0.083초입니다.")]
+        [Min(0.001f)]
+        [SerializeField] private float _killSlowEnterDuration = 0.083f;
+
+        [Tooltip("가장 느린 상태를 유지하는 시간입니다. 처형 순간을 0.5초 정도 보여주려면 0.5로 둡니다.")]
+        [Min(0f)]
+        [SerializeField] private float _killSlowHoldDuration = 0.50f;
+
+        [Tooltip("원래 속도로 돌아오는 시간입니다.")]
+        [Min(0.001f)]
+        [SerializeField] private float _killSlowRecoverDuration = 0.20f;
 
         [Header("시퀀스 시간")]
-        [Tooltip("도움닫기 구간 시간(초). 현재 인스펙터 값 기준.")]
+        [Tooltip("도움닫기 구간 시간(초). CharacterController가 없을 때 대기 시간으로 사용됩니다.")]
         [Min(0.01f)]
         [SerializeField] private float _windUpDuration = 0.01f;
 
-        [Tooltip("돌입 처치 구간 시간(초).")]
+        [Tooltip("타격 후 Recover로 넘어가기 전 최소 유지 시간입니다. 실제 시간 기준으로 처리됩니다.")]
         [Min(0.01f)]
         [SerializeField] private float _strikeDuration = 0.3f;
 
-        [Tooltip("체력 회복 구간 시간(초). 현재 인스펙터 값 기준.")]
+        [Tooltip("체력 회복 구간 시간(초, 실제 시간 기준).")]
         [Min(0.01f)]
         [SerializeField] private float _recoveryDuration = 0.01f;
 
@@ -133,10 +154,17 @@ namespace KillRitual.Player.Combat
         public bool IsExecuting { get; private set; }
 
         private IDamageable _pendingImpactTarget;
-        private bool _impactApplied;
+        private EnemyGrade _pendingTargetGrade = EnemyGrade.Fodder;
+
+        private bool _preImpactStarted;
+        private bool _impactMomentPlayed;
+        private bool _isLunging;
 
         private float _defaultCameraFov = 60f;
         private Coroutine _fovRoutine;
+
+        private Coroutine _killSlowRoutine;
+        private float _defaultFixedDeltaTime;
 
         private void Awake()
         {
@@ -160,6 +188,14 @@ namespace KillRitual.Player.Combat
 
             if (_playerCamera != null)
                 _defaultCameraFov = _playerCamera.fieldOfView;
+
+            _defaultFixedDeltaTime = Time.fixedDeltaTime;
+        }
+
+        private void OnDisable()
+        {
+            RestoreTimeScaleImmediately();
+            RestoreFovImmediately();
         }
 
         private void Update()
@@ -181,106 +217,174 @@ namespace KillRitual.Player.Combat
         {
             IsExecuting = true;
 
+            _pendingImpactTarget = target;
+            _pendingTargetGrade = GetGrade(target);
+
+            _preImpactStarted = false;
+            _impactMomentPlayed = false;
+
             _combatSystem?.SetCurrentWeaponVisualActive(false);
 
-            // ① 도움닫기 — 기존 애니메이터 호출 그대로
+            // ① 도움닫기
             SetInvincible(true);
             _animator?.SetTrigger(kWindUpHash);
 
             yield return StartCoroutine(LungeToTarget(target));
 
-            if (target == null || target.IsDead)
+            // 돌진 도중 선행 타격이 실패했다면 시퀀스 중단
+            if (!_preImpactStarted)
             {
                 SetInvincible(false);
                 RestoreFovImmediately();
                 _combatSystem?.SetCurrentWeaponVisualActive(true);
+
+                _pendingImpactTarget = null;
                 IsExecuting = false;
                 yield break;
             }
 
-            _pendingImpactTarget = target;
-            _impactApplied = false;
+            // 돌진 완료 프레임 = 플레이어 주먹 완전 신전 + 적 리액션 시작 프레임
+            if (_playImpactEffectOnLungeEnd)
+                PlayImpactMoment();
 
-            if (_lookAtTargetDuringLunge && _snapYawBeforeStrike)
-                RotateBodyYawToTarget(target, 1f, true);
+            // 슬로우모션이 유지되는 동안 주먹과 적 리액션을 보여주기 위해 Recover를 늦춤
+            float recoverDelay = Mathf.Max(_strikeDuration, _killSlowEnterDuration + _killSlowHoldDuration);
+            yield return new WaitForSecondsRealtime(recoverDelay);
 
-            // ② 돌입 처치 — 기존 애니메이터 호출 그대로
-            _animator?.SetTrigger(kStrikeHash);
-
-            yield return new WaitForSeconds(_strikeDuration);
-
-            if (!_impactApplied)
-                NotifyPunchImpact();
-
-            // ③ 회복 — 기존 애니메이터 호출 그대로
+            // ③ 회복
             SetInvincible(false);
             _animator?.SetTrigger(kRecoverHash);
-            ApplyHeal(CalculateHeal(GetGrade(target)));
+            ApplyHeal(CalculateHeal(_pendingTargetGrade));
 
-            yield return new WaitForSeconds(_recoveryDuration);
+            yield return new WaitForSecondsRealtime(_recoveryDuration);
 
             RestoreFovImmediately();
 
             _combatSystem?.SetCurrentWeaponVisualActive(true);
+
             _pendingImpactTarget = null;
             IsExecuting = false;
         }
 
         /// <summary>
-        /// Punch.anim의 타격 프레임에서 KRPunchImpactRelay를 통해 호출됩니다.
+        /// Punch.anim의 타격 프레임에서 KRPunchImpactRelay를 통해 호출될 수 있습니다.
+        ///
+        /// 현재 구조에서는 돌진 중 마지막 N프레임 전에 BeginPreImpact()가 먼저 Execute를 호출합니다.
+        /// 따라서 이 함수는 예비 안전장치입니다.
+        /// - 선행 타격이 이미 시작된 경우: 중복 Execute를 하지 않습니다.
+        /// - 돌진이 끝난 상태라면 충돌 연출만 보정합니다.
         /// </summary>
         public void NotifyPunchImpact()
         {
-            if (_impactApplied) return;
-            if (_pendingImpactTarget == null || _pendingImpactTarget.IsDead) return;
+            if (_pendingImpactTarget == null)
+                return;
 
-            _impactApplied = true;
+            if (!_preImpactStarted)
+            {
+                BeginPreImpact(_pendingImpactTarget);
+            }
 
-            _pendingImpactTarget.Execute(KillRitual.Core.Interfaces.ExecutionSource.Absorption);
-
-            StartCoroutine(HitStop());
-            StartCoroutine(CameraKick());
+            if (!_isLunging)
+            {
+                PlayImpactMoment();
+            }
         }
 
         /// <summary>
-        /// 도움닫기 — 기존 돌진 계산 유지.
-        /// 추가된 것은 FOV 상승과 Player Yaw 보정뿐입니다.
+        /// 도움닫기.
+        /// 돌진 프레임 수를 계산하고, 마지막 _preImpactLeadFrames 프레임 전에
+        /// 플레이어 Strike와 적 Execute를 동시에 시작합니다.
         /// </summary>
         private IEnumerator LungeToTarget(IDamageable target)
         {
             if (_characterController == null)
             {
-                yield return new WaitForSeconds(_windUpDuration);
+                yield return new WaitForSecondsRealtime(_windUpDuration);
+
+                if (target != null && !target.IsDead)
+                    BeginPreImpact(target);
+
                 yield break;
             }
 
             Vector3 startPos = transform.position;
 
-            // 기존 코드 그대로
             Vector3 dirToPlayer = (startPos - target.Position).normalized;
             Vector3 targetPos = target.Position + dirToPlayer * _lungeStopDistance;
             targetPos.y = startPos.y;
 
             float distance = Vector3.Distance(startPos, targetPos);
             float distRatio = Mathf.Clamp01(distance / _lungeMaxDistanceRef);
+
             int frameCount = Mathf.RoundToInt(Mathf.Lerp(_lungeMinFrames, _lungeMaxFrames, distRatio));
+            frameCount = Mathf.Max(1, frameCount);
+
+            int preImpactFrame = Mathf.Clamp(frameCount - _preImpactLeadFrames, 0, frameCount - 1);
 
             if (_useLungeFovBoost)
                 StartLungeFovBoost();
 
+            _isLunging = true;
+
             for (int frame = 0; frame < frameCount; frame++)
             {
+                if (!_preImpactStarted && frame == preImpactFrame)
+                {
+                    BeginPreImpact(target);
+                }
+
                 float t = Mathf.SmoothStep(0f, 1f, (float)(frame + 1) / frameCount);
                 Vector3 desired = Vector3.Lerp(startPos, targetPos, t);
                 Vector3 delta = desired - transform.position;
 
                 _characterController.Move(delta);
 
-                if (_lookAtTargetDuringLunge && target != null && !target.IsDead)
+                if (_lookAtTargetDuringLunge && target != null && !_preImpactStarted)
                     RotateBodyYawToTarget(target, Time.unscaledDeltaTime, false);
 
                 yield return null;
             }
+
+            _isLunging = false;
+        }
+
+        /// <summary>
+        /// 돌진 종료 직전 N프레임에 호출됩니다.
+        /// 이 지점에서 플레이어 Strike와 적 Execute를 동시에 시작합니다.
+        /// </summary>
+        private void BeginPreImpact(IDamageable target)
+        {
+            if (_preImpactStarted) return;
+            if (target == null || target.IsDead) return;
+
+            _preImpactStarted = true;
+            _pendingImpactTarget = target;
+            _pendingTargetGrade = GetGrade(target);
+
+            if (_lookAtTargetDuringLunge && _snapYawBeforeStrike)
+                RotateBodyYawToTarget(target, 1f, true);
+
+            // 플레이어 주먹 애니메이션 시작
+            _animator?.SetTrigger(kStrikeHash);
+
+            // 적 사망 애니메이션/사망 처리 시작
+            // 적 애니메이션의 리액션이 3프레임 뒤라면,
+            // 돌진 종료 3프레임 전에 호출해야 도착 순간과 맞습니다.
+            target.Execute(KillRitual.Core.Interfaces.ExecutionSource.Absorption);
+        }
+
+        /// <summary>
+        /// 실제 충돌이 성립한 프레임의 연출입니다.
+        /// 돌진 종료 프레임에서 호출되어야 합니다.
+        /// </summary>
+        private void PlayImpactMoment()
+        {
+            if (_impactMomentPlayed) return;
+
+            _impactMomentPlayed = true;
+
+            StartKillSlowMotion();
+            StartCoroutine(CameraKick());
         }
 
         // ─────────────────────────────────────────────
@@ -366,16 +470,78 @@ namespace KillRitual.Player.Combat
         }
 
         // ─────────────────────────────────────────────
-        // 히트스톱 / 카메라 킥
+        // 킬 슬로우모션 / 카메라 킥
         // ─────────────────────────────────────────────
 
-        private IEnumerator HitStop()
+        private void StartKillSlowMotion()
         {
-            Time.timeScale = _hitStopTimeScale;
+            if (!_useKillSlowMotion) return;
 
-            yield return new WaitForSecondsRealtime(_hitStopDuration);
+            if (_killSlowRoutine != null)
+                StopCoroutine(_killSlowRoutine);
+
+            _killSlowRoutine = StartCoroutine(KillSlowMotionRoutine());
+        }
+
+        private IEnumerator KillSlowMotionRoutine()
+        {
+            float elapsed = 0f;
+
+            // 1. 약 5프레임 동안 급감속
+            while (elapsed < _killSlowEnterDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / _killSlowEnterDuration);
+
+                // 초반에 빠르게 떨어지고 끝에서 살짝 붙는 감속 곡선
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+
+                SetTimeScale(Mathf.Lerp(1f, _killSlowMinScale, eased));
+                yield return null;
+            }
+
+            SetTimeScale(_killSlowMinScale);
+
+            // 2. 감속 상태 유지
+            if (_killSlowHoldDuration > 0f)
+                yield return new WaitForSecondsRealtime(_killSlowHoldDuration);
+
+            elapsed = 0f;
+
+            // 3. 원래 속도로 복귀
+            while (elapsed < _killSlowRecoverDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / _killSlowRecoverDuration);
+
+                float eased = Mathf.SmoothStep(0f, 1f, t);
+
+                SetTimeScale(Mathf.Lerp(_killSlowMinScale, 1f, eased));
+                yield return null;
+            }
+
+            SetTimeScale(1f);
+            _killSlowRoutine = null;
+        }
+
+        private void SetTimeScale(float scale)
+        {
+            scale = Mathf.Clamp(scale, 0.01f, 1f);
+
+            Time.timeScale = scale;
+            Time.fixedDeltaTime = _defaultFixedDeltaTime * scale;
+        }
+
+        private void RestoreTimeScaleImmediately()
+        {
+            if (_killSlowRoutine != null)
+            {
+                StopCoroutine(_killSlowRoutine);
+                _killSlowRoutine = null;
+            }
 
             Time.timeScale = 1f;
+            Time.fixedDeltaTime = _defaultFixedDeltaTime;
         }
 
         private IEnumerator CameraKick()
