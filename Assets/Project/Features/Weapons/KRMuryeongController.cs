@@ -3,29 +3,13 @@ using System.Collections;
 using KillRitual.Enemies.Projectiles;
 using KillRitual.Weapons.Visual;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace KillRitual.Player.Combat
 {
-    /// <summary>
-    /// 무령 입력/판정 컨트롤러.
-    ///
-    /// 구조:
-    /// - EnemyProjectile 레이어의 원본 적 투사체 1개를 잡음
-    /// - 원본 투사체는 Destroy
-    /// - 카메라 기준 SphereCast로 적 조준 보정
-    /// - 무령 전용 투사체 프리팹을 새로 발사
-    /// - 반사 성공 후 약간의 딜레이 뒤 흡혼과 같은 슬로우모션/카메라 킥 연출을 재생
-    ///
-    /// 주의:
-    /// - 무령탄 데미지/폭발/충돌 마스크는 KRMuryeongProjectile 프리팹에서만 관리합니다.
-    /// - 이 컨트롤러에는 무령탄 데미지 값을 두지 않습니다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRMuryeongController : MonoBehaviour
     {
-        private const float AfterguardDuration = 0.3f;
-        private const float AfterguardDamageReductionRate = 0.8f;
-
         [Header("Input")]
         [SerializeField] private bool _listenInputDirectly = true;
         [SerializeField] private KeyCode _parryKey = KeyCode.LeftControl;
@@ -81,23 +65,67 @@ namespace KillRitual.Player.Combat
         [Tooltip("등급 구분 없이 무령 1회 성공에 소모되는 게이지.")]
         [SerializeField] private float _reflectCost = 10f;
 
+        [Header("Gauge Regeneration")]
+        [Tooltip("무령 게이지가 자동 회복되는지 여부입니다.")]
+        [SerializeField] private bool _useGaugeRegen = true;
+
+        [Tooltip("초당 무령 게이지 회복량입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _gaugeRegenPerSecond = 1f;
+
+        [Tooltip("게이지를 사용한 뒤 자동 회복이 시작되기 전 대기 시간입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _gaugeRegenDelayAfterUse = 0.5f;
+
+        [Header("Gauge Bar UI")]
+        [Tooltip("무령 게이지 전체 너비 기준이 되는 RectTransform입니다. 보통 Background를 넣으세요.")]
+        [SerializeField] private RectTransform _gaugeBarWidthReference;
+
+        [Tooltip("현재 무령 게이지를 표시하는 실제 Fill Image입니다. Image Type은 Sliced 권장.")]
+        [SerializeField] private Image _gaugeBarFill;
+
+        [Tooltip("게이지 감소량을 보여주는 뒤따라오는 바입니다. Fill 뒤, Background 앞에 배치하세요. Image Type은 Sliced 권장.")]
+        [SerializeField] private Image _gaugeBarFollow;
+
+        [Tooltip("게이지가 가득 찼을 때의 너비입니다. 0이면 Width Reference의 현재 너비를 자동으로 사용합니다.")]
+        [Min(0f)]
+        [SerializeField] private float _gaugeBarMaxWidth = 0f;
+
+        [Tooltip("실행 시 Fill / Follow의 Anchor와 Pivot을 오른쪽 기준으로 강제 설정합니다.")]
+        [SerializeField] private bool _forceGaugeRightAligned = true;
+
+        [Tooltip("게이지 감소 후 Follow Bar가 움직이기 전 대기 시간입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _gaugeFollowDelay = 0.15f;
+
+        [Tooltip("Follow Bar가 현재 게이지바 위치까지 줄어드는 시간입니다.")]
+        [Min(0.01f)]
+        [SerializeField] private float _gaugeFollowCatchUpDuration = 0.18f;
+
+        [Header("Afterguard")]
+        [Tooltip("무령 반사 성공 후 피해 감소가 유지되는 실제 시간입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _afterguardDuration = 2.3f;
+
+        [Tooltip("잔흔 중 감소시킬 피해 비율입니다. 0.8이면 80% 감소, 즉 20%만 받습니다.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _afterguardDamageReductionRate = 0.8f;
+
         [Header("Lockout")]
         [Min(0f)]
         [SerializeField] private float _missLockout = 2f;
 
         [Header("Reflect Hitstop")]
-        [Tooltip("반사 성공 후 히트스탑이 시작되기 전까지의 실제 시간 딜레이입니다. 이펙트가 먼저 보이게 하려면 0.15~0.2 권장.")]
+        [Tooltip("반사 성공 후 히트스탑이 시작되기 전까지의 실제 시간 딜레이입니다.")]
         [Min(0f)]
         [SerializeField] private float _reflectImpactDelay = 0.18f;
 
         [Tooltip("반사 성공 순간 슬로우모션을 사용할지 여부입니다.")]
         [SerializeField] private bool _useReflectSlowMotion = true;
 
-        [Tooltip("가장 느려졌을 때의 시간 배율입니다.")]
         [Range(0.01f, 1f)]
         [SerializeField] private float _reflectSlowMinScale = 0.10f;
 
-        [Tooltip("최소 시간 배율까지 내려가는 시간입니다.")]
         [Min(0.001f)]
         [SerializeField] private float _reflectSlowEnterDuration = 0.083f;
 
@@ -105,16 +133,13 @@ namespace KillRitual.Player.Combat
         [Min(0f)]
         [SerializeField] private float _reflectSlowHoldDuration = 0.12f;
 
-        [Tooltip("원래 속도로 돌아오는 시간입니다.")]
         [Min(0.001f)]
         [SerializeField] private float _reflectSlowRecoverDuration = 0.18f;
 
         [Header("Reflect Camera Kick")]
-        [Tooltip("반사 성공 순간 카메라가 튀는 강도입니다.")]
         [Min(0f)]
         [SerializeField] private float _reflectCameraKickAmount = 5f;
 
-        [Tooltip("카메라 킥이 복구되는 시간입니다. 실제 시간 기준입니다.")]
         [Min(0.01f)]
         [SerializeField] private float _reflectCameraKickDuration = 0.2f;
 
@@ -125,21 +150,25 @@ namespace KillRitual.Player.Combat
         private static readonly Collider[] CatchBuffer = new Collider[32];
 
         private float _nextAvailableTime;
-        private float _afterguardEndTime;
+        private float _afterguardEndRealtime;
+        private float _lastGaugeUseRealtime;
 
         private Coroutine _catchRoutine;
         private Coroutine _weaponRestoreRoutine;
-
         private Coroutine _reflectImpactDelayRoutine;
         private Coroutine _reflectSlowRoutine;
         private Coroutine _reflectCameraKickRoutine;
+        private Coroutine _gaugeFollowCoroutine;
+
+        private RectTransform _gaugeBarFillRect;
+        private RectTransform _gaugeBarFollowRect;
 
         private float _defaultFixedDeltaTime;
 
         public float CurrentGauge => _currentGauge;
         public float MaxGauge => _maxGauge;
         public float GaugeNormalized => _maxGauge <= 0f ? 0f : _currentGauge / _maxGauge;
-        public bool IsAfterguardActive => Time.time < _afterguardEndTime;
+        public bool IsAfterguardActive => Time.unscaledTime < _afterguardEndRealtime;
 
         private void Reset()
         {
@@ -165,8 +194,12 @@ namespace KillRitual.Player.Combat
 
             _maxGauge = Mathf.Max(1f, _maxGauge);
             _currentGauge = Mathf.Clamp(_currentGauge, 0f, _maxGauge);
+            _reflectCost = Mathf.Max(0f, _reflectCost);
 
             _defaultFixedDeltaTime = Time.fixedDeltaTime;
+
+            CacheGaugeBarReferences();
+            UpdateGaugeBar(true);
         }
 
         private void OnValidate()
@@ -174,12 +207,17 @@ namespace KillRitual.Player.Combat
             _maxGauge = Mathf.Max(1f, _maxGauge);
             _currentGauge = Mathf.Clamp(_currentGauge, 0f, _maxGauge);
             _reflectCost = Mathf.Max(0f, _reflectCost);
+            _gaugeRegenPerSecond = Mathf.Max(0f, _gaugeRegenPerSecond);
+            _gaugeRegenDelayAfterUse = Mathf.Max(0f, _gaugeRegenDelayAfterUse);
         }
 
         private void OnEnable()
         {
             if (_visual != null)
                 _visual.OnHidden += OnMuryeongHidden;
+
+            CacheGaugeBarReferences();
+            UpdateGaugeBar(true);
         }
 
         private void OnDisable()
@@ -199,6 +237,12 @@ namespace KillRitual.Player.Combat
                 _reflectImpactDelayRoutine = null;
             }
 
+            if (_gaugeFollowCoroutine != null)
+            {
+                StopCoroutine(_gaugeFollowCoroutine);
+                _gaugeFollowCoroutine = null;
+            }
+
             RestoreReflectTimeScaleImmediately();
             StopReflectCameraKickImmediately();
             RestoreCurrentWeaponVisual();
@@ -206,6 +250,8 @@ namespace KillRitual.Player.Combat
 
         private void Update()
         {
+            UpdateGaugeRegen();
+
             if (!_listenInputDirectly)
                 return;
 
@@ -329,18 +375,12 @@ namespace KillRitual.Player.Combat
                 ? caughtProjectileCollider.attachedRigidbody.gameObject
                 : caughtProjectileCollider.transform.root.gameObject;
 
-            // 원본 적 투사체는 재사용하지 않고 제거.
             Destroy(caughtRoot);
 
-            // 반사탄 발사.
             FireMuryeongProjectile(caughtPosition);
-
-            // 이펙트가 먼저 보이도록 0.15~0.2초 뒤에 히트스탑/카메라 킥.
             StartDelayedReflectImpactMoment();
-
             ApplyAfterguard();
 
-            // 성공 시 쿨타임 없음.
             _nextAvailableTime = Time.time;
         }
 
@@ -353,10 +393,7 @@ namespace KillRitual.Player.Combat
         {
             if (_muryeongProjectilePrefab == null)
             {
-                Debug.LogWarning(
-                    $"[{nameof(KRMuryeongController)}] Muryeong Projectile Prefab이 비어 있습니다.",
-                    this);
-
+                Debug.LogWarning($"[{nameof(KRMuryeongController)}] Muryeong Projectile Prefab이 비어 있습니다.", this);
                 return;
             }
 
@@ -443,7 +480,6 @@ namespace KillRitual.Player.Combat
         private float CalculateCameraCenterAngle(Vector3 worldPosition)
         {
             Transform viewTransform = GetViewTransform();
-
             Vector3 toTarget = worldPosition - viewTransform.position;
 
             if (toTarget.sqrMagnitude <= 0.0001f)
@@ -457,8 +493,36 @@ namespace KillRitual.Player.Combat
             if (_currentGauge < _reflectCost)
                 return false;
 
+            float previousGauge = _currentGauge;
+
             _currentGauge = Mathf.Clamp(_currentGauge - _reflectCost, 0f, _maxGauge);
+            _lastGaugeUseRealtime = Time.unscaledTime;
+
+            bool gaugeReduced = _currentGauge < previousGauge;
+            UpdateGaugeBar(!gaugeReduced);
+
             return true;
+        }
+
+        private void UpdateGaugeRegen()
+        {
+            if (!_useGaugeRegen)
+                return;
+
+            if (_gaugeRegenPerSecond <= 0f)
+                return;
+
+            if (_currentGauge >= _maxGauge)
+                return;
+
+            if (Time.unscaledTime < _lastGaugeUseRealtime + _gaugeRegenDelayAfterUse)
+                return;
+
+            _currentGauge = Mathf.Min(
+                _maxGauge,
+                _currentGauge + _gaugeRegenPerSecond * Time.unscaledDeltaTime);
+
+            UpdateGaugeBar(true);
         }
 
         public void AddGauge(float amount)
@@ -467,18 +531,197 @@ namespace KillRitual.Player.Combat
                 return;
 
             _currentGauge = Mathf.Clamp(_currentGauge + amount, 0f, _maxGauge);
+            UpdateGaugeBar(true);
         }
 
         public void SetGauge(float value)
         {
             _currentGauge = Mathf.Clamp(value, 0f, _maxGauge);
+            UpdateGaugeBar(true);
+        }
+
+        private void CacheGaugeBarReferences()
+        {
+            if (_gaugeBarFill != null)
+                _gaugeBarFillRect = _gaugeBarFill.rectTransform;
+
+            if (_gaugeBarFollow != null)
+                _gaugeBarFollowRect = _gaugeBarFollow.rectTransform;
+
+            if (_forceGaugeRightAligned)
+            {
+                ForceRightAligned(_gaugeBarFillRect);
+                ForceRightAligned(_gaugeBarFollowRect);
+            }
+
+            Canvas.ForceUpdateCanvases();
+
+            if (_gaugeBarMaxWidth <= 0f)
+                _gaugeBarMaxWidth = GetGaugeReferenceWidth();
+
+            if (_gaugeBarMaxWidth <= 0.01f)
+            {
+                _gaugeBarMaxWidth = 100f;
+                Debug.LogWarning(
+                    "[KRMuryeongController] 무령 게이지바 최대 너비를 가져오지 못했습니다. " +
+                    "_gaugeBarWidthReference에 Background를 연결하거나 _gaugeBarMaxWidth를 직접 입력하세요.",
+                    this);
+            }
+
+            SetGaugeBarWidth(_gaugeBarFillRect, GetGaugeWidthFromRatio(GaugeNormalized));
+            SetGaugeBarWidth(_gaugeBarFollowRect, GetGaugeWidthFromRatio(GaugeNormalized));
+        }
+
+        private float GetGaugeReferenceWidth()
+        {
+            if (_gaugeBarWidthReference != null)
+            {
+                float referenceWidth = Mathf.Abs(_gaugeBarWidthReference.rect.width);
+
+                if (referenceWidth > 0.01f)
+                    return referenceWidth;
+
+                referenceWidth = Mathf.Abs(_gaugeBarWidthReference.sizeDelta.x);
+
+                if (referenceWidth > 0.01f)
+                    return referenceWidth;
+            }
+
+            if (_gaugeBarFillRect != null)
+            {
+                float fillWidth = Mathf.Abs(_gaugeBarFillRect.rect.width);
+
+                if (fillWidth > 0.01f)
+                    return fillWidth;
+
+                fillWidth = Mathf.Abs(_gaugeBarFillRect.sizeDelta.x);
+
+                if (fillWidth > 0.01f)
+                    return fillWidth;
+            }
+
+            return 0f;
+        }
+
+        private void ForceRightAligned(RectTransform rect)
+        {
+            if (rect == null)
+                return;
+
+            Vector2 size = rect.sizeDelta;
+            Vector2 anchoredPosition = rect.anchoredPosition;
+
+            rect.anchorMin = new Vector2(1f, rect.anchorMin.y);
+            rect.anchorMax = new Vector2(1f, rect.anchorMax.y);
+            rect.pivot = new Vector2(1f, rect.pivot.y);
+
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchoredPosition;
+        }
+
+        private void UpdateGaugeBar(bool followInstantly)
+        {
+            float ratio = GaugeNormalized;
+            float targetWidth = GetGaugeWidthFromRatio(ratio);
+
+            SetGaugeBarWidth(_gaugeBarFillRect, targetWidth);
+
+            if (_gaugeBarFill != null)
+                _gaugeBarFill.gameObject.SetActive(ratio > 0f);
+
+            UpdateGaugeFollowBar(targetWidth, ratio, followInstantly);
+        }
+
+        private float GetGaugeWidthFromRatio(float ratio)
+        {
+            ratio = Mathf.Clamp01(ratio);
+            return Mathf.Clamp(_gaugeBarMaxWidth * ratio, 0f, _gaugeBarMaxWidth);
+        }
+
+        private void UpdateGaugeFollowBar(float targetWidth, float targetRatio, bool instant)
+        {
+            if (_gaugeBarFollowRect == null)
+                return;
+
+            if (_gaugeFollowCoroutine != null)
+            {
+                StopCoroutine(_gaugeFollowCoroutine);
+                _gaugeFollowCoroutine = null;
+            }
+
+            if (instant)
+            {
+                SetGaugeBarWidth(_gaugeBarFollowRect, targetWidth);
+
+                if (_gaugeBarFollow != null)
+                    _gaugeBarFollow.gameObject.SetActive(targetRatio > 0f);
+
+                return;
+            }
+
+            if (_gaugeBarFollow != null)
+                _gaugeBarFollow.gameObject.SetActive(true);
+
+            _gaugeFollowCoroutine = StartCoroutine(GaugeFollowBarRoutine(targetWidth, targetRatio));
+        }
+
+        private IEnumerator GaugeFollowBarRoutine(float targetWidth, float targetRatio)
+        {
+            if (_gaugeFollowDelay > 0f)
+                yield return new WaitForSecondsRealtime(_gaugeFollowDelay);
+
+            float startWidth = GetCurrentGaugeBarWidth(_gaugeBarFollowRect);
+            startWidth = Mathf.Clamp(startWidth, 0f, _gaugeBarMaxWidth);
+
+            float elapsed = 0f;
+
+            while (elapsed < _gaugeFollowCatchUpDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+
+                float t = Mathf.Clamp01(elapsed / _gaugeFollowCatchUpDuration);
+                float width = Mathf.Lerp(startWidth, targetWidth, t);
+
+                SetGaugeBarWidth(_gaugeBarFollowRect, width);
+
+                yield return null;
+            }
+
+            SetGaugeBarWidth(_gaugeBarFollowRect, targetWidth);
+
+            if (_gaugeBarFollow != null)
+                _gaugeBarFollow.gameObject.SetActive(targetRatio > 0f);
+
+            _gaugeFollowCoroutine = null;
+        }
+
+        private float GetCurrentGaugeBarWidth(RectTransform rect)
+        {
+            if (rect == null)
+                return 0f;
+
+            float width = Mathf.Abs(rect.rect.width);
+
+            if (width <= 0.01f)
+                width = Mathf.Abs(rect.sizeDelta.x);
+
+            return Mathf.Clamp(width, 0f, _gaugeBarMaxWidth);
+        }
+
+        private void SetGaugeBarWidth(RectTransform rect, float width)
+        {
+            if (rect == null)
+                return;
+
+            width = Mathf.Clamp(width, 0f, _gaugeBarMaxWidth);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
         }
 
         private void ApplyAfterguard()
         {
-            _afterguardEndTime = Mathf.Max(
-                _afterguardEndTime,
-                Time.time + AfterguardDuration);
+            _afterguardEndRealtime = Mathf.Max(
+                _afterguardEndRealtime,
+                Time.unscaledTime + _afterguardDuration);
         }
 
         public float ModifyIncomingDamageByMuryeong(float rawDamage)
@@ -489,12 +732,8 @@ namespace KillRitual.Player.Combat
             if (!IsAfterguardActive)
                 return rawDamage;
 
-            return rawDamage * (1f - AfterguardDamageReductionRate);
+            return rawDamage * (1f - _afterguardDamageReductionRate);
         }
-
-        // ─────────────────────────────────────────────
-        // 반사 성공 히트스톱 / 카메라 킥
-        // ─────────────────────────────────────────────
 
         private void StartDelayedReflectImpactMoment()
         {
@@ -634,10 +873,6 @@ namespace KillRitual.Player.Combat
                 _reflectCameraKickRoutine = null;
             }
         }
-
-        // ─────────────────────────────────────────────
-        // 무기 손 숨김 / 복구
-        // ─────────────────────────────────────────────
 
         private void HideCurrentWeaponVisual()
         {

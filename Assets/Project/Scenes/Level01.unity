@@ -87578,7 +87578,19 @@ MonoBehaviour:
   _targetHeightOffset: 1
   _maxGauge: 100
   _currentGauge: 100
-  _reflectCost: 10
+  _reflectCost: 20
+  _useGaugeRegen: 1
+  _gaugeRegenPerSecond: 1
+  _gaugeRegenDelayAfterUse: 1
+  _gaugeBarWidthReference: {fileID: 1634632860}
+  _gaugeBarFill: {fileID: 963535440}
+  _gaugeBarFollow: {fileID: 1929201929}
+  _gaugeBarMaxWidth: 0
+  _forceGaugeRightAligned: 1
+  _gaugeFollowDelay: 0.15
+  _gaugeFollowCatchUpDuration: 0.18
+  _afterguardDuration: 2
+  _afterguardDamageReductionRate: 0.8
   _missLockout: 2
   _reflectImpactDelay: 0.18
   _useReflectSlowMotion: 1
@@ -87633,6 +87645,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _maxHealth: 100
+  _muryeongController: {fileID: 0}
   _healthBarWidthReference: {fileID: 1478325089}
   _healthBarFill: {fileID: 1937885034}
   _healthBarFollow: {fileID: 151864601}

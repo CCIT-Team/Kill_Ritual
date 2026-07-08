@@ -1,27 +1,23 @@
-﻿using System.Collections;
+﻿// Assets/Project/Scripts/Player/KRPlayerDamageFeedback.cs
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Interfaces;
+using KillRitual.Player.Combat;
 
 namespace KillRitual.Player
 {
-    /// <summary>
-    /// 플레이어의 체력과 피격 반응을 담당합니다.
-    ///
-    /// 체력바 처리 방식:
-    ///   1. Image.fillAmount를 사용하지 않습니다.
-    ///   2. Sliced Image의 RectTransform Width를 직접 조절합니다.
-    ///   3. Fill / Follow Bar는 오른쪽 기준으로 고정됩니다.
-    ///   4. 체력이 줄어들면 왼쪽에서 오른쪽 방향으로 깎입니다.
-    ///   5. Follow Bar는 실제 체력바보다 늦게 따라옵니다.
-    /// </summary>
     public sealed class KRPlayerDamageFeedback : MonoBehaviour, IDamageable
     {
         [Header("체력")]
         [Tooltip("플레이어의 최대 체력입니다.")]
         [Min(1f)]
         [SerializeField] private float _maxHealth = 100f;
+
+        [Header("무령 잔흔")]
+        [Tooltip("무령 반사 성공 후 피해 감소를 적용할 컨트롤러입니다. 비워두면 부모/자식 계층에서 자동 탐색합니다.")]
+        [SerializeField] private KRMuryeongController _muryeongController;
 
         [Header("체력바 UI 연결")]
         [Tooltip("체력바 전체 너비 기준이 되는 RectTransform입니다. 보통 Background를 넣으세요.")]
@@ -68,6 +64,7 @@ namespace KillRitual.Player
 
         private Coroutine _followCoroutine;
         private bool _isInvincible;
+
         public bool IsDead => _health <= 0f;
         public bool IsGroggy => false;
         public Vector3 Position => transform.position;
@@ -80,36 +77,37 @@ namespace KillRitual.Player
             _health = _maxHealth;
 
             EnsureHitColliderActive();
+            CacheMuryeongController();
             CacheHealthBarReferences();
 
             if (_gameOverUI == null)
-            {
                 _gameOverUI = FindObjectOfType<KRGameOverUI>();
-            }
 
             UpdateHealthBar(true);
             HideOverlayInstantly();
         }
 
-        /// <summary>
-        /// [2026-07-08 신규] 씬마다 사람이 직접 Inspector에서 설정해두는 방식이면 실수로 꺼먹기
-        /// 쉬워서(실제로 dev_hs 씬에서 이 문제로 보스 철갑 조각이 플레이어를 못 맞히고 있었습니다),
-        /// 씬 세팅에 기대지 않고 코드에서 항상 올바른 상태로 강제합니다. CharacterController는
-        /// Collider를 상속하는 별도 컴포넌트라 GetComponent&lt;CapsuleCollider&gt;()로 명시적으로
-        /// 찾아서 그것만 건드리고 CharacterController 자체는 손대지 않습니다.
-        /// </summary>
+        private void CacheMuryeongController()
+        {
+            if (_muryeongController != null)
+                return;
+
+            _muryeongController = GetComponentInParent<KRMuryeongController>();
+
+            if (_muryeongController == null)
+                _muryeongController = GetComponentInChildren<KRMuryeongController>();
+        }
+
         private void EnsureHitColliderActive()
         {
             CapsuleCollider hitCollider = GetComponent<CapsuleCollider>();
             if (hitCollider == null)
             {
                 Debug.LogWarning("[KRPlayerDamageFeedback] 피격 판정용 CapsuleCollider를 찾지 못했습니다 — " +
-                                  "레이캐스트 기반 투사체(보스 철갑 조각 등)가 플레이어를 못 맞힐 수 있습니다.");
+                                  "레이캐스트 기반 투사체가 플레이어를 못 맞힐 수 있습니다.");
                 return;
             }
 
-            // Is Trigger로 켜서 CharacterController/Rigidbody의 이동 물리와는 절대 안 부딪히면서도
-            // 레이캐스트(Physics.queriesHitTriggers가 프로젝트 설정에서 켜져 있음)에는 그대로 잡힙니다.
             hitCollider.enabled = true;
             hitCollider.isTrigger = true;
         }
@@ -134,16 +132,25 @@ namespace KillRitual.Player
 
         public void TakeDamage(KRDamageContext context)
         {
-            if (IsDead) return;
-            if (_isInvincible) return;
+            if (IsDead)
+                return;
+
+            if (_isInvincible)
+                return;
+
+            float incomingDamage = context.DamageAmount;
+
+            if (_muryeongController != null)
+                incomingDamage = _muryeongController.ModifyIncomingDamageByMuryeong(incomingDamage);
+
+            if (incomingDamage <= 0f)
+                return;
 
             float previousHealth = _health;
-            _health = Mathf.Max(0f, _health - context.DamageAmount);
+            _health = Mathf.Max(0f, _health - incomingDamage);
 
             bool healthReduced = _health < previousHealth;
 
-            // Fill은 즉시 줄어듦.
-            // Follow는 데미지를 받았을 때만 늦게 따라옴.
             UpdateHealthBar(!healthReduced);
 
             if (_damageOverlay != null)
@@ -153,9 +160,7 @@ namespace KillRitual.Player
             }
 
             if (_health <= 0f)
-            {
                 TriggerGameOver();
-            }
         }
 
         public void Execute(ExecutionSource source = ExecutionSource.Default)
@@ -163,21 +168,21 @@ namespace KillRitual.Player
             _health = 0f;
             UpdateHealthBar(false);
             TriggerGameOver();
-        }   
+        }
 
         public void Heal(float amount)
         {
             if (IsDead)
-            {
                 return;
-            }
+
+            if (amount <= 0f)
+                return;
 
             _health = Mathf.Min(_maxHealth, _health + amount);
 
-            // 회복 시에는 손실 표시가 필요 없으므로 Fill / Follow 둘 다 즉시 맞춤.
             UpdateHealthBar(true);
         }
-        /// <summary>흡혼 시퀀스 중 무적 상태를 설정합니다.</summary>
+
         public void SetInvincible(bool invincible)
         {
             _isInvincible = invincible;
@@ -186,14 +191,10 @@ namespace KillRitual.Player
         private void CacheHealthBarReferences()
         {
             if (_healthBarFill != null)
-            {
                 _healthBarFillRect = _healthBarFill.rectTransform;
-            }
 
             if (_healthBarFollow != null)
-            {
                 _healthBarFollowRect = _healthBarFollow.rectTransform;
-            }
 
             if (_forceRightAligned)
             {
@@ -204,9 +205,7 @@ namespace KillRitual.Player
             Canvas.ForceUpdateCanvases();
 
             if (_healthBarMaxWidth <= 0f)
-            {
                 _healthBarMaxWidth = GetReferenceWidth();
-            }
 
             if (_healthBarMaxWidth <= 0.01f)
             {
@@ -225,35 +224,25 @@ namespace KillRitual.Player
                 float referenceWidth = Mathf.Abs(_healthBarWidthReference.rect.width);
 
                 if (referenceWidth > 0.01f)
-                {
                     return referenceWidth;
-                }
 
                 referenceWidth = Mathf.Abs(_healthBarWidthReference.sizeDelta.x);
 
                 if (referenceWidth > 0.01f)
-                {
                     return referenceWidth;
-                }
             }
 
-            // Reference가 없을 경우에만 Fill에서 가져옴.
-            // 하지만 이 방식은 Fill이 이미 줄어든 상태면 잘못된 값을 가져올 수 있음.
             if (_healthBarFillRect != null)
             {
                 float fillWidth = Mathf.Abs(_healthBarFillRect.rect.width);
 
                 if (fillWidth > 0.01f)
-                {
                     return fillWidth;
-                }
 
                 fillWidth = Mathf.Abs(_healthBarFillRect.sizeDelta.x);
 
                 if (fillWidth > 0.01f)
-                {
                     return fillWidth;
-                }
             }
 
             return 0f;
@@ -262,9 +251,7 @@ namespace KillRitual.Player
         private void ForceRightAligned(RectTransform rect)
         {
             if (rect == null)
-            {
                 return;
-            }
 
             Vector2 size = rect.sizeDelta;
             Vector2 anchoredPosition = rect.anchoredPosition;
@@ -285,9 +272,7 @@ namespace KillRitual.Player
             SetBarWidth(_healthBarFillRect, targetWidth);
 
             if (_healthBarFill != null)
-            {
                 _healthBarFill.gameObject.SetActive(ratio > 0f);
-            }
 
             UpdateFollowBar(targetWidth, ratio, followInstantly);
         }
@@ -301,9 +286,7 @@ namespace KillRitual.Player
         private void UpdateFollowBar(float targetWidth, float targetRatio, bool instant)
         {
             if (_healthBarFollowRect == null)
-            {
                 return;
-            }
 
             if (_followCoroutine != null)
             {
@@ -316,17 +299,13 @@ namespace KillRitual.Player
                 SetBarWidth(_healthBarFollowRect, targetWidth);
 
                 if (_healthBarFollow != null)
-                {
                     _healthBarFollow.gameObject.SetActive(targetRatio > 0f);
-                }
 
                 return;
             }
 
             if (_healthBarFollow != null)
-            {
                 _healthBarFollow.gameObject.SetActive(true);
-            }
 
             _followCoroutine = StartCoroutine(FollowBarRoutine(targetWidth, targetRatio));
         }
@@ -355,9 +334,7 @@ namespace KillRitual.Player
             SetBarWidth(_healthBarFollowRect, targetWidth);
 
             if (_healthBarFollow != null)
-            {
                 _healthBarFollow.gameObject.SetActive(targetRatio > 0f);
-            }
 
             _followCoroutine = null;
         }
@@ -365,16 +342,12 @@ namespace KillRitual.Player
         private float GetCurrentWidth(RectTransform rect)
         {
             if (rect == null)
-            {
                 return 0f;
-            }
 
             float width = Mathf.Abs(rect.rect.width);
 
             if (width <= 0.01f)
-            {
                 width = Mathf.Abs(rect.sizeDelta.x);
-            }
 
             return Mathf.Clamp(width, 0f, _healthBarMaxWidth);
         }
@@ -382,9 +355,7 @@ namespace KillRitual.Player
         private void SetBarWidth(RectTransform rect, float width)
         {
             if (rect == null)
-            {
                 return;
-            }
 
             width = Mathf.Clamp(width, 0f, _healthBarMaxWidth);
             rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
@@ -405,9 +376,7 @@ namespace KillRitual.Player
         private void SetOverlayAlpha(float alpha)
         {
             if (_damageOverlay == null)
-            {
                 return;
-            }
 
             Color c = _damageOverlay.color;
             c.a = alpha;
