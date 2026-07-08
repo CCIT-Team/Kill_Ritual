@@ -88,9 +88,18 @@ namespace KillRitual.Enemies
 
         private void HandleHit(Vector3 point, Collider hitCollider)
         {
-            IDamageable target = KRManagers.Combat != null
-                ? KRManagers.Combat.Lookup(hitCollider)
-                : hitCollider.GetComponentInParent<IDamageable>();
+            // [2026-07-08 버그 수정] "레이어가 Default라서 데미지가 안 들어온다"고 짐작했던 문제의
+            // 진짜 원인: 레이어/LayerMask 문제가 아니라 KRManagers.Combat 레지스트리에 플레이어가
+            // 등록되어 있지 않은 것이었습니다. 적(KREnemyBase)과 보스 부위(KRBossBodyPart)는
+            // Awake()/OnEnable()에서 스스로 KRManagers.Combat.Register()를 호출하지만, 플레이어
+            // (KRPlayerDamageFeedback)는 어디서도 등록을 안 합니다 — 그래서 KRManagers.Combat이
+            // null이 아닌 이상 Lookup(hitCollider)이 플레이어를 못 찾고 항상 null을 반환했고,
+            // 예전 코드는 "Combat 매니저 자체가 없을 때만" GetComponentInParent로 대체하는
+            // 삼항연산자였기 때문에 이 대체 경로를 절대 안 탔습니다. 이제 Lookup이 null이면
+            // GetComponentInParent<IDamageable>()로 한 번 더 시도하도록 바꿨습니다(다른 패턴들이
+            // 쓰는 FindPlayerDamageable()과 같은 원리).
+            IDamageable target = KRManagers.Combat != null ? KRManagers.Combat.Lookup(hitCollider) : null;
+            if (target == null) target = hitCollider.GetComponentInParent<IDamageable>();
 
             if (target != null && !ReferenceEquals(target, _owner) && !target.IsDead)
             {
@@ -118,9 +127,11 @@ namespace KillRitual.Enemies
 
             foreach (Collider col in hits)
             {
-                IDamageable target = KRManagers.Combat != null
-                    ? KRManagers.Combat.Lookup(col)
-                    : col.GetComponentInParent<IDamageable>();
+                // [2026-07-08 버그 수정] HandleHit()과 같은 이유로 폭발 판정에도 동일하게
+                // GetComponentInParent 대체 경로를 추가합니다(플레이어가 Combat 레지스트리에
+                // 등록돼 있지 않아서 Lookup만으로는 못 찾습니다).
+                IDamageable target = KRManagers.Combat != null ? KRManagers.Combat.Lookup(col) : null;
+                if (target == null) target = col.GetComponentInParent<IDamageable>();
 
                 if (target == null || ReferenceEquals(target, _owner) || target.IsDead) continue;
 

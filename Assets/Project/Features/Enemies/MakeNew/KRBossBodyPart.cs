@@ -23,9 +23,10 @@ namespace KillRitual.Enemies
     ///   보스 컨트롤러(KRBossJakdu01)가 이걸 구독해서 "이동속도 감소", "돌진 패턴 봉인",
     ///   "강제 다운" 같은 실제 행동 변화를 적용합니다 — 즉 부위 파괴가 그냥 눈요기가 아니라
     ///   전투 자체를 바꿉니다.
-    /// - 파괴된 부위는 그 자리에 작게 남는 발광 표시(코드로 즉석 생성, 자동 소멸 안 함)로
-    ///   구분됩니다. 다운받은 완성형 모델이라 실제로 잘려나간 메시/텍스처는 없어서,
-    ///   시각 피드백은 이 정도가 한계입니다.
+    /// - [2026-07-08 변경] 파괴된 부위는 몸통 렌더러의 해당 머티리얼 슬롯 색을 바꿔서 표시합니다
+    ///   (모델이 부위별로 머티리얼 슬롯이 나뉘어 있다는 걸 확인해서 반영했습니다 — "메터리얼
+    ///   변경으로 보여주면 안되는거야?" 요청 반영). _bodyRenderer/_materialSlotIndex를 안
+    ///   연결해두면 예전 방식(그 자리에 작게 남는 구체 마커)으로 자동 대체됩니다.
     /// </summary>
     [RequireComponent(typeof(Collider))]
     public sealed class KRBossBodyPart : MonoBehaviour, IDamageable
@@ -46,10 +47,24 @@ namespace KillRitual.Enemies
         [Tooltip("파괴 전, 일반 피격 시 표시할 플래시 색.")]
         [SerializeField] private Color _hitFlashColor = new Color(1f, 0.15f, 0.1f, 1f);
 
-        [Tooltip("파괴된 부위 자리에 영구적으로 남는 표시의 색.")]
+        [Tooltip("파괴된 부위를 표시할 색(머티리얼 틴트에도, 구체 마커 폴백에도 둘 다 씁니다).")]
         [SerializeField] private Color _breakMarkerColor = new Color(0.12f, 0.12f, 0.12f, 1f);
 
-        [Tooltip("파괴 표시 오브젝트의 크기(로컬 스케일 배수).")]
+        [Header("파괴 표시 - 머티리얼 틴트 (2026-07-08 신규)")]
+        [Tooltip("이 부위에 해당하는 몸통 렌더러(모델의 SkinnedMeshRenderer). 보통 모든 부위가 " +
+                 "같은 렌더러 하나를 공유합니다(하나의 스킨 메시라서) — 그 렌더러를 여기 끌어다 " +
+                 "놓으세요. 비워두면 예전 방식(구체 마커)으로 자동 대체됩니다.")]
+        [SerializeField] private Renderer _bodyRenderer;
+
+        [Tooltip("_bodyRenderer의 Materials 리스트에서 이 부위에 해당하는 슬롯 번호(Element 0, 1, 2...). " +
+                 "에디터에서 _bodyRenderer를 선택하면 Materials 항목에 머리/몸통/다리 등 부위별로 " +
+                 "나뉜 슬롯이 보일 겁니다 — 거기 순서(0부터 시작)를 그대로 적으세요. -1이면 " +
+                 "머티리얼 틴트를 안 쓰고 예전 방식(구체 마커)을 씁니다.")]
+        [SerializeField] private int _materialSlotIndex = -1;
+
+        [Tooltip("[2026-07-08 더 이상 기본으로 안 씀] _bodyRenderer/_materialSlotIndex가 제대로 " +
+                 "연결되면 머티리얼 틴트가 우선이고, 이 구체 마커는 안 씁니다. 연결이 안 됐을 " +
+                 "때만(폴백) 자동으로 이 구체 마커가 대신 나옵니다.")]
         [Min(0.05f)]
         [SerializeField] private float _breakMarkerScale = 0.4f;
 
@@ -135,7 +150,7 @@ namespace KillRitual.Enemies
 
             _isBroken = true;
             Debug.Log($"[KRBossBodyPart] {_partName}: 부위 파괴!");
-            SpawnPersistentBreakMarker();
+            ApplyBrokenVisual();
             OnBroken?.Invoke();
         }
 
@@ -165,9 +180,35 @@ namespace KillRitual.Enemies
         }
 
         /// <summary>
-        /// [2026-07-07 신규] 부위가 파괴된 자리에 영구적으로 남는 작은 표시입니다(자동 소멸 안 함).
-        /// 실제로 손상된 버전의 메시/텍스처는 없으므로(다운로드한 완성형 모델), 이 정도가
-        /// 지금 줄 수 있는 최소한의 "이 부위는 파괴됐다"는 시각 피드백입니다.
+        /// [2026-07-08 신규] 부위 파괴 시각 표시의 진입점입니다. _bodyRenderer/_materialSlotIndex가
+        /// 제대로 연결돼 있으면 그 머티리얼 슬롯만 콕 집어서 색을 바꾸고(SetPropertyBlock의
+        /// materialIndex 오버로드 — 다른 부위/슬롯엔 영향 없음), 안 연결돼 있으면 예전 방식인
+        /// 구체 마커(SpawnPersistentBreakMarker)로 자동 대체합니다.
+        /// </summary>
+        private void ApplyBrokenVisual()
+        {
+            if (_bodyRenderer == null || _materialSlotIndex < 0)
+            {
+                Debug.LogWarning($"[KRBossBodyPart] {_partName}: _bodyRenderer 또는 " +
+                                  "_materialSlotIndex가 안 연결되어 있어 머티리얼 틴트 대신 " +
+                                  "구체 마커로 대체합니다. 모델의 SkinnedMeshRenderer를 " +
+                                  "_bodyRenderer에, 해당 부위의 Materials 슬롯 번호를 " +
+                                  "_materialSlotIndex에 연결하면 머티리얼 틴트를 씁니다.");
+                SpawnPersistentBreakMarker();
+                return;
+            }
+
+            var block = new MaterialPropertyBlock();
+            _bodyRenderer.GetPropertyBlock(block, _materialSlotIndex);
+            block.SetColor(kFlashColorId, _breakMarkerColor);
+            block.SetColor(kFlashBaseColorId, _breakMarkerColor);
+            _bodyRenderer.SetPropertyBlock(block, _materialSlotIndex);
+        }
+
+        /// <summary>
+        /// [2026-07-07 신규, 2026-07-08부터 폴백 전용] 부위가 파괴된 자리에 영구적으로 남는 작은
+        /// 표시입니다(자동 소멸 안 함). _bodyRenderer/_materialSlotIndex가 연결 안 됐을 때만
+        /// ApplyBrokenVisual()이 자동으로 이걸 대신 호출합니다.
         /// </summary>
         private void SpawnPersistentBreakMarker()
         {

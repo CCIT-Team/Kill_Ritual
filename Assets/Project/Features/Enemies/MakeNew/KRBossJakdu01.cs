@@ -88,6 +88,16 @@ namespace KillRitual.Enemies
         [Range(1f, 3f)]
         [SerializeField] private float _sprintSpeedMultiplier = 1.6f;
 
+        [Tooltip("[2026-07-08 신규] '근거리 살살 접근' — 기준거리(_preferredDistance) 바로 바깥쪽, " +
+                 "이 폭(m)만큼의 구간에서는 뛰지 않고 걸어서 다가옵니다. 예: 기준거리 9, 이 값 3이면 " +
+                 "9~12m 구간에서만 Walk를 씁니다. 그보다 멀면 평소처럼 Run(또는 전력 질주)입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _walkZoneWidth = 3f;
+
+        [Tooltip("걷기(Walk) 구간에서 이동속도에 곱해지는 배율.")]
+        [Range(0.1f, 1f)]
+        [SerializeField] private float _walkSpeedMultiplier = 0.5f;
+
         [Tooltip("패턴 하나가 끝난 뒤 다음 패턴까지의 기본 대기 시간(초, 1페이즈 기준).")]
         [Min(0.1f)]
         [SerializeField] private float _patternCooldown = 2.5f;
@@ -129,7 +139,7 @@ namespace KillRitual.Enemies
 
         [Header("패턴3 - 돌진")]
         [Min(0.1f)] [SerializeField] private float _chargeWindup = 1f;
-        [Min(1f)] [SerializeField] private float _chargeSpeed = 15f;
+        [Min(1f)] [SerializeField] private float _chargeSpeed = 22f;
         [Min(1f)] [SerializeField] private float _chargeMaxDistance = 20f;
         [Min(0f)] [SerializeField] private float _chargeDamage = 30f;
         [Tooltip("더 이상 안 씀 — _chargeHitbox(실제 Trigger 콜라이더)가 판정을 전담합니다. " +
@@ -204,9 +214,18 @@ namespace KillRitual.Enemies
 
             _bodyBaseScale = transform.localScale;
 
-            if (_visualAnimator != null && _visualAnimator.applyRootMotion)
-                Debug.LogWarning($"[불가살이] {name}: Animator의 Apply Root Motion이 켜져 있습니다 — " +
-                                  "이동 코드가 옮긴 위치를 애니메이션이 매 프레임 덮어쓸 수 있습니다. 꺼주세요.");
+            // [2026-07-08 신규] 이동/회전이 전부 코드로 제어됩니다 — MoveTowards()(NavMeshAgent),
+            // DoChargeDash()의 수동 transform.position 이동, TurnBackTowardsPlayer()의 수동
+            // transform.rotation Slerp, FacePlayer()의 수동 회전까지 전부 스크립트가 직접 계산합니다.
+            // 여기에 애니메이션 클립 자체의 루트모션(특히 attack/Powerfull_attack처럼 제자리에서
+            // 안 멈추는 클립)까지 더해지면, 실제 위치가 코드가 계산한 위치와 어긋나서 꼬리 휘두르기
+            // 사거리 판정이나 돌진 거리 계산이 눈에 보이는 것과 안 맞게 됩니다.
+            // 그래서 에디터의 Apply Root Motion 체크박스는 그대로 켜둬도 되지만(사용자가 명시적으로
+            // 켠 설정이라 되돌리지 않습니다), 런타임에서는 여기서 강제로 꺼서 위치/회전 제어권을
+            // 코드가 전담하도록 합니다. 클립 재생 자체(다리 움직임 등 제자리 애니메이션)에는 영향
+            // 없고, "클립에 저장된 이동/회전량을 실제로 반영할지"만 꺼집니다.
+            if (_visualAnimator != null)
+                _visualAnimator.applyRootMotion = false;
 
             // [2026-07-07 신규] 부위 파괴 이벤트 구독 — 다리(앞/뒤) 파괴 시 이동속도 감소 +
             // 강제 다운을 적용합니다. 돌진 가능 여부는 IsPatternViableAtDistance()에서
@@ -290,19 +309,39 @@ namespace KillRitual.Enemies
 
             if (distance > _preferredDistance)
             {
-                MoveTowards(_player.position);
-                // [2026-07-07 변경] Speed=2(Run) — 이 포식자는 걷는 것보다 뛰어서 쫓아오는 게
-                // 어울려서, 이동 중엔 Run 클립을 쓰도록 값을 올렸습니다. Walk 상태/클립은
-                // 컨트롤러에 그대로 남겨뒀지만(향후 "천천히 견제" 같은 동작에 쓸 수 있게),
-                // 지금 코드는 Idle(0)↔Run(2)만 오갑니다.
-                _visualAnimator?.SetFloat(kSpeedParam, 2f);
+                // [2026-07-08 신규] "무작정 접근만 하면 패턴이 단조롭다"는 피드백 반영 — 접근
+                // 중에도 패턴 쿨다운이 다 찼으면 잠깐 멈춰서 원거리 철갑 발사(패턴0, 유일하게
+                // 거리 제한 없는 패턴)를 섞습니다. 근접 패턴(꼬리 휘두르기/돌진/철갑 폭우)은
+                // 어차피 이 거리에서 안 맞으니 제외하고 철갑 발사만 강제로 골라 씁니다.
+                if (Time.time >= _nextPatternTime)
+                {
+                    StartCoroutine(RunRandomPattern(forceRangedOnly: true));
+                    return;
+                }
 
-                // [2026-07-07 신규] 너무 멀면 전력 질주 — 기준거리의 _sprintDistanceMultiplier배보다
-                // 더 멀어지면 NavMeshAgent의 실제 speed 자체를 올려서 더 빨리 따라잡습니다.
-                // 다리 파괴 감속(_legSpeedMultiplier)과 곱셈으로 함께 적용됩니다.
+                MoveTowards(_player.position);
+
+                // [2026-07-08 변경] 거리에 따라 세 단계로 나눕니다:
+                //   1) 기준거리×_sprintDistanceMultiplier보다 멀다 → 전력 질주(Run 클립 + 가속)
+                //   2) 기준거리+_walkZoneWidth보다 멀다(그러나 위 조건은 아님) → 평소 추격(Run 클립)
+                //   3) 그 안쪽, 기준거리 바로 바깥의 좁은 구간 → 살살 접근(Walk 클립 + 감속)
+                // Idle(0)/Walk(1)/Run(2) 세 값을 다 쓰게 됐습니다 — 컨트롤러의 Idle→Walk/Run→Walk
+                // 전환도 이 좁은 구간(0.1~1.5 사이 Speed)에서만 걸리도록 이미 손봐뒀습니다.
                 bool isSprinting = distance > _preferredDistance * _sprintDistanceMultiplier;
-                if (_agent != null)
-                    _agent.speed = _moveSpeed * _legSpeedMultiplier * (isSprinting ? _sprintSpeedMultiplier : 1f);
+                bool isWalkZone = !isSprinting && distance <= _preferredDistance + _walkZoneWidth;
+
+                if (isWalkZone)
+                {
+                    _visualAnimator?.SetFloat(kSpeedParam, 1f);
+                    if (_agent != null)
+                        _agent.speed = _moveSpeed * _legSpeedMultiplier * _walkSpeedMultiplier;
+                }
+                else
+                {
+                    _visualAnimator?.SetFloat(kSpeedParam, 2f);
+                    if (_agent != null)
+                        _agent.speed = _moveSpeed * _legSpeedMultiplier * (isSprinting ? _sprintSpeedMultiplier : 1f);
+                }
 
                 return;
             }
@@ -380,14 +419,29 @@ namespace KillRitual.Enemies
 
         // ── 패턴 선택/진행 ────────────────────────────────────────────────
 
-        private IEnumerator RunRandomPattern()
+        /// <param name="forceRangedOnly">
+        /// [2026-07-08 신규] true면 패턴을 랜덤으로 고르지 않고 무조건 철갑 발사(0번, 유일한
+        /// 원거리 패턴)만 실행합니다. 아직 접근 중(거리가 _preferredDistance보다 먼 상태)일 때
+        /// TickBossLogic()이 이걸 호출해서 "그냥 걸어오기만 하면 단조롭다"는 피드백에 대응합니다.
+        /// </param>
+        private IEnumerator RunRandomPattern(bool forceRangedOnly = false)
         {
             _isPatternActive = true;
             _patternActiveSince = Time.time;
             StopMoving();
 
-            float distance = DistanceToPlayer();
-            int index = PickPatternIndex(distance);
+            int index;
+            if (forceRangedOnly)
+            {
+                index = 0;
+                _lastPatternIndex = index;
+            }
+            else
+            {
+                float distance = DistanceToPlayer();
+                index = PickPatternIndex(distance);
+            }
+
             yield return StartCoroutine(GetPatternCoroutine(index));
 
             float cooldown = _patternCooldown * (_phase == BossPhase.Phase2 ? _phase2CooldownMultiplier : 1f);
@@ -627,13 +681,15 @@ namespace KillRitual.Enemies
         {
             Debug.Log($"[불가살이] {name}: 패턴3 - 돌진 준비 ({_chargeWindup}초 차징)");
 
-            OverrideColor = _telegraphColor;
-            PlayScalePunch(new Vector3(1.1f, 0.8f, 0.95f), _chargeWindup * 0.85f, _chargeWindup * 0.15f);
-            yield return new WaitForSeconds(_chargeWindup);
-            OverrideColor = null;
-            PlayScalePunch(new Vector3(0.9f, 1.05f, 1.2f), 0.1f, 0.25f);
-            _visualAnimator?.SetTrigger(kPowerfulAttackTrigger);
-
+            // [2026-07-08 변경] "돌진이 예측 불가능하고 피하기 힘들다"는 피드백 반영 — 예전엔
+            // 윈드업 동안 몸이 어느 쪽을 보고 있든 상관없이, 윈드업이 "끝나는 순간"의 플레이어
+            // 위치로 방향을 다시 계산해서 그대로 돌진했습니다. 즉 몸이 보여주는 방향(전조)과
+            // 실제 돌진 방향이 서로 무관해서, 플레이어 입장에선 아무리 옆으로 피해도 소용없는
+            // "조준 사격"처럼 느껴졌을 겁니다.
+            // 이제는 방향을 윈드업 "시작" 시점에 딱 한 번만 정하고, 그 방향으로 윈드업 내내
+            // 실제로 몸을 돌리는 걸 보여준 다음(WaitForSeconds 대신 회전 코루틴을 그 자리에
+            // 씁니다 — 전체 윈드업 시간은 그대로 유지됩니다) 그 고정된 방향으로만 돌진합니다.
+            // 플레이어는 몸이 돌아가는 걸 보고 미리 옆으로 피할 수 있습니다.
             Vector3 direction = transform.forward;
             if (_player != null)
             {
@@ -642,7 +698,14 @@ namespace KillRitual.Enemies
                 if (toPlayer.sqrMagnitude > 0.01f) direction = toPlayer.normalized;
             }
 
-            Debug.Log($"[불가살이] {name}: 돌진 개시");
+            OverrideColor = _telegraphColor;
+            PlayScalePunch(new Vector3(1.1f, 0.8f, 0.95f), _chargeWindup * 0.85f, _chargeWindup * 0.15f);
+            yield return StartCoroutine(RotateTowardsDirectionOverTime(direction, _chargeWindup));
+            OverrideColor = null;
+            PlayScalePunch(new Vector3(0.9f, 1.05f, 1.2f), 0.1f, 0.25f);
+            _visualAnimator?.SetTrigger(kPowerfulAttackTrigger);
+
+            Debug.Log($"[불가살이] {name}: 돌진 개시 (윈드업 시작 시점에 고정한 방향)");
             yield return StartCoroutine(DoChargeDash(direction));
 
             if (_lastChargeHitWall)
@@ -675,19 +738,32 @@ namespace KillRitual.Enemies
 
         /// <summary>
         /// [2026-07-07 신규] 지정한 시간(duration) 동안 플레이어 쪽으로 부드럽게 회전합니다.
-        /// 회전속도가 아니라 "걸리는 시간"을 고정하는 방식이라(Slerp의 t를 시간으로 진행),
-        /// 남은 각도가 크든 작든 항상 duration초 만에 재조준이 끝나 일관된 느낌을 줍니다.
+        /// 실제 회전은 공용 헬퍼(RotateTowardsDirectionOverTime)에 위임합니다.
         /// </summary>
         private IEnumerator TurnBackTowardsPlayer(float duration)
         {
-            if (_player == null || duration <= 0f) yield break;
+            if (_player == null) yield break;
 
             Vector3 toPlayer = _player.position - transform.position;
             toPlayer.y = 0f;
-            if (toPlayer.sqrMagnitude < 0.0001f) yield break;
+
+            yield return StartCoroutine(RotateTowardsDirectionOverTime(toPlayer, duration));
+        }
+
+        /// <summary>
+        /// [2026-07-08 신규] 지정한 방향(direction)을 향해 지정한 시간(duration) 동안 부드럽게
+        /// 회전합니다. 회전속도가 아니라 "걸리는 시간"을 고정하는 방식이라(Slerp의 t를 시간으로
+        /// 진행), 남은 각도가 크든 작든 항상 duration초 만에 회전이 끝나 일관된 느낌을 줍니다.
+        /// 돌진 윈드업 방향 고정(Pattern_Charge)과 돌진 후 재조준(TurnBackTowardsPlayer) 둘 다
+        /// 이 헬퍼 하나를 공유합니다.
+        /// </summary>
+        private IEnumerator RotateTowardsDirectionOverTime(Vector3 direction, float duration)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f || duration <= 0f) yield break;
 
             Quaternion startRot = transform.rotation;
-            Quaternion targetRot = Quaternion.LookRotation(toPlayer.normalized, Vector3.up);
+            Quaternion targetRot = Quaternion.LookRotation(direction.normalized, Vector3.up);
 
             float t = 0f;
             while (t < duration)
@@ -726,7 +802,22 @@ namespace KillRitual.Enemies
                 int hitCount = Physics.RaycastNonAlloc(
                     transform.position + Vector3.up, direction, hits, step + 0.5f, _chargeWallLayerMask);
 
-                if (hitCount > 0)
+                // [2026-07-08 버그 수정] "돌진이 너무 적게 나간다"는 문제의 원인 — _chargeWallLayerMask가
+                // 기본값 Everything(레이어 구분을 별도로 안 해둔 상태)이라, 방금 Activate()로 켠
+                // _chargeHitbox 자신이나 머리/앞다리 등 보스 자신의 부위 콜라이더까지 레이캐스트에
+                // 걸려서 "벽에 부딪혔다"고 착각해 돌진 시작하자마자(0에 가까운 거리에서) 멈춰버렸던
+                // 겁니다. 레이어 세팅에 의존하지 않고, 맞은 콜라이더가 보스 자신의 계층구조 소속이면
+                // (transform.root가 이 보스 루트와 같으면) 무시하도록 코드에서 직접 걸러냅니다.
+                bool blocked = false;
+                for (int i = 0; i < hitCount; i++)
+                {
+                    Collider hitCollider = hits[i].collider;
+                    if (hitCollider != null && hitCollider.transform.root == transform.root) continue;
+                    blocked = true;
+                    break;
+                }
+
+                if (blocked)
                 {
                     _lastChargeHitWall = true;
                     break;
