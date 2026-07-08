@@ -79,6 +79,7 @@ namespace KillRitual.Player
         {
             _health = _maxHealth;
 
+            EnsureHitColliderActive();
             CacheHealthBarReferences();
 
             if (_gameOverUI == null)
@@ -88,6 +89,29 @@ namespace KillRitual.Player
 
             UpdateHealthBar(true);
             HideOverlayInstantly();
+        }
+
+        /// <summary>
+        /// [2026-07-08 신규] 씬마다 사람이 직접 Inspector에서 설정해두는 방식이면 실수로 꺼먹기
+        /// 쉬워서(실제로 dev_hs 씬에서 이 문제로 보스 철갑 조각이 플레이어를 못 맞히고 있었습니다),
+        /// 씬 세팅에 기대지 않고 코드에서 항상 올바른 상태로 강제합니다. CharacterController는
+        /// Collider를 상속하는 별도 컴포넌트라 GetComponent&lt;CapsuleCollider&gt;()로 명시적으로
+        /// 찾아서 그것만 건드리고 CharacterController 자체는 손대지 않습니다.
+        /// </summary>
+        private void EnsureHitColliderActive()
+        {
+            CapsuleCollider hitCollider = GetComponent<CapsuleCollider>();
+            if (hitCollider == null)
+            {
+                Debug.LogWarning("[KRPlayerDamageFeedback] 피격 판정용 CapsuleCollider를 찾지 못했습니다 — " +
+                                  "레이캐스트 기반 투사체(보스 철갑 조각 등)가 플레이어를 못 맞힐 수 있습니다.");
+                return;
+            }
+
+            // Is Trigger로 켜서 CharacterController/Rigidbody의 이동 물리와는 절대 안 부딪히면서도
+            // 레이캐스트(Physics.queriesHitTriggers가 프로젝트 설정에서 켜져 있음)에는 그대로 잡힙니다.
+            hitCollider.enabled = true;
+            hitCollider.isTrigger = true;
         }
 
         private void OnDisable()

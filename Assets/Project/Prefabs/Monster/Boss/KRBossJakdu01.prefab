@@ -81,7 +81,7 @@ MonoBehaviour:
   _baseColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
   _hitFlashDuration: 0.08
-  _despawnDelay: 0.5
+  _despawnDelay: 1.2
   _phase2HealthRatio: 0.5
   _fallbackDamageRatio: 0.15
   _armorBlockVfxPrefab: {fileID: 7700000000001001, guid: 3e77cff67bf84890b79812741e9dd153, type: 3}
@@ -96,6 +96,8 @@ MonoBehaviour:
   _preferredDistance: 9
   _sprintDistanceMultiplier: 2
   _sprintSpeedMultiplier: 1.6
+  _walkZoneWidth: 3
+  _walkSpeedMultiplier: 0.5
   _patternCooldown: 2.5
   _phase2CooldownMultiplier: 0.6
   _armorShardPrefab: {fileID: 7700000000001003, guid: 3e77cff67bf84890b79812741e9dd153, type: 3}
@@ -118,7 +120,7 @@ MonoBehaviour:
   _trunkDamage: 25
   _trunkComboInterval: 0.35
   _chargeWindup: 1
-  _chargeSpeed: 15
+  _chargeSpeed: 22
   _chargeMaxDistance: 20
   _chargeDamage: 30
   _chargeHitRadius: 2.5
