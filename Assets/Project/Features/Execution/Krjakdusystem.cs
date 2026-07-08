@@ -62,13 +62,16 @@ namespace KillRitual.Player.Combat
         [SerializeField] private Animator _shamanSwordAnimator;
 
         [Tooltip("Swing.anim 클립 길이(초)입니다. 이 시간이 지나면 샤먼소드 손을 자동으로 다시 숨깁니다. " +
-                 "감속/반발 등 실제 판정 타이밍(약 0.2~0.3초)보다 스윙 애니메이션(약 1.17초)이 더 길어서, " +
-                 "게임플레이 타이밍과는 별개로 이 값 기준으로 숨김 처리합니다. Swing.anim을 다른 클립으로 " +
-                 "바꾸면 이 값도 그 클립 길이에 맞춰 같이 바꿔주세요. " +
-                 "[2026-07-06 정정] 실제 Swing.anim의 m_StopTime을 확인해보니 0.6초가 아니라 " +
-                 "1.1666666초였습니다(이전에 잘못 기재됨) — 그 값에 맞춰 수정했습니다.")]
+                 "이동 감속(①감속 단계)도 이 값만큼 지속됩니다 — 감속이 \"애니메이션 시전 시간 동안\" " +
+                 "유지되도록 요청받아, 별도의 _slowDuration 대신 이 값을 그대로 재사용합니다. " +
+                 "Swing.anim을 다른 클립으로 바꾸면 이 값도 그 클립 길이에 맞춰 같이 바꿔주세요 " +
+                 "(감속 지속시간 + 적 판정 타이밍이 자동으로 같이 바뀝니다). " +
+                 "[2026-07-06 재정정] Swing.anim의 실제 m_StopTime을 다시 확인해보니 1.1666666초가 " +
+                 "아니라 0.55초였습니다(적 반응이 스윙 동작이 끝난 뒤에도 한참 있다가 나오는 버그의 " +
+                 "원인 — 애니메이션은 0.55초에 끝났는데 코드는 1.17초까지 기다렸다가 판정했었음). " +
+                 "0.55초로 정정했습니다.")]
         [Min(0.01f)]
-        [SerializeField] private float _shamanSwordSwingClipLength = 1.17f;
+        [SerializeField] private float _shamanSwordSwingClipLength = 0.55f;
 
         [Header("UI")]
         [Tooltip("작두(처형) 자원의 현재 보유 개수만 텍스트로 표시할 UI입니다(Assets/Project/Features/UI/KRJakduChargeUI.cs, " +
@@ -111,9 +114,12 @@ namespace KillRitual.Player.Combat
         [Range(0f, 1f)]
         [SerializeField] private float _slowRatio = 0.65f;
 
-        [Tooltip("감속 지속 시간(초).")]
-        [Min(0.01f)]
-        [SerializeField] private float _slowDuration = 0.1f;
+        // [2026-07-06 삭제] _slowDuration(감속 지속 시간, 기존 0.1초 고정값) 필드를 제거했습니다.
+        // "감속이 애니메이션 시전 시간 동안 유지되어야 한다"는 요청에 따라, 감속 지속 시간을
+        // 더 이상 별도 값으로 관리하지 않고 위쪽 _shamanSwordSwingClipLength(Swing.anim 길이,
+        // 1.17초)를 그대로 재사용하도록 JakduSequence()를 변경했습니다. 인스펙터에서 이 필드에
+        // 저장돼 있던 값은 더 이상 아무 코드에서도 읽지 않습니다(씬/프리팹에는 죽은 값으로 남아있을
+        // 수 있으나 무해합니다).
 
         [Tooltip("판정 후 반발 가속 비율. 1.3 = 현재 속도의 130%.")]
         [Min(1f)]
@@ -150,6 +156,13 @@ namespace KillRitual.Player.Combat
         /// 자원 재충전 대상에서 제외합니다. (다른 무기/시스템으로 죽인 처치는 그대로 재충전됩니다.)
         /// </summary>
         public static bool IsSelfExecuting { get; private set; }
+
+        /// <summary>
+        /// [2026-07-06 추가] 작두 시퀀스(감속→판정→반발)가 지금 진행 중인지 여부입니다.
+        /// 플레이어 이동 스크립트(KRPlayerMotor)가 이 값을 보고 작두 사용 중 이동 속도를
+        /// 감속시키는 데 사용합니다.
+        /// </summary>
+        public bool IsActing => _isActing;
 
         private void Awake()
         {
@@ -217,17 +230,21 @@ namespace KillRitual.Player.Combat
         {
             _isActing = true;
 
-            // [2026-07-06 변경] 자원 소모 시점을 여기서 아래(실제 판정 이후)로 옮겼습니다.
-            // 기존엔 발동 즉시 무조건 1을 소모해서, 앞에 적이 하나도 없는 "허공 헛스윙"에도
-            // 자원이 깎이는 문제가 있었습니다. 이제는 실제로 유효한 대상을 맞췄을 때만 소모합니다.
+            // [2026-07-06 재변경] 기획 확인 결과 "적에게 적중하지 않아도(허공에 휘둘러도) 자원을
+            // 소모하는 게 맞는 디자인"이라고 합니다. 한때 "맞췄을 때만 소모"하도록 바꿨던 걸
+            // 되돌려서, 발동 즉시 무조건 1을 소모합니다(적중 여부와 무관).
+            _currentResource--;
+            UpdateJakduUI();
 
             // [2026-07-06 추가] 작두 애니메이션 트리거 — 평소 꺼져있던 샤먼소드 손을 보여주고
             // Swing 클립을 처음부터 재생합니다.
             PlayShamanSwordSwing();
 
-            // ① 감속
+            // ① 감속 — [2026-07-06 변경] 지속 시간을 고정 0.1초 대신 _shamanSwordSwingClipLength
+            // (Swing.anim 실제 길이, 1.17초)로 바꿔서, 스윙 애니메이션이 재생되는 동안 계속
+            // 감속 상태가 유지되도록 했습니다.
             SpeedMultiplier = _slowRatio;
-            yield return new WaitForSeconds(_slowDuration);
+            yield return new WaitForSeconds(_shamanSwordSwingClipLength);
 
             // ② 판정 — 존을 1프레임 활성화해 적을 수집
             KRDamageType dropElement = GetLowestRatioElement();
@@ -245,13 +262,10 @@ namespace KillRitual.Player.Combat
 
                 System.Collections.Generic.IReadOnlyCollection<IDamageable> hits = _jakduZone.GetHits();
 
-                // [2026-07-06 추가] 존에 걸린 것 중 실제로 피해를 줄 수 있는(살아있는) 대상이
-                // 하나라도 있을 때만 자원을 소모합니다. 허공에 휘두른 경우엔 소모하지 않습니다.
+                // 자원은 이미 위에서 소모했습니다(적중 여부와 무관). 여기서는 실제로 피해를 줄 수
+                // 있는(살아있는) 대상이 하나라도 있을 때만 피해/드롭 처리를 진행합니다.
                 if (HasValidTarget(hits))
                 {
-                    _currentResource--;
-                    UpdateJakduUI();
-
                     ApplyHits(hits, dropElement);
                 }
 
