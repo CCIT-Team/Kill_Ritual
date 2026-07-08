@@ -178,11 +178,13 @@ namespace KillRitual.Enemies
 
             _ownColliders = GetComponentsInChildren<Collider>(includeInactive: false);
 
-            // KRGroggyOutline이 없으면 자동으로 추가합니다.
-            // 적마다 수동으로 컴포넌트를 붙일 필요가 없습니다.
-            _groggyOutline = GetComponent<KRGroggyOutline>();
+            // KRGroggyOutline은 3D 모델(_modelRoot)에만 붙여야 합니다.
+            // 루트(gameObject)에 붙이면 Outline 컴포넌트가 GetComponentsInChildren<Renderer>()로
+            // 하위 전체(공격 이펙트 포함)를 훑어서 테두리를 적용해버립니다.
+            Transform outlineTarget = _modelRoot != null ? _modelRoot : transform;
+            _groggyOutline = outlineTarget.GetComponent<KRGroggyOutline>();
             if (_groggyOutline == null)
-                _groggyOutline = gameObject.AddComponent<KRGroggyOutline>();
+                _groggyOutline = outlineTarget.gameObject.AddComponent<KRGroggyOutline>();
         }
 
         private void OnEnable()
