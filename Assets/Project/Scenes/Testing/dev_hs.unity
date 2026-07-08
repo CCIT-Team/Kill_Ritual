@@ -20574,7 +20574,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _element: 0
   _weaponName: "\uD654_\uC288\uD37C\uC0F7\uAC74"
-  _damage: 3000
+  _damage: 30
   _range: 50
   _cooldown: 1
   _resourceCost: 5
@@ -109066,11 +109066,47 @@ MonoBehaviour:
   _parryKey: 306
   _visual: {fileID: 240846128}
   _combatSystem: {fileID: 0}
-  _inputLockout: 0.2
-  _parryCheckRadius: 4
-  _parryableLayerMask:
+  _viewCamera: {fileID: 0}
+  _parryOrigin: {fileID: 0}
+  _muryeongProjectileSpawnPoint: {fileID: 0}
+  _enemyProjectileLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 0
+  _catchDistance: 6
+  _catchAngle: 110
+  _catchWindowDuration: 0.2
+  _muryeongProjectilePrefab: {fileID: 0}
+  _aimAssistEnemyMask:
+    serializedVersion: 2
+    m_Bits: 0
+  _aimAssistRange: 60
+  _aimAssistRadius: 0.8
+  _targetHeightOffset: 1
+  _maxGauge: 100
+  _currentGauge: 100
+  _reflectCost: 10
+  _useGaugeRegen: 1
+  _gaugeRegenPerSecond: 1
+  _gaugeRegenDelayAfterUse: 0.5
+  _gaugeBarWidthReference: {fileID: 0}
+  _gaugeBarFill: {fileID: 0}
+  _gaugeBarFollow: {fileID: 0}
+  _gaugeBarMaxWidth: 0
+  _forceGaugeRightAligned: 1
+  _gaugeFollowDelay: 0.15
+  _gaugeFollowCatchUpDuration: 0.18
+  _afterguardDuration: 2.3
+  _afterguardDamageReductionRate: 0.8
+  _missLockout: 2
+  _reflectImpactDelay: 0.18
+  _useReflectSlowMotion: 1
+  _reflectSlowMinScale: 0.1
+  _reflectSlowEnterDuration: 0.083
+  _reflectSlowHoldDuration: 0.12
+  _reflectSlowRecoverDuration: 0.18
+  _reflectCameraKickAmount: 5
+  _reflectCameraKickDuration: 0.2
+  _weaponVisualRestoreFallbackDelay: 0.6
 --- !u!114 &1766383538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109115,6 +109151,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _maxHealth: 100
+  _muryeongController: {fileID: 0}
+  _autoEnableHitCollider: 0
   _healthBarWidthReference: {fileID: 1553247563}
   _healthBarFill: {fileID: 866645073}
   _healthBarFollow: {fileID: 724079721}

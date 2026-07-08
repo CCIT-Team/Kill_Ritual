@@ -34,6 +34,12 @@ namespace KillRitual.Player.Combat
     ///   - SpawnAmmoOrb()는 "회수 가능한 만큼 즉시 흡수 + 초과분만 대표 오브젝트 하나로 드롭"
     ///     방식입니다(기획 4-4 "다수의 자원은 대표 오브젝트로 묶어서 표현"). 대상마다 오브를
     ///     흩뿌리지 않고, 작두 1회당 오브가 생성되어도 최대 1개입니다.
+    ///
+    /// [변경 이력 - 2026-07-08]
+    /// "둠 이터널 전기톱처럼 여러 파츠가 나오게" 명시적 요청으로, 위 4-4의 "오브 하나" 원칙만
+    /// 의도적으로 뒤집었습니다. 초과분(remaining)을 오브 하나가 아니라 _ammoOrbSplitCount개로
+    /// 쪼개서 물리적으로 흩뿌립니다(SpawnAmmoOrbPiece 참고). 자원 총량 계산(기획 3-5/4-4의 비율,
+    /// 즉시흡수/초과분 구분)은 그대로 유지했고, 시각적 드롭 표현 방식만 바꿨습니다.
     /// 남은 과제(기획서 대비 아직 미구현, 별도 작업 필요):
     ///   - 갑사/장령 등급 구분 (현재 EnemyGrade는 Fodder/Heavy/Elite/Boss 4종뿐이라 갑사·장령이
     ///     Elite 하나로 합쳐져 있음. 장령 전용 수치(10%/30%)가 아직 코드에 없음)
@@ -108,6 +114,40 @@ namespace KillRitual.Player.Combat
         [Header("탄약 오브 프리팹")]
         [Tooltip("[0]=화 [1]=수 [2]=목 [3]=토 [4]=금 순서.")]
         [SerializeField] private GameObject[] _ammoOrbPrefabs = new GameObject[5];
+
+        [Tooltip("[2026-07-08 신규] '탄약오브 등록에 비활성화도 할수있게해줘' 요청으로 추가 — 위 " +
+                 "프리팹 배열과 같은 순서(화/수/목/토/금)입니다. 여기서 체크를 끄면 프리팹을 " +
+                 "지우지 않고도 해당 속성의 드롭을 완전히 끌 수 있습니다(즉시 흡수까지 포함해서 " +
+                 "SpawnAmmoOrb() 맨 앞에서 걸러냅니다). 슬롯이 잠겨 무기가 없는 속성(예: 토/금)을 " +
+                 "굳이 드롭하지 않게 할 때 사용하세요.")]
+        [SerializeField] private bool[] _ammoOrbEnabled = { true, true, true, true, true };
+
+        [Header("탄약 오브 흩뿌리기 (2026-07-08 신규)")]
+        [Tooltip("[2026-07-08 신규] '둠 이터널 전기톱처럼 여러 파츠로' 요청 반영 — 기획서(3-5/4-4, " +
+                 "'대표 오브젝트 하나') 대신, 초과 자원(remaining)을 오브 하나가 아니라 이 개수만큼 " +
+                 "쪼개서 사방으로 흩뿌립니다. 몇 개를 줍든 합계는 항상 remaining과 같도록 개수로 " +
+                 "나눠서 각 조각의 회복량을 정합니다. " +
+                 "[2026-07-08 수정 — '그냥 나오는 방향 4개로 설정해서 퍼트리면 안됨?'] 방향을 " +
+                 "완전 랜덤(Random.insideUnitCircle)으로 뽑던 걸, 이 개수만큼 균등하게 나눈 고정 " +
+                 "각도로 바꿨습니다 — 물리 힘/착지 타이밍에 기대지 않고 항상 확실하게 사방으로 " +
+                 "갈라지는 걸 보장합니다.")]
+        [Min(1)] [SerializeField] private int _ammoOrbSplitCount = 4;
+
+        // [2026-07-08 삭제] _ammoOrbSpawnRadius — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"
+        // 요청으로, 스폰 위치를 반지름만큼 미리 벌려두는 방식 자체를 없앴습니다(전부 한 점에서
+        // 스폰). 겹침 방지는 이제 Physics.IgnoreCollision(IgnoreCollisionsWithinBurst)이 담당합니다.
+
+        [Tooltip("각 조각이 옆으로 튀는 힘의 크기.")]
+        [Min(0f)] [SerializeField] private float _ammoOrbOutwardForce = 3.5f;
+
+        [Tooltip("각 조각이 위로 튀어오르는 힘의 크기.")]
+        [Min(0f)] [SerializeField] private float _ammoOrbUpForce = 4f;
+
+        [Tooltip("[2026-07-08 신규] '적 머리쯤에서 떨어져서 바닥과 충돌한뒤에 고정되도록 해줘' 요청으로 " +
+                 "추가 — 스폰 기준 높이를 적 발밑(0m) 기준이 아니라 적 머리 정도 높이로 올려서, 위에서 " +
+                 "떨어지는 낙하 궤적이 눈에 잘 보이도록 했습니다. 실제 적 콜라이더 높이를 재지 않고 " +
+                 "평균적인 적 머리 높이를 고정값으로 씁니다.")]
+        [Min(0.1f)] [SerializeField] private float _ammoOrbSpawnHeight = 2f;
 
         [Header("이동 처리")]
         [Tooltip("판정 전 감속 비율. 0.65 = 현재 속도의 65%.")]
@@ -247,7 +287,8 @@ namespace KillRitual.Player.Combat
             yield return new WaitForSeconds(_shamanSwordSwingClipLength);
 
             // ② 판정 — 존을 1프레임 활성화해 적을 수집
-            KRDamageType dropElement = GetLowestRatioElement();
+            // [2026-07-08 삭제] dropElement = GetLowestRatioElement() — "모든 총알이 나오게"
+            // 요청으로 더 이상 속성 하나만 고르지 않고 ApplyHits()가 5속성 전부를 처리합니다.
 
             if (_jakduZone != null)
             {
@@ -266,7 +307,7 @@ namespace KillRitual.Player.Combat
                 // 있는(살아있는) 대상이 하나라도 있을 때만 피해/드롭 처리를 진행합니다.
                 if (HasValidTarget(hits))
                 {
-                    ApplyHits(hits, dropElement);
+                    ApplyHits(hits);
                 }
 
                 _jakduZone.gameObject.SetActive(false);
@@ -339,12 +380,19 @@ namespace KillRitual.Player.Combat
 
         // ── 피해 적용 ──────────────────────────────────────────────────
 
-        private void ApplyHits(System.Collections.Generic.IReadOnlyCollection<IDamageable> targets,
-            KRDamageType dropElement)
+        // [2026-07-08 삭제] dropElement 매개변수 — "모든 총알이 나오게" 요청으로 이제 한 속성만
+        // 골라 받는 대신 메서드 내부에서 _allElements 전체를 순회하므로 더 이상 필요 없습니다.
+        private void ApplyHits(System.Collections.Generic.IReadOnlyCollection<IDamageable> targets)
         {
             // 기획 3-5: 적중 보상과 처치 보상은 대상마다 개별 지급하지 않고,
             // 이번 작두 발동에서 발생한 모든 대상의 보상을 전부 합산한 뒤 딱 한 번만 자원으로 환산합니다.
             float totalDropRatio = 0f;
+
+            // [2026-07-08 신규] "적 위치에 소환되도록" 요청 반영 — 보상에 실제로 기여한 대상들의
+            // 위치를 모아뒀다가, 나중에 그 평균 위치에서 탄약 조각을 흩뿌립니다(여러 마리를 한 번에
+            // 처치해도 플레이어가 아니라 적들이 있던 자리 근처에서 나오게).
+            Vector3 dropPositionSum = Vector3.zero;
+            int dropPositionCount = 0;
 
             // [2026-07-06 추가] 이 블록 안에서 발생하는 처치는 전부 "작두 자신에 의한 처치"입니다.
             // IsSelfExecuting을 true로 켜두는 동안 KREnemyBase.TakeDamage() → EnterDead()가 동기적으로
@@ -359,10 +407,18 @@ namespace KillRitual.Player.Combat
 
                     EnemyGrade grade = GetGrade(target);
                     float damage = _baseDamage * GetDamageMultiplier(grade);
+                    Vector3 targetPosition = target.Position;
                     bool killed = ApplyDamage(target, damage);
 
                     // 기획 3-5: 적중 보상과 처치 보상은 중복 지급하지 않습니다(killed일 때만 처치 보상).
-                    totalDropRatio += CalculateDropRatio(grade, killed);
+                    float dropRatio = CalculateDropRatio(grade, killed);
+                    totalDropRatio += dropRatio;
+
+                    if (dropRatio > 0f)
+                    {
+                        dropPositionSum += targetPosition;
+                        dropPositionCount++;
+                    }
 
                     // TODO(넉백/경직): 기획 3-4 — 튼튼한 잡졸(장거리 넉백)/갑사(중거리 넉백)/
                     // 장령(짧은 경직)/보스(넉백 없음) 반응은 아직 구현하지 않았습니다. 별도 작업 필요.
@@ -377,7 +433,57 @@ namespace KillRitual.Player.Combat
             totalDropRatio = Mathf.Min(totalDropRatio, _dropCap);
 
             if (totalDropRatio > 0f)
-                SpawnAmmoOrb(dropElement, totalDropRatio);
+            {
+                Vector3 dropPosition = dropPositionCount > 0
+                    ? dropPositionSum / dropPositionCount
+                    : transform.position + transform.forward;
+
+                // [2026-07-08 신규] "슬롯 잠금의 총이 아닌 모든 총알이 나오게" 요청 반영 — 예전엔
+                // GetLowestRatioElement()로 고른 속성 하나에만 보상을 전부 몰아줬는데, 이제 5속성
+                // (화/수/목/토/금) 전부에 나눠서 흩뿌립니다. 총 보상 가치가 그냥 5배로 뻥튀기되지
+                // 않도록, totalDropRatio를 속성 개수로 나눠서 똑같이 배분합니다 — 합쳐보면 예전에
+                // 한 속성에 몰아주던 총량과 동일합니다.
+                float perElementRatio = totalDropRatio / _allElements.Length;
+
+                // [2026-07-08 수정 — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"]
+                // 이전엔 겹침을 막으려고 반지름을 크게 벌려서(4m) 스폰 자체를 이미 퍼진 위치에서
+                // 시작했는데, 그러면 "한 점에서 터져나가는" 느낌이 아니라 애초에 넓게 벌어진 채로
+                // 나타나 보였습니다. 요청대로 전부 정확히 같은 지점(dropPosition)에서 스폰하고,
+                // 물리 힘(AddForce)만으로 사방(지름 방향)으로 퍼져나가게 바꿨습니다. 같은 지점에
+                // 겹쳐서 스폰하면 원래 힘이 밀어내기도 전에 서로 충돌해 그 자리에 얼어붙는 문제가
+                // 있었는데(바람속성 버그와 같은 원인), 이번엔 같은 처형 1회에서 스폰된 조각들끼리는
+                // Physics.IgnoreCollision으로 서로 충돌 판정 자체를 꺼서(바닥/적과는 그대로 충돌)
+                // 겹쳐서 스폰돼도 얼어붙지 않고 힘만으로 자유롭게 퍼지도록 했습니다.
+                var burstColliders = new System.Collections.Generic.List<Collider>();
+                float burstBaseAngle = Random.Range(0f, 360f);
+                for (int i = 0; i < _allElements.Length; i++)
+                {
+                    SpawnAmmoOrb(_allElements[i], perElementRatio, dropPosition, i, burstBaseAngle, burstColliders);
+                }
+                IgnoreCollisionsWithinBurst(burstColliders);
+            }
+        }
+
+        /// <summary>
+        /// [2026-07-08 신규 — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"] 같은 처형 1회에서
+        /// 스폰된 탄약 조각들은 전부 같은 지점(spawnPos)에서 겹쳐서 시작합니다. 이대로 두면 물리
+        /// 힘(AddForce)이 밀어내기도 전에 서로 충돌해 그 자리에 얼어붙으므로(바람속성 버그와 동일
+        /// 원인), 이 목록에 모인 조각들끼리는 서로 충돌 판정을 완전히 꺼서(Physics.IgnoreCollision)
+        /// 겹쳐서 스폰돼도 부딪히지 않고 순수하게 힘으로만 퍼지도록 합니다. 바닥/적/플레이어 등
+        /// 다른 오브젝트와의 충돌은 그대로 유지됩니다(같은 목록 안의 콜라이더끼리만 꺼짐).
+        /// </summary>
+        private static void IgnoreCollisionsWithinBurst(System.Collections.Generic.List<Collider> colliders)
+        {
+            for (int i = 0; i < colliders.Count; i++)
+            {
+                if (colliders[i] == null) continue;
+
+                for (int j = i + 1; j < colliders.Count; j++)
+                {
+                    if (colliders[j] == null) continue;
+                    Physics.IgnoreCollision(colliders[i], colliders[j], true);
+                }
+            }
         }
 
         private bool ApplyDamage(IDamageable target, float damage)
@@ -393,25 +499,9 @@ namespace KillRitual.Player.Combat
 
         // ── 드롭 처리 ──────────────────────────────────────────────────
 
-        private KRDamageType GetLowestRatioElement()
-        {
-            if (_combatSystem == null) return KRDamageType.Fire;
-
-            KRDamageType lowest = _allElements[0];
-            float lowestRatio = float.MaxValue;
-
-            foreach (KRDamageType element in _allElements)
-            {
-                float ratio = _combatSystem.GetResourceRatio(element);
-                if (ratio < lowestRatio)
-                {
-                    lowestRatio = ratio;
-                    lowest = element;
-                }
-            }
-
-            return lowest;
-        }
+        // [2026-07-08 삭제] GetLowestRatioElement() — "모든 총알이 나오게" 요청으로 더 이상
+        // 속성 하나만 골라 쓰지 않아서(ApplyHits()가 _allElements 전체를 순회) 안 쓰는 메서드가
+        // 됐습니다.
 
         private float CalculateDropRatio(EnemyGrade grade, bool killed)
         {
@@ -427,13 +517,50 @@ namespace KillRitual.Player.Combat
 
         /// <summary>
         /// 기획 3-5/4-4 반영: 계산된 비율만큼의 자원 중, 현재 자원 지갑에 회수 가능한 만큼은
-        /// 즉시 흡수(RefillResource)하고, 지갑 최대치를 넘어 회수하지 못한 초과분만
-        /// 대표 오브젝트 하나(KRDropItem)로 플레이어 앞에 드랍합니다.
-        /// 대상마다 오브를 만들지 않고, 작두 1회당 최대 1개만 생성됩니다.
+        /// 즉시 흡수(RefillResource)합니다.
+        /// [2026-07-08 수정 — "둠 이터널 전기톱처럼 여러 파츠로" 요청 반영] 기획서(3-5/4-4)는
+        /// 초과분을 "대표 오브젝트 하나"로만 드랍하라고 되어 있었지만, 명시적 요청으로 이 부분만
+        /// 기획서와 다르게 갑니다 — 초과분을 오브 하나가 아니라 _ammoOrbSplitCount개로 쪼개서
+        /// 사방으로 물리적으로 흩뿌립니다. 각 조각의 회복량은 remaining/개수라서, 몇 개를 줍든
+        /// 합계는 항상 remaining과 같습니다(자원 총량 자체는 기획서 수치 그대로 유지).
         /// </summary>
-        private void SpawnAmmoOrb(KRDamageType element, float ratio)
+        /// <param name="origin">
+        /// [2026-07-08 신규] "적 위치에 소환되도록" 요청 반영 — 예전엔 항상 플레이어 앞에서 났는데,
+        /// 이제 ApplyHits()가 계산해서 넘겨준 "실제 보상에 기여한 적들의 평균 위치"를 기준으로
+        /// 흩뿌립니다.
+        /// </param>
+        /// <param name="elementIndex">
+        /// [2026-07-08 신규 — "바람속성만 중력/리기드바디가 있는거같아서"] 5속성 중 이 속성의 순번
+        /// (0~4)입니다. 발사 "방향"만 균등하게 나누는 데 씁니다(아래 burstBaseAngle 참고). 스폰
+        /// 위치 자체는 [2026-07-08 수정 — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"] 요청으로
+        /// 더 이상 이 값의 영향을 받지 않고 전부 같은 지점(origin)에서 스폰됩니다.
+        /// </param>
+        /// <param name="burstBaseAngle">
+        /// [2026-07-08 신규] ApplyHits()에서 이번 드랍 1회에 한해 딱 한 번 뽑은 공통 기준 각도입니다.
+        /// 5속성이 전부 이 값을 공유해서 발사 방향이 골고루 퍼지도록 합니다(속성마다 따로 랜덤을
+        /// 뽑으면 방향이 한쪽으로 몰릴 수 있음). 겹침 방지는 더 이상 방향/거리가 아니라
+        /// Physics.IgnoreCollision(아래 burstColliders)이 담당합니다.
+        /// </param>
+        /// <param name="burstColliders">
+        /// [2026-07-08 신규 — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"] 이번 처형 1회에서
+        /// 스폰되는 모든 조각(5속성×_ammoOrbSplitCount개)의 Collider를 여기 모아둡니다. 전부 같은
+        /// 지점에서 스폰되므로 물리적으로 겹친 채로 시작하는데, ApplyHits()가 이 목록을 이용해
+        /// 서로 간의 충돌 판정을 꺼서(Physics.IgnoreCollision) 겹쳐도 얼어붙지 않게 합니다.
+        /// </param>
+        private void SpawnAmmoOrb(
+            KRDamageType element, float ratio, Vector3 origin, int elementIndex, float burstBaseAngle,
+            System.Collections.Generic.List<Collider> burstColliders)
         {
             if (_combatSystem == null) return;
+
+            // [2026-07-08 신규] '탄약오브 등록에 비활성화도 할수있게해줘' — 비활성화된 속성은
+            // 즉시 흡수/오브 드롭 전부 건너뜁니다(자원 자체를 아예 처리하지 않음).
+            int elementIdx = (int)element;
+            if (_ammoOrbEnabled != null && elementIdx >= 0 && elementIdx < _ammoOrbEnabled.Length
+                && !_ammoOrbEnabled[elementIdx])
+            {
+                return;
+            }
 
             float maxAmount = _combatSystem.GetMaxResourceAmount(element);
             float dropAmount = maxAmount * ratio;
@@ -447,27 +574,94 @@ namespace KillRitual.Player.Combat
             if (instantAmount > 0f)
                 _combatSystem.RefillResource(element, instantAmount);
 
-            // 기획 4-4: "초과 자원은 바닥에 잔여 자원으로 유지" — 넘친 만큼만 오브 하나로 드랍합니다.
+            // [2026-07-08 수정] "초과 자원은 바닥에 잔여 자원으로 유지"는 그대로 두되, 오브 하나가
+            // 아니라 여러 조각으로 나눠서 흩뿌립니다.
             float remaining = dropAmount - instantAmount;
             if (remaining <= 0f) return;
 
-            int idx = (int)element;
+            int idx = elementIdx;
             if (_ammoOrbPrefabs == null || idx < 0 || idx >= _ammoOrbPrefabs.Length) return;
             if (_ammoOrbPrefabs[idx] == null) return;
 
-            Vector3 spawnPos = transform.position + transform.forward + Vector3.up * 0.5f;
-            GameObject orbInstance = Instantiate(_ammoOrbPrefabs[idx], spawnPos, Quaternion.identity);
+            // [2026-07-08 수정 — "잘 안 퍼지는데?" 버그 수정]
+            // 오브 프리팹의 SphereCollider 반지름이 0.5m인데, 예전엔 0.5m 높이에서 스폰했습니다 —
+            // 즉 구의 바닥면이 스폰 순간 이미 땅에 닿아 있었던 겁니다. KRDropItem은
+            // OnCollisionEnter가 한 번이라도 뜨면 그 즉시 Rigidbody를 Kinematic으로 고정해버리는데
+            // (착지 판정), 땅에 닿은 채로 스폰되면 AddForce로 준 힘이 실제로 밀어내기도 전에 첫
+            // 물리 스텝에서 바로 충돌이 잡혀서 그 자리에 고정돼버립니다 — 그래서 힘을 줘도 안
+            // 퍼지고 그 자리에 멈춰 있었던 겁니다. 땅에서 확실히 띄운 채로 시작하게 해, 떨어지는
+            // 동안 옆으로 밀리는 궤적이 실제로 보이도록 했습니다.
+            // [2026-07-08 수정 — "적 위치에 소환되도록"] 기준점을 플레이어(transform.position)가
+            // 아니라 인자로 받은 origin(적들의 평균 위치)으로 바꿨습니다.
+            // [2026-07-08 수정 — "적 머리쯤에서 떨어져서 바닥과 충돌한뒤에 고정되도록 해줘"]
+            // 고정 1.5m 대신 _ammoOrbSpawnHeight(기본 2m, 대략 적 머리 높이)를 써서 낙하가 더
+            // 위에서부터 시작해 눈에 잘 보이도록 했습니다. 착지 후 고정되는 동작 자체는
+            // OnCollisionEnter(KRDropItem)에서 기존대로 처리됩니다.
+            Vector3 spawnPos = origin + Vector3.up * _ammoOrbSpawnHeight;
+            float perPieceAmount = remaining / _ammoOrbSplitCount;
+
+            // [2026-07-08 수정 — "그냥 나오는 방향 4개로 설정해서 퍼트리면 안됨?" /
+            // "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"]
+            // 같은 속성의 조각들은 여전히 균등 각도(angleStep)로 4방향(발사 방향만) 분산됩니다.
+            // 시작 각도는 속성마다 독립적으로 랜덤하게 뽑지 않고, ApplyHits()가 딱 한 번 뽑아
+            // 5속성이 공유하는 burstBaseAngle에 속성 순번(elementIndex)만큼 균등한 오프셋을
+            // 더해서, 20개 조각의 발사 방향이 골고루 퍼지도록 합니다(겹침 방지 목적은 아님 —
+            // 이제 겹침은 Physics.IgnoreCollision이 막습니다).
+            float angleStep = 360f / _ammoOrbSplitCount;
+            float groupAngleOffset = angleStep / _allElements.Length * elementIndex;
+            float startAngle = burstBaseAngle + groupAngleOffset;
+
+            // [2026-07-08 수정 — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"]
+            // 예전엔 겹침을 막으려고 반지름만큼(_ammoOrbSpawnRadius) 위치를 미리 벌려서 스폰했는데,
+            // 그러면 "한 점에서 터져나가는" 게 아니라 이미 퍼진 채로 나타나 보였습니다. 요청대로
+            // 위치 오프셋을 없애고 전부 정확히 spawnPos(한 점)에서 스폰합니다. 방향(direction)은
+            // AddForce에 그대로 쓰여서, 스폰 직후 물리 힘만으로 사방(지름 방향)으로 퍼져나갑니다.
+            for (int i = 0; i < _ammoOrbSplitCount; i++)
+            {
+                float angleDeg = startAngle + angleStep * i;
+                Vector3 direction = new Vector3(
+                    Mathf.Cos(angleDeg * Mathf.Deg2Rad), 0f, Mathf.Sin(angleDeg * Mathf.Deg2Rad));
+
+                SpawnAmmoOrbPiece(_ammoOrbPrefabs[idx], spawnPos, perPieceAmount, direction, burstColliders);
+            }
+        }
+
+        /// <summary>
+        /// [2026-07-08 신규] 탄약 조각 하나를 생성하고, 지정된 방향으로 물리 힘을 줘서 튀어나가게
+        /// 합니다.
+        /// [2026-07-08 수정 — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"] 이제 여러 조각이
+        /// 전부 같은 spawnPos에서 생성되므로, 이 조각의 Collider를 burstColliders에 등록해 나중에
+        /// ApplyHits()가 같은 처형에서 나온 조각끼리 충돌 판정을 끄도록(Physics.IgnoreCollision)
+        /// 합니다.
+        /// </summary>
+        private void SpawnAmmoOrbPiece(
+            GameObject prefab, Vector3 spawnPos, float amount, Vector3 direction,
+            System.Collections.Generic.List<Collider> burstColliders)
+        {
+            GameObject orbInstance = Instantiate(prefab, spawnPos, Quaternion.identity);
 
             var dropItem = orbInstance.GetComponent<KillRitual.Items.KRDropItem>();
             if (dropItem != null)
             {
-                dropItem.ConfigureAmount(remaining);
+                dropItem.ConfigureAmount(amount);
             }
             else
             {
                 Debug.LogWarning(
-                    $"[KRJakduSystem] {_ammoOrbPrefabs[idx].name} 프리팹에 KRDropItem 컴포넌트가 없습니다. " +
+                    $"[KRJakduSystem] {prefab.name} 프리팹에 KRDropItem 컴포넌트가 없습니다. " +
                     "회수 가능한 오브가 아닙니다.");
+            }
+
+            if (orbInstance.TryGetComponent(out Collider pieceCollider))
+            {
+                burstColliders.Add(pieceCollider);
+            }
+
+            if (orbInstance.TryGetComponent(out Rigidbody rb))
+            {
+                float forceVariance = Random.Range(0.85f, 1.15f);
+                Vector3 force = (direction * _ammoOrbOutwardForce + Vector3.up * _ammoOrbUpForce) * forceVariance;
+                rb.AddForce(force, ForceMode.Impulse);
             }
         }
 

@@ -2715,10 +2715,14 @@ MonoBehaviour:
   _detectRange: 50
   _chaseForever: 1
   _moveSpeed: 3.5
+  _useOriginalMaterialColors: 1
   _baseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
   _hitFlashDuration: 0.08
+  _hitEffectPrefab: {fileID: 0}
+  _hitEffectFallbackHeight: 1
   _despawnDelay: 1.2
+  _modelRoot: {fileID: 0}
   _attackRange: 5
   _attackCooldown: 5
   _attackDamage: 10
@@ -2746,8 +2750,9 @@ MonoBehaviour:
   - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
   - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
   _ammoOrbChance: 1
-  _spreadRadius: 0.5
-  _spawnHeightOffset: 0.8
+  _ammoOrbCount: 4
+  _spreadRadius: 1
+  _spawnHeightOffset: 0.3
   _bounceUpForce: 4
   _bounceOutwardForce: 3
 --- !u!136 &1901742783695709381

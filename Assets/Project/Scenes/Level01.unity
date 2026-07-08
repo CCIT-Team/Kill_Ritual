@@ -31292,7 +31292,7 @@ BoxCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 155190272
+    m_Bits: 150994944
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
@@ -87529,7 +87529,7 @@ MonoBehaviour:
   _multiplierHeavy: 0.8
   _multiplierElite: 0.4
   _multiplierBoss: 0.2
-  _dropFodderKill: 0.1
+  _dropFodderKill: 0.2
   _dropEliteHit: 0.05
   _dropEliteKill: 0.2
   _dropBossHit: 0.2
@@ -87541,6 +87541,11 @@ MonoBehaviour:
   - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
   - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
   - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
+  _ammoOrbEnabled: 0101010000
+  _ammoOrbSplitCount: 2
+  _ammoOrbOutwardForce: 3.5
+  _ammoOrbUpForce: 4
+  _ammoOrbSpawnHeight: 2
   _slowRatio: 0.914
   _reboundRatio: 1.3
   _reboundDuration: 0.5
@@ -87646,6 +87651,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxHealth: 100
   _muryeongController: {fileID: 0}
+  _autoEnableHitCollider: 0
   _healthBarWidthReference: {fileID: 1478325089}
   _healthBarFill: {fileID: 1937885034}
   _healthBarFollow: {fileID: 151864601}
@@ -143467,7 +143473,7 @@ BoxCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 155190272
+    m_Bits: 150994944
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
