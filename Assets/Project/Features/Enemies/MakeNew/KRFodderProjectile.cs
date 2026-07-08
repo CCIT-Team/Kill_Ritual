@@ -1,82 +1,270 @@
-﻿// Assets/Project/Scripts/05_Enemies/KREnemyProjectile.cs
-using UnityEngine;
+﻿using UnityEngine;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Interfaces;
 
 namespace KillRitual.Enemies
 {
+    public enum KRMuryeongProjectileRank
+    {
+        Fodder = 0,
+        Gapsa = 1,
+        Jangryeong = 2,
+        Boss = 3
+    }
+
     /// <summary>
-    /// 원거리 몬스터(KRFodderRanged)가 쏘는 발사체입니다.
-    /// 직선으로 날아가다가 무언가에 닿으면 사라지고, 그 대상이 플레이어(IDamageable)면 데미지를 줍니다.
-    /// 아무것도 맞히지 못해도 _lifeTime 초가 지나면 스스로 사라져 화면에 쌓이지 않습니다.
+    /// 원거리 몬스터가 쏘는 발사체.
     ///
-    /// 콜라이더가 isTrigger(트리거)인 상태를 가정하므로 OnTriggerEnter로 충돌을 감지합니다.
-    /// (KRFodderRanged가 자동 생성하는 구는 트리거로 설정됩니다.)
+    /// 기본 상태:
+    /// - EnemyProjectile 레이어.
+    /// - 직선으로 날아감.
+    /// - 몬스터는 맞히지 않음.
+    /// - 플레이어만 데미지를 받음.
+    ///
+    /// 무령 반사 상태:
+    /// - Projectile 레이어로 변경.
+    /// - 플레이어가 보고 있는 방향으로 날아감.
+    /// - 플레이어는 맞히지 않음.
+    /// - 적을 맞히면 데미지를 줌.
     /// </summary>
+    [DisallowMultipleComponent]
     public sealed class KREnemyProjectile : MonoBehaviour
     {
+        [Header("Muryeong Reflection")]
+        [SerializeField] private KRMuryeongProjectileRank _sourceRank = KRMuryeongProjectileRank.Fodder;
+
+        [Tooltip("무령으로 반사되는 순간 바꿀 레이어 이름. 반드시 Unity Layer에 Projectile이 있어야 합니다.")]
+        [SerializeField] private string _reflectedLayerName = "Projectile";
+
+        [Tooltip("반사 후 데미지 배율. 1이면 원래 투사체 데미지 그대로 적에게 줍니다.")]
+        [Min(0f)]
+        [SerializeField] private float _reflectedDamageMultiplier = 1f;
+
+        [Tooltip("반사 후 수명을 다시 계산합니다.")]
+        [SerializeField] private bool _resetLifeTimeOnReflect = true;
+
         private float _speed;
         private float _damage;
-        private Transform _shooter;     // 쏜 몬스터 자신. 자기 발사체에 자기가 맞지 않도록 무시합니다.
+        private Transform _shooter;
+        private Transform _reflectedByPlayer;
+
         private Vector3 _direction;
-        private float _lifeTime = 5f;   // 최대 비행 시간(초)
+        private float _lifeTime = 5f;
         private float _spawnTime;
+        public Transform Shooter => _shooter;
+
+        private bool _isLaunched;
+        private bool _isReflected;
+        private bool _isDestroyed;
+
+        public Transform CachedTransform => transform;
+        public KRMuryeongProjectileRank SourceRank => _sourceRank;
+        public bool IsReflected => _isReflected;
+
+        public bool CanBeReflectedByMuryeong
+        {
+            get
+            {
+                return _isLaunched
+                       && !_isReflected
+                       && !_isDestroyed
+                       && gameObject.activeInHierarchy;
+            }
+        }
 
         /// <summary>
-        /// 발사체를 초기화하고 날립니다. KRFodderRanged가 생성 직후 1회 호출합니다.
+        /// 발사체를 초기화하고 날립니다.
+        /// 기존 KRFodderRanged 호출부를 깨지 않기 위해 시그니처 유지.
         /// </summary>
         public void Launch(Vector3 direction, float speed, float damage, Transform shooter)
         {
-            _direction = direction.normalized;
+            _direction = direction.sqrMagnitude > 0.0001f
+                ? direction.normalized
+                : transform.forward;
+
             _speed = speed;
             _damage = damage;
             _shooter = shooter;
             _spawnTime = Time.time;
+            _isLaunched = true;
+            _isReflected = false;
+            _isDestroyed = false;
+            _reflectedByPlayer = null;
+
+            if (_direction.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.LookRotation(_direction, Vector3.up);
+        }
+
+        /// <summary>
+        /// 무령 컨트롤러가 투사체 우선순위 계산에 사용.
+        /// 현재 이동 방향 기준으로 worldPoint에 도달하는 예상 시간.
+        /// 플레이어에게 접근 중이 아니면 Infinity를 반환해서 우선순위를 낮춤.
+        /// </summary>
+        public float EstimateArrivalTimeTo(Vector3 worldPoint)
+        {
+            Vector3 toPoint = worldPoint - transform.position;
+            float distance = toPoint.magnitude;
+
+            if (distance <= 0.001f)
+                return 0f;
+
+            if (_speed <= 0.001f)
+                return float.PositiveInfinity;
+
+            float closingSpeed = Vector3.Dot(_direction.normalized, toPoint.normalized) * _speed;
+
+            if (closingSpeed <= 0.001f)
+                return float.PositiveInfinity;
+
+            return distance / closingSpeed;
+        }
+
+        /// <summary>
+        /// 무령으로 투사체를 반사합니다.
+        /// 발사자를 찾지 않고, 넘겨받은 방향으로만 날립니다.
+        /// 보통 reflectDirection은 카메라 forward입니다.
+        /// </summary>
+        public void ReflectByMuryeong(Transform playerRoot, Vector3 reflectDirection)
+        {
+            if (!CanBeReflectedByMuryeong)
+                return;
+
+            if (reflectDirection.sqrMagnitude <= 0.0001f)
+                reflectDirection = transform.forward;
+
+            _isReflected = true;
+            _reflectedByPlayer = playerRoot;
+            _direction = reflectDirection.normalized;
+
+            if (_resetLifeTimeOnReflect)
+                _spawnTime = Time.time;
+
+            ApplyReflectedLayer();
+
+            if (_direction.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.LookRotation(_direction, Vector3.up);
         }
 
         private void Update()
         {
-            // 직선 등속 운동.
+            if (!_isLaunched || _isDestroyed)
+                return;
+
             transform.position += _direction * _speed * Time.deltaTime;
 
-            // 수명이 다하면 스스로 제거합니다.
             if (Time.time - _spawnTime >= _lifeTime)
             {
-                Destroy(gameObject);
+                DestroyProjectile();
             }
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            // 자신을 쏜 몬스터(또는 그 자식)와는 충돌을 무시합니다.
+            if (_isDestroyed)
+                return;
+
+            if (other == null)
+                return;
+
+            if (_isReflected)
+                HandleReflectedTrigger(other);
+            else
+                HandleEnemyProjectileTrigger(other);
+        }
+
+        private void HandleEnemyProjectileTrigger(Collider other)
+        {
+            // 자신을 쏜 몬스터 또는 그 자식과는 충돌 무시.
             if (_shooter != null && other.transform.IsChildOf(_shooter))
-            {
                 return;
-            }
 
-            // 다른 몬스터끼리는 서로 안 맞도록, 상대가 몬스터면 무시합니다.
+            // 일반 적 투사체 상태에서는 몬스터끼리 맞지 않음.
             if (other.GetComponentInParent<KREnemyBase>() != null)
-            {
                 return;
-            }
 
-            // 플레이어 등 데미지를 받을 수 있는 대상이면 데미지를 적용합니다.
-            // 게임오버/체력바를 담당하는 KRPlayerDamageFeedback을 우선 찾고, 없으면 일반 IDamageable을 씁니다.
             IDamageable target = other.GetComponentInParent<KillRitual.Player.KRPlayerDamageFeedback>();
+
             if (target == null)
-            {
                 target = other.GetComponentInParent<IDamageable>();
-            }
 
             if (target != null && !target.IsDead)
             {
-                // KRDamageContext는 속성을 요구하지만 몬스터 발사체에는 속성 개념이 없습니다.
-                // 형식상 아무 값(Fire)이나 넣어 전달하며, 플레이어 체력은 속성과 무관하게 깎입니다.
-                var context = new KRDamageContext(_damage, KRDamageType.Fire, transform.position, _direction);
+                var context = new KRDamageContext(
+                    _damage,
+                    KRDamageType.Fire,
+                    transform.position,
+                    _direction);
+
                 target.TakeDamage(context);
             }
 
-            // 무언가에 닿았으면(벽이든 플레이어든) 발사체는 사라집니다.
+            DestroyProjectile();
+        }
+
+        private void HandleReflectedTrigger(Collider other)
+        {
+            // 반사된 투사체는 플레이어 자신에게 다시 맞지 않음.
+            if (_reflectedByPlayer != null && other.transform.IsChildOf(_reflectedByPlayer))
+                return;
+
+            // 반사된 투사체는 플레이어 피해 컴포넌트를 직접 무시.
+            // 즉, 반사탄이 다시 플레이어를 때리는 상황 방지.
+            if (other.GetComponentInParent<KillRitual.Player.KRPlayerDamageFeedback>() != null)
+                return;
+
+            IDamageable target = other.GetComponentInParent<IDamageable>();
+
+            if (target != null && !target.IsDead)
+            {
+                float reflectedDamage = _damage * _reflectedDamageMultiplier;
+
+                var context = new KRDamageContext(
+                    reflectedDamage,
+                    KRDamageType.Fire,
+                    transform.position,
+                    _direction);
+
+                target.TakeDamage(context);
+            }
+
+            // 반사 상태에서는 적이든 벽이든 무언가에 닿으면 제거.
+            DestroyProjectile();
+        }
+
+        private void ApplyReflectedLayer()
+        {
+            if (string.IsNullOrEmpty(_reflectedLayerName))
+                return;
+
+            int layer = LayerMask.NameToLayer(_reflectedLayerName);
+
+            if (layer < 0)
+            {
+                Debug.LogWarning(
+                    $"[{nameof(KREnemyProjectile)}] '{_reflectedLayerName}' 레이어를 찾을 수 없습니다. " +
+                    "Unity Project Settings > Tags and Layers에 Projectile 레이어가 있는지 확인하세요.",
+                    this);
+
+                return;
+            }
+
+            SetLayerRecursively(transform, layer);
+        }
+
+        private static void SetLayerRecursively(Transform root, int layer)
+        {
+            root.gameObject.layer = layer;
+
+            for (int i = 0; i < root.childCount; i++)
+                SetLayerRecursively(root.GetChild(i), layer);
+        }
+
+        private void DestroyProjectile()
+        {
+            if (_isDestroyed)
+                return;
+
+            _isDestroyed = true;
             Destroy(gameObject);
         }
     }

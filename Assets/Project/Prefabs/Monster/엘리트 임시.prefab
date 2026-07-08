@@ -2010,6 +2010,8 @@ MonoBehaviour:
   _detectRange: 164
   _chaseForever: 1
   _moveSpeed: 7
+  _useOriginalMaterialColors: 1
+  _baseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
   _hitFlashDuration: 0.08
   _hitEffectPrefab: {fileID: 0}
@@ -2026,7 +2028,7 @@ MonoBehaviour:
   _meleeAttackHeightOffset: 1.27
   _rangedCooldown: 8
   _projectileDamage: 10
-  _projectileSpeed: 40
+  _projectileSpeed: 50
   _rangedFireDelay: 2.05
   _rangedAttackLockDuration: 5
   _projectileCount: 10

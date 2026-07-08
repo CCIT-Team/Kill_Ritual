@@ -877,6 +877,10 @@ MonoBehaviour:
   - {fileID: 758888234}
   _objectsToDisable:
   - {fileID: 1605710332}
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -3528,6 +3532,10 @@ MonoBehaviour:
   - {fileID: 1046401913}
   - {fileID: 758888234}
   - {fileID: 1345607327}
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -4642,6 +4650,10 @@ MonoBehaviour:
   _objectsToDisable:
   - {fileID: 1650205994}
   - {fileID: 1605710332}
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -16365,6 +16377,10 @@ MonoBehaviour:
   _objectsToEnable:
   - {fileID: 1345607327}
   _objectsToDisable: []
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -27318,6 +27334,10 @@ MonoBehaviour:
   - {fileID: 1605710332}
   _objectsToDisable:
   - {fileID: 1388299628}
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -31272,7 +31292,7 @@ BoxCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 16777216
+    m_Bits: 155190272
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
@@ -33600,6 +33620,10 @@ MonoBehaviour:
   - {fileID: 1345607327}
   _objectsToDisable:
   - {fileID: 1931867743}
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -87535,8 +87559,36 @@ MonoBehaviour:
   _listenInputDirectly: 1
   _parryKey: 306
   _visual: {fileID: 733113926}
-  _combatSystem: {fileID: 0}
-  _inputLockout: 0.2
+  _combatSystem: {fileID: 1260905887}
+  _viewCamera: {fileID: 1006283753}
+  _parryOrigin: {fileID: 733113925}
+  _muryeongProjectileSpawnPoint: {fileID: 0}
+  _enemyProjectileLayerMask:
+    serializedVersion: 2
+    m_Bits: 134217728
+  _catchDistance: 6
+  _catchAngle: 110
+  _catchWindowDuration: 0.2
+  _muryeongProjectilePrefab: {fileID: -8794838888793221991, guid: a31bdcbad9c04764a95a4da37eab775f, type: 3}
+  _aimAssistEnemyMask:
+    serializedVersion: 2
+    m_Bits: 4195328
+  _aimAssistRange: 60
+  _aimAssistRadius: 0.8
+  _targetHeightOffset: 1
+  _maxGauge: 100
+  _currentGauge: 100
+  _reflectCost: 10
+  _missLockout: 2
+  _reflectImpactDelay: 0.18
+  _useReflectSlowMotion: 1
+  _reflectSlowMinScale: 0.1
+  _reflectSlowEnterDuration: 0.083
+  _reflectSlowHoldDuration: 0.3
+  _reflectSlowRecoverDuration: 0.2
+  _reflectCameraKickAmount: 5
+  _reflectCameraKickDuration: 0.2
+  _weaponVisualRestoreFallbackDelay: 0.6
 --- !u!114 &1260905884
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87725,7 +87777,7 @@ MonoBehaviour:
   groundProbeDistance: 0.2
   maxRunSpeed: 35
   slowRunSpeed: 0.5
-  jakduSystem: {fileID: 0}
+  jakduSystem: {fileID: 1260905882}
   groundAcceleration: 60
   groundDeceleration: 100
   airAcceleration: 18
@@ -131485,6 +131537,10 @@ MonoBehaviour:
   _objectsToEnable:
   - {fileID: 1931867743}
   _objectsToDisable: []
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -143398,7 +143454,7 @@ BoxCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 16777216
+    m_Bits: 155190272
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
@@ -149222,6 +149278,10 @@ MonoBehaviour:
   - {fileID: 1650205994}
   _objectsToDisable:
   - {fileID: 1046401913}
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
@@ -150306,6 +150366,10 @@ MonoBehaviour:
   - {fileID: 1046401913}
   _objectsToDisable:
   - {fileID: 1650205994}
+  _linkCombat: 0
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _spreadOverFrames: 1
   _framesBetweenChanges: 1
   _enableBeforeDisable: 1
