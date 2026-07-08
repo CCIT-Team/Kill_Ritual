@@ -94,6 +94,14 @@ namespace KillRitual.Enemies
         public bool IsGroggy => _isGroggy;
         public Vector3 Position => transform.position;
 
+        /// <summary>
+        /// 이 적의 그로기 테두리 컴포넌트. Awake에서 캐싱된 참조를 그대로 반환하므로
+        /// KRGroggyOutline이 계층구조 어디(루트/자식)에 있든 상관없이 정확히 찾을 수 있습니다.
+        /// 외부 스크립트(KRAbsorptionZone 등)는 GetComponent/GetComponentInParent로 직접 찾지 말고
+        /// 이 프로퍼티를 사용하세요.
+        /// </summary>
+        public KRGroggyOutline GroggyOutline => _groggyOutline;
+
         private void CacheRenderers()
         {
             // GetComponentsInChildren은 파티클처럼 나중에 붙는 자식까지 잡을 수 있으니,
@@ -180,7 +188,7 @@ namespace KillRitual.Enemies
 
             // KRGroggyOutline은 3D 모델(_modelRoot)에만 붙여야 합니다.
             // 루트(gameObject)에 붙이면 Outline 컴포넌트가 GetComponentsInChildren<Renderer>()로
-            // 하위 전체(공격 이펙트 포함)를 훑어서 테두리를 적용해버립니다.
+            // 하위 전체(공격 이펙트 등 포함)를 훑어서 테두리를 적용해버립니다.
             Transform outlineTarget = _modelRoot != null ? _modelRoot : transform;
             _groggyOutline = outlineTarget.GetComponent<KRGroggyOutline>();
             if (_groggyOutline == null)

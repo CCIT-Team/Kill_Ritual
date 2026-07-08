@@ -1,18 +1,18 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace KillRitual.Enemies
 {
     /// <summary>
     /// 그로기 상태일 때 항상 테두리를 표시하고,
-    /// 처형 가능 거리 안에 들어오면 색상이 파란색으로 바뀝니다.
+    /// 처형 가능 거리 안에 들어오면 색상이 주황색으로 바뀝니다.
     /// </summary>
     public sealed class KRGroggyOutline : MonoBehaviour
     {
         [Tooltip("그로기 상태 기본 테두리 색상.")]
-        [SerializeField] private Color _groggyColor = new Color(0.2f, 0.6f, 1f);  // 주황
+        [SerializeField] private Color _groggyColor = new Color(0.2f, 0.6f, 1f);  // 파랑
 
         [Tooltip("처형 가능 거리 안에 들어왔을 때 테두리 색상.")]
-        [SerializeField] private Color _executableColor = new Color(1f, 0.5f, 0f); // 파랑
+        [SerializeField] private Color _executableColor = new Color(1f, 0.5f, 0f); // 주황
 
         [Tooltip("테두리 두께.")]
         [Min(0f)]
@@ -42,6 +42,7 @@ namespace KillRitual.Enemies
         /// <summary>처형 가능 범위 진입/이탈. KRAbsorptionZone이 호출합니다.</summary>
         public void SetInRange(bool inRange)
         {
+            Debug.Log($"[{name}] SetInRange({inRange}) 호출됨");
             _isInRange = inRange;
             Refresh();
         }
