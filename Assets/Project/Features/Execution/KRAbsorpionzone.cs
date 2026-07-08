@@ -34,8 +34,8 @@ namespace KillRitual.Player.Combat
 
             if (_candidates.Add(damageable))
             {
-                var outline = other.GetComponentInParent<KillRitual.Enemies.KRGroggyOutline>();
-                outline?.SetInRange(true);
+                var enemyBase = other.GetComponentInParent<KillRitual.Enemies.KREnemyBase>();
+                enemyBase?.GroggyOutline?.SetInRange(true);
             }
         }
 
@@ -47,8 +47,8 @@ namespace KillRitual.Player.Combat
             if (_candidates.Remove(damageable))
             {
                 // 처형 가능 범위에서 벗어난 순간 범위 이탈을 알립니다.
-                if (other.GetComponentInParent<KillRitual.Enemies.KRGroggyOutline>() is { } outline)
-                    outline.SetInRange(false);
+                var enemyBase = other.GetComponentInParent<KillRitual.Enemies.KREnemyBase>();
+                enemyBase?.GroggyOutline?.SetInRange(false);
             }
         }
 
@@ -60,7 +60,7 @@ namespace KillRitual.Player.Combat
                 if (c == null || c.IsDead || !c.IsGroggy)
                 {
                     if (c is KillRitual.Enemies.KREnemyBase enemy)
-                        enemy.GetComponent<KillRitual.Enemies.KRGroggyOutline>()?.SetInRange(false);
+                        enemy.GroggyOutline?.SetInRange(false);
                     return true;
                 }
                 return false;
