@@ -2616,6 +2616,7 @@ GameObject:
   - component: {fileID: 7495546858022873460}
   - component: {fileID: 1901742783695709381}
   - component: {fileID: 2366814060553205183}
+  - component: {fileID: 4959995314060796806}
   m_Layer: 22
   m_Name: "\uC880\uBE44"
   m_TagString: Untagged
@@ -2715,10 +2716,14 @@ MonoBehaviour:
   _detectRange: 50
   _chaseForever: 1
   _moveSpeed: 3.5
+  _useOriginalMaterialColors: 1
   _baseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
   _hitFlashDuration: 0.08
+  _hitEffectPrefab: {fileID: 0}
+  _hitEffectFallbackHeight: 1
   _despawnDelay: 1.2
+  _modelRoot: {fileID: 0}
   _attackRange: 5
   _attackCooldown: 5
   _attackDamage: 10
@@ -2833,6 +2838,18 @@ MonoBehaviour:
   _noiseScale: 18
   _normalPush: 0.04
   _upPush: 0.08
+--- !u!114 &4959995314060796806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7479795742330165063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 609a35f0070955f43b760216e3446de9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7525382996357898421
 GameObject:
   m_ObjectHideFlags: 0
