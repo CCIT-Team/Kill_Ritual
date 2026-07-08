@@ -20574,7 +20574,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _element: 0
   _weaponName: "\uD654_\uC288\uD37C\uC0F7\uAC74"
-  _damage: 3000
+  _damage: 30
   _range: 50
   _cooldown: 1
   _resourceCost: 5

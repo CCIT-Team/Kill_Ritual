@@ -34,6 +34,12 @@ namespace KillRitual.Items
         [Range(0f, 1f)]
         [SerializeField] private float _ammoOrbChance = 1f;
 
+        [Tooltip("[2026-07-08 신규] '둠 이터널 전기톱처럼 여러 파츠가 나오게' 요청 반영 — 드롭이 " +
+                 "결정되면(위 확률 통과 시) 오브를 하나만 만드는 대신 이 개수만큼 만들어서 " +
+                 "사방으로 흩뿌립니다. 각 조각은 SpawnOrb()에서 위치/발사 방향을 따로 랜덤하게 " +
+                 "잡으므로 자연스럽게 여러 파츠가 튀는 것처럼 보입니다.")]
+        [Min(1)] [SerializeField] private int _ammoOrbCount = 4;
+
         [Tooltip("드롭된 오브가 퍼지는 반경. 여러 오브가 한곳에 겹치지 않도록 랜덤하게 흩뿌립니다.")]
         [Min(0f)]
         [SerializeField] private float _spreadRadius = 0.5f;
@@ -92,7 +98,10 @@ namespace KillRitual.Items
             if (_ammoOrbPrefabs != null && idx >= 0 && idx < _ammoOrbPrefabs.Length
                 && _ammoOrbPrefabs[idx] != null && Random.value <= _ammoOrbChance)
             {
-                SpawnOrb(_ammoOrbPrefabs[idx], spawnBase);
+                // [2026-07-08 신규] "둠 이터널 전기톱처럼 여러 파츠가 나오게" 요청 반영 — 오브 하나만
+                // 만들던 걸 _ammoOrbCount만큼 반복해서 여러 조각이 사방으로 흩뿌려지도록 했습니다.
+                for (int i = 0; i < _ammoOrbCount; i++)
+                    SpawnOrb(_ammoOrbPrefabs[idx], spawnBase);
             }
         }
 
@@ -125,9 +134,13 @@ namespace KillRitual.Items
             // 생성 직후 랜덤한 방향으로 힘을 가해 물리적으로 퍼지게 합니다.
             if (instance.TryGetComponent(out Rigidbody rb))
             {
+                // [2026-07-08 신규] 파츠가 여러 개로 늘어나면서, 힘 크기까지 매번 똑같으면 다들
+                // 똑같은 궤적으로 튀어서 부자연스러워 보입니다. 세기에 ±30% 정도 랜덤 편차를 줘서
+                // 조각마다 멀리/짧게, 높게/낮게 제각각 튀도록 했습니다.
+                float forceVariance = Random.Range(0.7f, 1.3f);
                 Vector2 randomDir = Random.insideUnitCircle.normalized;
-                Vector3 force = new Vector3(randomDir.x, 0f, randomDir.y) * _bounceOutwardForce
-                              + Vector3.up * _bounceUpForce;
+                Vector3 force = (new Vector3(randomDir.x, 0f, randomDir.y) * _bounceOutwardForce
+                              + Vector3.up * _bounceUpForce) * forceVariance;
                 rb.AddForce(force, ForceMode.Impulse);
             }
         }
