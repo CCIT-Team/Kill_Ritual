@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Interfaces;
 
@@ -45,7 +46,7 @@ namespace KillRitual.Enemies
                  "그로기(다운) 상태에서 처형당해도 즉사하지 않고, 대신 이 값만큼 고정 피해를 " +
                  "입습니다. 이 피해도 다른 피해와 똑같은 경로(TakeDamageDirect)를 거치므로, " +
                  "1페이즈 중이면 ClampFinalDamage()의 2페이즈 문턱 보정도 그대로 적용됩니다.")]
-        [Min(0f)] [SerializeField] private float _executeDamage = 500f;
+        [Min(0f)][SerializeField] private float _executeDamage = 500f;
 
         [Tooltip("[2026-07-08 신규] '포효모션이 무조건 우선' 요청 반영 — 2페이즈 전환 포효를 " +
                  "독점 재생하는 동안 다른 패턴이 못 끼어들게 붙잡아 두는 시간(초)입니다. " +
@@ -56,7 +57,31 @@ namespace KillRitual.Enemies
                  "값으로는 애니메이션이 끝나기 전에 _isPatternActive가 풀려서 다음 패턴이 끼어들어 " +
                  "포효가 중간에 캔슬됐습니다. 7.5초로 늘려서 실제 종료 시점보다 확실히 뒤로 " +
                  "맞췄습니다.")]
-        [Min(0.1f)] [SerializeField] private float _roarDuration = 7.5f;
+        [Min(0.1f)][SerializeField] private float _roarDuration = 7.5f;
+
+        [Header("보스 UI - 체력 / 페이즈")]
+        [Tooltip("보스 전체 체력 스크롤바입니다. Scrollbar의 size를 HP 비율로 사용합니다. 방향은 UI 오브젝트의 Direction 설정을 따릅니다.")]
+        [SerializeField] private Scrollbar _bossHealthScrollbar;
+
+        [Tooltip("위쪽에 미리 배치해둔 페이즈 조각/표식 오브젝트입니다. 순서대로 하나씩 사라집니다. 총 2페이즈면 2개를 넣으면 됩니다.")]
+        [SerializeField] private GameObject[] _phaseBreakObjects;
+
+        [Tooltip("true면 페이즈 조각을 SetActive(false)로 숨깁니다. false면 Destroy()합니다. UI는 보통 true가 안전합니다.")]
+        [SerializeField] private bool _deactivatePhaseBreakObject = true;
+
+        [Tooltip("시작 시 페이즈 조각을 전부 다시 켭니다. 보스 프리팹이 재사용되거나 테스트 중 비활성화 상태가 남는 것을 막습니다.")]
+        [SerializeField] private bool _initializePhaseBreakObjectsOnAwake = true;
+
+        [Header("보스 UI - 표시 타이밍")]
+        [Tooltip("보스 HP바 전체 루트입니다. 가능하면 보스 이름/HP/페이즈 조각을 감싼 최상위 패널을 넣으세요. 비워두면 스크롤바와 페이즈 조각을 개별로 숨깁니다.")]
+        [SerializeField] private GameObject _bossUiRoot;
+
+        [Tooltip("켜두면 플레이어를 감지하기 전까지 보스 UI를 숨깁니다. UpdateChase/UpdateAttack이 처음 호출되는 순간 표시됩니다.")]
+        [SerializeField] private bool _hideBossUiUntilPlayerDetected = true;
+
+        private int _consumedPhaseBreakCount;
+        private bool _deathUiConsumed;
+        private bool _bossUiRevealed;
 
         [Header("몸통 방어 (부위 판정이 아닌 애매한 곳)")]
         [Tooltip("[2026-07-07 이름 변경] 예전엔 '철갑 방어'였지만, 이제 몸통 자체도 부위(_body)로 " +
@@ -129,9 +154,9 @@ namespace KillRitual.Enemies
         [SerializeField] private KRBossArmorShard _armorShardPrefab;
         [SerializeField] private Transform _shoulderLMuzzle;
         [SerializeField] private Transform _shoulderRMuzzle;
-        [Min(1)] [SerializeField] private int _shardsPerShoulder = 3;
-        [Min(0.1f)] [SerializeField] private float _shardSpeed = 20f;
-        [Min(0f)] [SerializeField] private float _shardDamage = 15f;
+        [Min(1)][SerializeField] private int _shardsPerShoulder = 3;
+        [Min(0.1f)][SerializeField] private float _shardSpeed = 20f;
+        [Min(0f)][SerializeField] private float _shardDamage = 15f;
         [SerializeField] private LayerMask _shardHitLayerMask = ~0;
         [SerializeField] private LayerMask _shardDamageableLayerMask = ~0;
         // [2026-07-08 삭제] _shardMinRange(원거리 최소 사거리) — 안 쓰는 필드였습니다.
@@ -140,7 +165,7 @@ namespace KillRitual.Enemies
                  "트리거를 건 시점부터 실제로 철갑을 던지는(발사하는) 순간까지의 지연 시간입니다. " +
                  "[2026-07-08 최종 수정] '모션과 동시에' 요청에 따라 0으로 맞췄습니다 — 트리거를 " +
                  "건 바로 그 프레임(모션 시작과 동시)에 곧바로 발사됩니다.")]
-        [Min(0f)] [SerializeField] private float _shardLaunchDelay = 0f;
+        [Min(0f)][SerializeField] private float _shardLaunchDelay = 0f;
         [Tooltip("[2026-07-08 신규] '걷기 모션이 다시 빠졌다' 버그 수정 — 철갑을 던진 뒤 코루틴이 " +
                  "끝날 때까지 추가로 기다리는 시간입니다. " +
                  "[2026-07-08 수정 — '애니메이션이 캔슬되는거 같아서' 버그 재수정] 클립 실제 " +
@@ -149,10 +174,10 @@ namespace KillRitual.Enemies
                  "먼저 잡혀서 애니메이션이 끝까지 재생되지 못하고 캔슬됐습니다. 1.3초로 늘려서 " +
                  "(텔레그래프 0.35초 + 발사 0초 + 이 값 + 쿨다운 2.5초 = 약 4.15초) 실제 종료 " +
                  "시점보다 확실히 뒤로 맞췄습니다.")]
-        [Min(0f)] [SerializeField] private float _shardRecoveryDelay = 1.3f;
+        [Min(0f)][SerializeField] private float _shardRecoveryDelay = 1.3f;
         [Tooltip("2페이즈: 바닥에 꽂힌 철갑이 터지기까지의 지연 시간(초).")]
-        [Min(0.1f)] [SerializeField] private float _shardExplodeDelay = 1.5f;
-        [Min(0.1f)] [SerializeField] private float _shardExplosionRadius = 2.5f;
+        [Min(0.1f)][SerializeField] private float _shardExplodeDelay = 1.5f;
+        [Min(0.1f)][SerializeField] private float _shardExplosionRadius = 2.5f;
 
         [Header("패턴2 - 물기")]
         [Tooltip("[2026-07-08 변경] 컨셉을 다시 '물기'로 확정했습니다(꼬리 휘두르기 → 물기). " +
@@ -166,19 +191,19 @@ namespace KillRitual.Enemies
                  "이제 물기의 실제 타격 사거리일 뿐 아니라, 원거리(철갑발사)/물기/돌진 패턴 선택을 " +
                  "가르는 근접·원거리 경계값 역할도 겸합니다(IsPatternViableAtDistance() 참고). " +
                  "기본값을 6→10으로 올린 이유도 이것 하나입니다.")]
-        [Min(0.05f)] [SerializeField] private float _trunkWindup = 0.6f;
-        [Min(0.5f)] [SerializeField] private float _trunkStrikeRange = 10f;
+        [Min(0.05f)][SerializeField] private float _trunkWindup = 0.6f;
+        [Min(0.5f)][SerializeField] private float _trunkStrikeRange = 10f;
         // [2026-07-08 삭제] _trunkStrikeHalfAngle(각도 제한용) — 각도 제한 자체를 없애면서 안 쓰는 필드였습니다.
-        [Min(0f)] [SerializeField] private float _trunkDamage = 25f;
+        [Min(0f)][SerializeField] private float _trunkDamage = 25f;
         [Tooltip("연속 타격 사이의 간격(초, 2페이즈 3연타용).")]
-        [Min(0.05f)] [SerializeField] private float _trunkComboInterval = 0.35f;
+        [Min(0.05f)][SerializeField] private float _trunkComboInterval = 0.35f;
 
         [Header("패턴3 - 돌진")]
-        [Min(0.1f)] [SerializeField] private float _chargeWindup = 1f;
-        [Min(1f)] [SerializeField] private float _chargeSpeed = 22f;
+        [Min(0.1f)][SerializeField] private float _chargeWindup = 1f;
+        [Min(1f)][SerializeField] private float _chargeSpeed = 22f;
         [Tooltip("[2026-07-08 수정] '돌진거리 두배까지 이동하게 해줘' 요청으로 20m → 40m로 늘렸습니다.")]
-        [Min(1f)] [SerializeField] private float _chargeMaxDistance = 40f;
-        [Min(0f)] [SerializeField] private float _chargeDamage = 30f;
+        [Min(1f)][SerializeField] private float _chargeMaxDistance = 40f;
+        [Min(0f)][SerializeField] private float _chargeDamage = 30f;
         // [2026-07-08 삭제] _chargeHitRadius(예전 원형 판정 반경) — _chargeHitbox(Trigger 콜라이더)가
         // 판정을 전담하게 되면서 안 쓰는 필드였습니다.
         [Tooltip("벽 감지용 레이어 — 플레이어/적 레이어는 반드시 제외하세요. 지형/벽 레이어만 포함.")]
@@ -186,23 +211,23 @@ namespace KillRitual.Enemies
         [Tooltip("돌진 전용 피해 판정 콜라이더(KRBossChargeHitbox). 돌진 중에만 켜져서 " +
                  "정확한 Trigger 판정을 합니다.")]
         [SerializeField] private KRBossChargeHitbox _chargeHitbox;
-        [Min(0.1f)] [SerializeField] private float _wallStunDuration = 1.5f;
+        [Min(0.1f)][SerializeField] private float _wallStunDuration = 1.5f;
         [Tooltip("[2026-07-07 신규] 돌진 중 벽에 부딪혔을 때 그 충격으로 앞다리(_frontLegs) 자신에게 " +
                  "들어가는 자해 피해. 무리한 돌진을 반복하면 스스로 다리가 부러질 수 있게 하는 " +
                  "리스크/리워드 장치입니다 — '돌진도 부위 파괴와 연동'해 달라는 요청 반영.")]
-        [Min(0f)] [SerializeField] private float _chargeSelfDamageOnWallHit = 35f;
+        [Min(0f)][SerializeField] private float _chargeSelfDamageOnWallHit = 35f;
         [Tooltip("[2026-07-07 신규] 돌진(및 벽 충돌 시 경직/2연속 돌진까지) 끝난 뒤, 플레이어 쪽으로 " +
                  "다시 몸을 돌리는 데 걸리는 시간(초). 패턴 진행 중엔 FacePlayer가 멈춰 있으므로, " +
                  "돌진 직후 남은 각도와 상관없이 항상 이 시간만큼 걸려서 천천히 재조준하도록 " +
                  "코루틴으로 별도 처리합니다 — '뒤도는데 한 2초는 걸리면 좋겠다'는 요청 반영.")]
-        [Min(0.1f)] [SerializeField] private float _chargeTurnBackDuration = 2f;
+        [Min(0.1f)][SerializeField] private float _chargeTurnBackDuration = 2f;
 
         [Header("신규 패턴(2페이즈 전용) - 철갑 폭우")]
-        [Min(1)] [SerializeField] private int _armorRainCount = 10;
-        [Min(1f)] [SerializeField] private float _armorRainRadius = 8f;
-        [Min(0f)] [SerializeField] private float _armorRainDamage = 10f;
-        [Min(0.1f)] [SerializeField] private float _armorRainFallSpeed = 12f;
-        [Min(0.1f)] [SerializeField] private float _armorRainDuration = 1.8f;
+        [Min(1)][SerializeField] private int _armorRainCount = 10;
+        [Min(1f)][SerializeField] private float _armorRainRadius = 8f;
+        [Min(0f)][SerializeField] private float _armorRainDamage = 10f;
+        [Min(0.1f)][SerializeField] private float _armorRainFallSpeed = 12f;
+        [Min(0.1f)][SerializeField] private float _armorRainDuration = 1.8f;
 
         [Header("시각 신호")]
         [Tooltip("모든 패턴 예고(윈드업) 구간 동안 표시할 경고색.")]
@@ -214,10 +239,10 @@ namespace KillRitual.Enemies
                  "별도 머티리얼/프리팹 준비 없이 런타임에 LineRenderer를 자동 생성해서 씁니다.")]
         [SerializeField] private bool _showAttackRangeIndicator = true;
         [SerializeField] private Color _rangeIndicatorColor = new Color(1f, 0.15f, 0.1f, 0.9f);
-        [Min(3)] [SerializeField] private int _rangeCircleSegments = 48;
-        [Min(0.01f)] [SerializeField] private float _rangeIndicatorLineWidth = 0.18f;
+        [Min(3)][SerializeField] private int _rangeCircleSegments = 48;
+        [Min(0.01f)][SerializeField] private float _rangeIndicatorLineWidth = 0.18f;
         [Tooltip("범위 표시선이 바닥에 파묻혀 안 보이지 않도록 띄우는 높이(Z-fighting 방지).")]
-        [Min(0f)] [SerializeField] private float _rangeIndicatorYOffset = 0.05f;
+        [Min(0f)][SerializeField] private float _rangeIndicatorYOffset = 0.05f;
 
         [Header("애니메이션")]
         [Tooltip("모델에 붙일 Animator. 비워두면 자식에서 자동으로 찾습니다. " +
@@ -292,6 +317,123 @@ namespace KillRitual.Enemies
             // 확인합니다(별도 이벤트 불필요).
             if (_frontLegs != null) _frontLegs.OnBroken += HandleLegBroken;
             if (_backLegs != null) _backLegs.OnBroken += HandleLegBroken;
+
+            InitializeBossHealthUI();
+        }
+
+        // ── 보스 UI - 체력 / 페이즈 ─────────────────────────────────────
+
+        private void InitializeBossHealthUI()
+        {
+            ConfigureHealthScrollbar(_bossHealthScrollbar);
+
+            _consumedPhaseBreakCount = 0;
+            _deathUiConsumed = false;
+            _bossUiRevealed = !_hideBossUiUntilPlayerDetected;
+
+            if (_initializePhaseBreakObjectsOnAwake && _phaseBreakObjects != null)
+            {
+                for (int i = 0; i < _phaseBreakObjects.Length; i++)
+                {
+                    if (_phaseBreakObjects[i] != null)
+                        _phaseBreakObjects[i].SetActive(true);
+                }
+            }
+
+            SetBossUiVisible(_bossUiRevealed);
+            UpdateBossHealthUI();
+        }
+
+        private static void ConfigureHealthScrollbar(Scrollbar scrollbar)
+        {
+            if (scrollbar == null) return;
+
+            // HP바 용도에서는 value가 아니라 size가 실제 표시량입니다.
+            // value는 핸들의 위치를 움직이므로 0으로 고정해 좌/우 기준만 Direction 설정에 맡깁니다.
+            scrollbar.numberOfSteps = 0;
+            scrollbar.value = 0f;
+        }
+
+        private void UpdateBossHealthUI()
+        {
+            float totalRatio = _maxHealth > 0f
+                ? Mathf.Clamp01(_health / _maxHealth)
+                : 0f;
+
+            SetScrollbarAmount(_bossHealthScrollbar, totalRatio);
+            RefreshPhaseBreakObjectVisibility();
+        }
+
+        private void RevealBossUiIfNeeded()
+        {
+            if (_bossUiRevealed) return;
+
+            _bossUiRevealed = true;
+            SetBossUiVisible(true);
+            UpdateBossHealthUI();
+        }
+
+        private void SetBossUiVisible(bool visible)
+        {
+            if (_bossUiRoot != null)
+            {
+                if (_bossUiRoot.activeSelf != visible)
+                    _bossUiRoot.SetActive(visible);
+            }
+            else
+            {
+                if (_bossHealthScrollbar != null && _bossHealthScrollbar.gameObject.activeSelf != visible)
+                    _bossHealthScrollbar.gameObject.SetActive(visible);
+            }
+
+            RefreshPhaseBreakObjectVisibility();
+        }
+
+        private void RefreshPhaseBreakObjectVisibility()
+        {
+            if (_phaseBreakObjects == null) return;
+
+            for (int i = 0; i < _phaseBreakObjects.Length; i++)
+            {
+                GameObject phaseObject = _phaseBreakObjects[i];
+                if (phaseObject == null) continue;
+
+                bool shouldBeVisible = _bossUiRevealed && i >= _consumedPhaseBreakCount;
+                if (phaseObject.activeSelf != shouldBeVisible)
+                    phaseObject.SetActive(shouldBeVisible);
+            }
+        }
+
+        private static void SetScrollbarAmount(Scrollbar scrollbar, float value)
+        {
+            if (scrollbar == null) return;
+
+            float clamped = Mathf.Clamp01(value);
+            scrollbar.size = clamped;
+            scrollbar.value = 0f;
+        }
+
+        private void ConsumeNextPhaseBreakObject()
+        {
+            if (_phaseBreakObjects == null || _phaseBreakObjects.Length == 0) return;
+
+            while (_consumedPhaseBreakCount < _phaseBreakObjects.Length &&
+                   _phaseBreakObjects[_consumedPhaseBreakCount] == null)
+            {
+                _consumedPhaseBreakCount++;
+            }
+
+            if (_consumedPhaseBreakCount >= _phaseBreakObjects.Length) return;
+
+            GameObject target = _phaseBreakObjects[_consumedPhaseBreakCount];
+            _consumedPhaseBreakCount++;
+
+            if (_deactivatePhaseBreakObject)
+                target.SetActive(false);
+            else
+                Destroy(target);
+
+            RefreshPhaseBreakObjectVisibility();
         }
 
         /// <summary>
@@ -414,6 +556,8 @@ namespace KillRitual.Enemies
 
         protected override void UpdateChase()
         {
+            RevealBossUiIfNeeded();
+
             // [2026-07-07 변경] 패턴(예고~공격)이 진행 중일 땐 더 이상 매 프레임 플레이어 쪽으로
             // 재조준하지 않습니다. 예전엔 여기서 무조건 FacePlayer를 불러서, 회전속도가 유한해도
             // 결국 시간이 지나면 항상 정면이 플레이어를 향하게 됐습니다(플레이어가 옆/뒤로 돌아가도
@@ -426,6 +570,8 @@ namespace KillRitual.Enemies
 
         protected override void UpdateAttack()
         {
+            RevealBossUiIfNeeded();
+
             if (!_isPatternActive) FacePlayer(_turnSpeedDegreesPerSecond);
             TickBossLogic();
         }
@@ -569,6 +715,9 @@ namespace KillRitual.Enemies
             if (_phase == BossPhase.Phase1 && ratio <= _phase2HealthRatio)
             {
                 _phase = BossPhase.Phase2;
+                ConsumeNextPhaseBreakObject();
+                UpdateBossHealthUI();
+
                 Debug.Log($"[불가살이] {name}: 2페이즈 진입 (체력 {ratio:P0}) — 공격 속도 증가, " +
                           "철갑 발사 폭발/코 채찍 3연타/돌진 연속/철갑 폭우 해금");
 
@@ -585,7 +734,10 @@ namespace KillRitual.Enemies
                 HideCircleIndicator();
                 HideChargeLineIndicator();
                 StartCoroutine(PhaseTransitionRoar());
+                return;
             }
+
+            UpdateBossHealthUI();
         }
 
         /// <summary>
@@ -605,6 +757,18 @@ namespace KillRitual.Enemies
 
             _isPatternActive = false;
             _nextPatternTime = Time.time + _patternCooldown * _phase2CooldownMultiplier;
+        }
+
+        protected override void OnDeath()
+        {
+            if (!_deathUiConsumed)
+            {
+                _deathUiConsumed = true;
+                UpdateBossHealthUI();
+                ConsumeNextPhaseBreakObject();
+            }
+
+            base.OnDeath();
         }
 
         /// <summary>

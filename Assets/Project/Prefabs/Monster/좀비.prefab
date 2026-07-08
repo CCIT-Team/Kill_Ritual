@@ -2715,7 +2715,7 @@ MonoBehaviour:
   _groggyDuration: 3
   _detectRange: 50
   _chaseForever: 1
-  _moveSpeed: 3.5
+  _moveSpeed: 6
   _useOriginalMaterialColors: 1
   _baseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
@@ -2723,7 +2723,7 @@ MonoBehaviour:
   _hitEffectPrefab: {fileID: 0}
   _hitEffectFallbackHeight: 1
   _despawnDelay: 1.2
-  _modelRoot: {fileID: 0}
+  _modelRoot: {fileID: 6607948410281963861}
   _attackRange: 5
   _attackCooldown: 5
   _attackDamage: 10

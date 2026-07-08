@@ -5,18 +5,27 @@ using UnityEngine.UI;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Interfaces;
 using KillRitual.Player.Combat;
+using KillRitual.UI;
 
 namespace KillRitual.Player
 {
     /// <summary>
-    /// 플레이어의 체력과 피격 반응을 담당합니다.
+    /// 플레이어 체력, 피격 UI, 저체력 비네트, 피격 카메라 흔들림을 담당합니다.
     ///
-    /// 체력바 처리 방식:
-    ///   1. Image.fillAmount를 사용하지 않습니다.
-    ///   2. Sliced Image의 RectTransform Width를 직접 조절합니다.
-    ///   3. Fill / Follow Bar는 오른쪽 기준으로 고정됩니다.
-    ///   4. 체력이 줄어들면 왼쪽에서 오른쪽 방향으로 깎입니다.
-    ///   5. Follow Bar는 실제 체력바보다 늦게 따라옵니다.
+    /// 체력바:
+    ///   - Image.fillAmount를 쓰지 않고 RectTransform Width를 직접 조절합니다.
+    ///   - Fill / Follow Bar는 오른쪽 기준으로 고정됩니다.
+    ///   - 체력이 줄어들면 왼쪽에서 오른쪽 방향으로 깎입니다.
+    ///
+    /// 화면 피격 효과:
+    ///   - KRScreenDamageVignette에 체력 비율을 전달합니다.
+    ///   - 피격 순간에는 Flash()를 호출합니다.
+    ///   - 저체력 상태에서는 체력 비율에 따라 빨간 테두리가 지속 표시됩니다.
+    ///
+    /// 카메라 피격 흔들림:
+    ///   - CameraRoot / CameraShake는 건드리지 않습니다.
+    ///   - HitShake Transform 하나만 localPosition / localRotation으로 짧게 흔듭니다.
+    ///   - 기존 Look, FOV, 다른 셰이크와 충돌하지 않도록 별도 계층을 사용합니다.
     ///
     /// 무령 잔흔:
     ///   - 무령 반사 성공 직후 일정 시간 동안 받는 피해를 KRMuryeongController에서 감산합니다.
@@ -65,22 +74,61 @@ namespace KillRitual.Player
         [Tooltip("게임오버 화면을 그리는 KRGameOverUI 컴포넌트. 비워두면 자동으로 씬에서 찾습니다.")]
         [SerializeField] private KRGameOverUI _gameOverUI;
 
-        [Header("피격 화면 효과")]
-        [Tooltip("피격 시 잠깐 빨갛게 보일 전체화면 Image입니다.")]
-        [SerializeField] private Image _damageOverlay;
+        [Header("피격 / 저체력 화면 효과")]
+        [Tooltip("화면 피격/저체력 비네트 UI입니다. 비워두면 자식 또는 씬에서 자동 탐색합니다.")]
+        [SerializeField] private KRScreenDamageVignette _screenDamageVignette;
 
-        [Tooltip("피격 효과가 사라지는 속도. 클수록 빨리 옅어집니다.")]
-        [Min(0.1f)]
-        [SerializeField] private float _fadeSpeed = 3f;
+        [Tooltip("이 데미지를 기준으로 피격 플래시가 최대 강도에 가까워집니다. 예: 30이면 30 이상 피해에서 거의 최대 플래시.")]
+        [Min(1f)]
+        [SerializeField] private float _damageFlashReferenceDamage = 30f;
+
+        [Header("피격 카메라 흔들림")]
+        [Tooltip("피격 시 흔들 Transform입니다. 현재 구조에서는 CameraRoot/CameraShake/HitShake 중 HitShake를 넣으세요.")]
+        [SerializeField] private Transform _hitShakeRoot;
+
+        [Tooltip("비워두면 이름이 HitShake인 자식 Transform을 자동 탐색합니다.")]
+        [SerializeField] private bool _autoFindHitShakeRoot = true;
+
+        [Tooltip("이 데미지를 기준으로 카메라 흔들림이 최대 강도에 가까워집니다.")]
+        [Min(1f)]
+        [SerializeField] private float _shakeReferenceDamage = 30f;
+
+        [Tooltip("피격 흔들림 지속 시간입니다.")]
+        [Min(0.01f)]
+        [SerializeField] private float _shakeDuration = 0.16f;
+
+        [Tooltip("피격 흔들림 위치 세기입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _shakePositionStrength = 0.045f;
+
+        [Tooltip("피격 흔들림 회전 세기입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _shakeRotationStrength = 1.35f;
+
+        [Tooltip("흔들림 진동 속도입니다.")]
+        [Min(1f)]
+        [SerializeField] private float _shakeFrequency = 38f;
+
+        [Tooltip("작은 피해에도 최소한 이 비율만큼 흔들립니다.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _shakeMinNormalizedStrength = 0.35f;
+
+        [Tooltip("히트스탑/슬로우모션 중에도 카메라 흔들림이 정상 속도로 재생되게 합니다.")]
+        [SerializeField] private bool _useUnscaledTimeForShake = true;
 
         private float _health;
-        private float _overlayAlpha;
 
         private RectTransform _healthBarFillRect;
         private RectTransform _healthBarFollowRect;
 
         private Coroutine _followCoroutine;
+        private Coroutine _hitShakeCoroutine;
+
         private bool _isInvincible;
+
+        private Vector3 _hitShakeBaseLocalPosition;
+        private Quaternion _hitShakeBaseLocalRotation;
+        private bool _hasCachedHitShakeBaseTransform;
 
         public bool IsDead => _health <= 0f;
         public bool IsGroggy => false;
@@ -100,6 +148,8 @@ namespace KillRitual.Player
 
             CacheMuryeongController();
             CacheHealthBarReferences();
+            CacheScreenDamageVignette();
+            CacheHitShakeRoot();
 
             if (_gameOverUI == null)
             {
@@ -107,7 +157,7 @@ namespace KillRitual.Player
             }
 
             UpdateHealthBar(true);
-            HideOverlayInstantly();
+            UpdateScreenDamageVignette();
         }
 
         private void OnDisable()
@@ -117,15 +167,14 @@ namespace KillRitual.Player
                 StopCoroutine(_followCoroutine);
                 _followCoroutine = null;
             }
-        }
 
-        private void Update()
-        {
-            if (_damageOverlay != null && _overlayAlpha > 0f)
+            if (_hitShakeCoroutine != null)
             {
-                _overlayAlpha = Mathf.Max(0f, _overlayAlpha - _fadeSpeed * Time.deltaTime);
-                SetOverlayAlpha(_overlayAlpha);
+                StopCoroutine(_hitShakeCoroutine);
+                _hitShakeCoroutine = null;
             }
+
+            RestoreHitShakeTransform();
         }
 
         public void TakeDamage(KRDamageContext context)
@@ -188,11 +237,14 @@ namespace KillRitual.Player
             // Follow는 데미지를 받았을 때만 늦게 따라옴.
             UpdateHealthBar(!healthReduced);
 
-            if (_damageOverlay != null)
-            {
-                _overlayAlpha = 1f;
-                SetOverlayAlpha(1f);
-            }
+            // 체력이 낮을수록 지속 빨간 비네트가 표시됨.
+            UpdateScreenDamageVignette();
+
+            // 피격 순간 플래시.
+            FlashScreenDamage(incomingDamage);
+
+            // 피격 순간 HitShake만 흔듦.
+            PlayHitShake(incomingDamage, context.Direction);
 
             if (_health <= 0f)
             {
@@ -205,6 +257,7 @@ namespace KillRitual.Player
         {
             _health = 0f;
             UpdateHealthBar(false);
+            UpdateScreenDamageVignette();
             TriggerGameOver();
         }
 
@@ -224,6 +277,7 @@ namespace KillRitual.Player
 
             // 회복 시에는 손실 표시가 필요 없으므로 Fill / Follow 둘 다 즉시 맞춤.
             UpdateHealthBar(true);
+            UpdateScreenDamageVignette();
         }
 
         /// <summary>흡혼 시퀀스 중 무적 상태를 설정합니다.</summary>
@@ -250,6 +304,104 @@ namespace KillRitual.Player
             {
                 Debug.LogWarning("[KRPlayerDamageFeedback] KRMuryeongController를 찾지 못했습니다. 무령 잔흔 피해 감소가 적용되지 않습니다.");
             }
+        }
+
+        private void CacheScreenDamageVignette()
+        {
+            if (_screenDamageVignette != null)
+            {
+                return;
+            }
+
+            _screenDamageVignette = GetComponentInChildren<KRScreenDamageVignette>(true);
+
+            if (_screenDamageVignette == null)
+            {
+                _screenDamageVignette = FindObjectOfType<KRScreenDamageVignette>(true);
+            }
+
+            if (_screenDamageVignette == null)
+            {
+                Debug.LogWarning(
+                    "[KRPlayerDamageFeedback] KRScreenDamageVignette를 찾지 못했습니다. " +
+                    "피격/저체력 화면 비네트가 표시되지 않습니다."
+                );
+            }
+        }
+
+        private void CacheHitShakeRoot()
+        {
+            if (_hitShakeRoot == null && _autoFindHitShakeRoot)
+            {
+                _hitShakeRoot = FindChildByName(transform, "HitShake");
+
+                if (_hitShakeRoot == null && Camera.main != null)
+                {
+                    Transform cameraTransform = Camera.main.transform;
+                    Transform parent = cameraTransform.parent;
+
+                    while (parent != null)
+                    {
+                        if (parent.name == "HitShake")
+                        {
+                            _hitShakeRoot = parent;
+                            break;
+                        }
+
+                        parent = parent.parent;
+                    }
+                }
+            }
+
+            if (_hitShakeRoot == null)
+            {
+                Debug.LogWarning(
+                    "[KRPlayerDamageFeedback] HitShake Transform을 찾지 못했습니다. " +
+                    "피격 카메라 흔들림이 적용되지 않습니다."
+                );
+                return;
+            }
+
+            CacheHitShakeBaseTransform();
+        }
+
+        private Transform FindChildByName(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                Transform found = FindChildByName(child, childName);
+
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private void CacheHitShakeBaseTransform()
+        {
+            if (_hitShakeRoot == null)
+            {
+                return;
+            }
+
+            _hitShakeBaseLocalPosition = _hitShakeRoot.localPosition;
+            _hitShakeBaseLocalRotation = _hitShakeRoot.localRotation;
+            _hasCachedHitShakeBaseTransform = true;
         }
 
         private void EnsureHitColliderActive()
@@ -326,8 +478,6 @@ namespace KillRitual.Player
                 }
             }
 
-            // Reference가 없을 경우에만 Fill에서 가져옴.
-            // 하지만 Fill이 이미 줄어든 상태면 잘못된 값을 가져올 수 있음.
             if (_healthBarFillRect != null)
             {
                 float fillWidth = Mathf.Abs(_healthBarFillRect.rect.width);
@@ -479,6 +629,142 @@ namespace KillRitual.Player
             rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
         }
 
+        private void FlashScreenDamage(float incomingDamage)
+        {
+            if (_screenDamageVignette == null)
+            {
+                return;
+            }
+
+            float normalizedDamage = Mathf.Clamp01(incomingDamage / _damageFlashReferenceDamage);
+            _screenDamageVignette.Flash(normalizedDamage);
+        }
+
+        private void UpdateScreenDamageVignette()
+        {
+            if (_screenDamageVignette == null)
+            {
+                return;
+            }
+
+            float healthRatio = _maxHealth > 0f
+                ? Mathf.Clamp01(_health / _maxHealth)
+                : 0f;
+
+            _screenDamageVignette.SetHealthRatio(healthRatio);
+        }
+
+        private void PlayHitShake(float incomingDamage, Vector3 damageDirection)
+        {
+            if (_hitShakeRoot == null)
+            {
+                return;
+            }
+
+            if (!_hasCachedHitShakeBaseTransform)
+            {
+                CacheHitShakeBaseTransform();
+            }
+
+            float normalizedDamage = Mathf.Clamp01(incomingDamage / _shakeReferenceDamage);
+            float strength = Mathf.Lerp(_shakeMinNormalizedStrength, 1f, normalizedDamage);
+
+            if (_hitShakeCoroutine != null)
+            {
+                StopCoroutine(_hitShakeCoroutine);
+                RestoreHitShakeTransform();
+            }
+
+            _hitShakeCoroutine = StartCoroutine(HitShakeRoutine(strength, damageDirection));
+        }
+
+        private IEnumerator HitShakeRoutine(float strength, Vector3 damageDirection)
+        {
+            if (_hitShakeRoot == null)
+            {
+                yield break;
+            }
+
+            if (!_hasCachedHitShakeBaseTransform)
+            {
+                CacheHitShakeBaseTransform();
+            }
+
+            float elapsed = 0f;
+            float seed = Random.value * 100f;
+
+            Vector3 localDamageDirection = Vector3.zero;
+
+            if (damageDirection.sqrMagnitude > 0.0001f)
+            {
+                // 월드 방향을 HitShake 로컬 방향으로 변환.
+                localDamageDirection = _hitShakeRoot.InverseTransformDirection(damageDirection.normalized);
+                localDamageDirection.z = 0f;
+
+                if (localDamageDirection.sqrMagnitude > 0.0001f)
+                {
+                    localDamageDirection.Normalize();
+                }
+            }
+
+            while (elapsed < _shakeDuration)
+            {
+                float deltaTime = _useUnscaledTimeForShake
+                    ? Time.unscaledDeltaTime
+                    : Time.deltaTime;
+
+                elapsed += deltaTime;
+
+                float t = Mathf.Clamp01(elapsed / _shakeDuration);
+                float envelope = 1f - t;
+                envelope *= envelope;
+
+                float time = elapsed * _shakeFrequency;
+
+                float noiseX = Mathf.PerlinNoise(seed, time) * 2f - 1f;
+                float noiseY = Mathf.PerlinNoise(seed + 13.37f, time) * 2f - 1f;
+                float noiseRoll = Mathf.PerlinNoise(seed + 29.91f, time) * 2f - 1f;
+
+                Vector3 randomOffset = new Vector3(noiseX, noiseY, 0f) * (_shakePositionStrength * strength * envelope);
+
+                // 피해 방향이 있으면 살짝 반대 방향으로 밀리는 느낌 추가.
+                Vector3 directionalOffset = Vector3.zero;
+
+                if (localDamageDirection.sqrMagnitude > 0.0001f)
+                {
+                    directionalOffset = -localDamageDirection * (_shakePositionStrength * 0.45f * strength * envelope);
+                }
+
+                float pitch = -noiseY * _shakeRotationStrength * strength * envelope;
+                float yaw = noiseX * _shakeRotationStrength * 0.65f * strength * envelope;
+                float roll = noiseRoll * _shakeRotationStrength * strength * envelope;
+
+                _hitShakeRoot.localPosition = _hitShakeBaseLocalPosition + randomOffset + directionalOffset;
+                _hitShakeRoot.localRotation = _hitShakeBaseLocalRotation * Quaternion.Euler(pitch, yaw, roll);
+
+                yield return null;
+            }
+
+            RestoreHitShakeTransform();
+            _hitShakeCoroutine = null;
+        }
+
+        private void RestoreHitShakeTransform()
+        {
+            if (_hitShakeRoot == null)
+            {
+                return;
+            }
+
+            if (!_hasCachedHitShakeBaseTransform)
+            {
+                return;
+            }
+
+            _hitShakeRoot.localPosition = _hitShakeBaseLocalPosition;
+            _hitShakeRoot.localRotation = _hitShakeBaseLocalRotation;
+        }
+
         private void TriggerGameOver()
         {
             if (_gameOverUI != null)
@@ -489,24 +775,6 @@ namespace KillRitual.Player
             {
                 Debug.LogWarning("[KRPlayerDamageFeedback] KRGameOverUI가 연결되지 않아 게임오버 화면을 띄울 수 없습니다.");
             }
-        }
-
-        private void SetOverlayAlpha(float alpha)
-        {
-            if (_damageOverlay == null)
-            {
-                return;
-            }
-
-            Color c = _damageOverlay.color;
-            c.a = alpha;
-            _damageOverlay.color = c;
-        }
-
-        private void HideOverlayInstantly()
-        {
-            _overlayAlpha = 0f;
-            SetOverlayAlpha(0f);
         }
     }
 }
