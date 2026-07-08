@@ -133,7 +133,12 @@ namespace KillRitual.Enemies
             }
             else
             {
+                // [2026-07-08 수정] "파괴된 부위는 타격되어도 안 보여?" — 맞습니다, 여기선
+                // SpawnFlash()를 안 불러서 부위가 이미 파괴된 뒤엔 맞아도 아무 시각 피드백이
+                // 없었습니다(로그만 남음). 파괴된 부위에 맞아도 그 피해가 그대로 보스 본체
+                // 체력에는 들어가고 있었으니, 맞았다는 걸 보여주도록 플래시를 추가했습니다.
                 Debug.Log($"[KRBossBodyPart] {_partName}: {adjustedAmount:F1} 데미지 (이미 파괴된 부위)");
+                SpawnFlash(context.HitPoint, _hitFlashColor);
             }
 
             // [기존과 동일한 이유] TakeDamage()가 아니라 TakeDamageDirect()를 씁니다 — 위에서 이미
