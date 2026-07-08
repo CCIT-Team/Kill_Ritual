@@ -104,6 +104,7 @@ namespace KillRitual.CombatZones
 
         private void OnTriggerEnter(Collider other)
         {
+            Debug.Log($"[WaveCombatZone] {name} OnTriggerEnter: {other.name}");
             TryActivateFromTrigger(other);
         }
 
@@ -112,6 +113,7 @@ namespace KillRitual.CombatZones
         /// </summary>
         public void NotifyEntryTriggered(Collider other)
         {
+            Debug.Log($"[WaveCombatZone] {name} NotifyEntryTriggered (relay): {other.name}");
             TryActivateFromTrigger(other);
         }
 
