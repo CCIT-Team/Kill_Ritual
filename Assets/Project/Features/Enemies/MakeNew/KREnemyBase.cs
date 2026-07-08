@@ -1,4 +1,5 @@
 ﻿// Assets/Project/Features/Enemies/KREnemyBase.cs
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using KillRitual.Core.Damage;
@@ -40,20 +41,24 @@ namespace KillRitual.Enemies
         [Min(0f)]
         [SerializeField] protected float _moveSpeed = 3.5f;
 
-        [Header("피격 깜빡임 (Hit Flash)")]
-        [Tooltip("맞았을 때 잠깐 곱해질 색입니다. 각 파츠(Renderer)의 원래 색은 자동으로 저장되어 " +
-                 "평소에는 그대로 유지되고, 피격 순간에만 이 색으로 바뀌었다가 복귀합니다.")]
+        [Header("색상 / 피격 피드백")]
+        [Tooltip("켜면 모델 머티리얼이 원래 갖고 있던 색을 기본색으로 사용합니다. 끄면 아래 Base Color를 강제로 기본색으로 씁니다.")]
+        [SerializeField] private bool _useOriginalMaterialColors = true;
+
+        [Tooltip("_useOriginalMaterialColors가 꺼져 있을 때 사용할 기본 색입니다.")]
+        [SerializeField] protected Color _baseColor = Color.gray;
+
+        [Tooltip("맞았을 때 잠깐 곱해질 색입니다.")]
         [SerializeField] protected Color _hitFlashColor = Color.white;
 
         [Min(0.01f)]
         [SerializeField] protected float _hitFlashDuration = 0.08f;
 
         [Header("피격 파티클 이펙트")]
-        [Tooltip("맞았을 때 생성할 파티클 프리팹입니다 (예: FX_BloodHit). 비워두면 파티클 없이도 정상 동작합니다.")]
+        [Tooltip("맞았을 때 생성할 파티클 프리팹입니다. 비워두면 파티클 없이 정상 동작합니다.")]
         [SerializeField] protected ParticleSystem _hitEffectPrefab;
 
-        [Tooltip("데미지 컨텍스트에 피격 위치 정보가 없을 경우(Origin이 Vector3.zero) 대신 사용할 " +
-                 "높이 보정값입니다. 몬스터 발밑이 아니라 몸통 높이쯤에서 파티클이 나오게 하고 싶을 때 조절하세요.")]
+        [Tooltip("데미지 컨텍스트에 피격 위치 정보가 없을 경우 대신 사용할 높이 보정값입니다.")]
         [SerializeField] protected float _hitEffectFallbackHeight = 1f;
 
         [Header("사망")]
@@ -61,7 +66,7 @@ namespace KillRitual.Enemies
         [SerializeField] protected float _despawnDelay = 0.5f;
 
         [Header("모델 참조")]
-        [Tooltip("실제 캐릭터 메시가 들어있는 자식 오브젝트입니다. 파티클 등 다른 자식은 여기 안 넣으세요.")]
+        [Tooltip("실제 캐릭터 메시가 들어있는 자식 오브젝트입니다. 파티클 등 다른 자식은 여기 안 넣는 것을 권장합니다.")]
         [SerializeField] private Transform _modelRoot;
 
         // ── 런타임 상태 ────────────────────────────────────────────────
@@ -71,14 +76,10 @@ namespace KillRitual.Enemies
         protected NavMeshAgent _agent;
         protected bool _hasSpottedPlayer;
 
-        // 모델이 여러 파츠(자식 오브젝트)로 나뉘어 있을 수 있으므로 Renderer를 전부 캐싱합니다.
         private Renderer[] _renderers;
-
-        // 각 Renderer가 원래(임포트된 모델/머티리얼 그대로) 갖고 있던 색.
-        // 이 값을 모르면 "평소 색"을 흰색이나 회색 같은 임의 값으로 잘못 덮어씌우게 됩니다.
         private Color[] _originalColors;
-
         private MaterialPropertyBlock _mpb;
+
         private float _hitFlashEndTime;
         private float _groggyEndTime;
         private bool _isGroggy;
@@ -95,34 +96,68 @@ namespace KillRitual.Enemies
         public Vector3 Position => transform.position;
 
         /// <summary>
-        /// 이 적의 그로기 테두리 컴포넌트. Awake에서 캐싱된 참조를 그대로 반환하므로
-        /// KRGroggyOutline이 계층구조 어디(루트/자식)에 있든 상관없이 정확히 찾을 수 있습니다.
-        /// 외부 스크립트(KRAbsorptionZone 등)는 GetComponent/GetComponentInParent로 직접 찾지 말고
-        /// 이 프로퍼티를 사용하세요.
+        /// 이 적의 그로기 테두리 컴포넌트.
+        /// 외부 스크립트는 가능하면 GetComponent로 직접 찾지 말고 이 프로퍼티를 참조하세요.
         /// </summary>
         public KRGroggyOutline GroggyOutline => _groggyOutline;
 
-        private void CacheRenderers()
-        {
-            // GetComponentsInChildren은 파티클처럼 나중에 붙는 자식까지 잡을 수 있으니,
-            // 캐릭터 "모델 루트" 오브젝트를 태그나 별도 참조로 명확히 지정해서 그 안에서만 찾습니다.
-            _renderers = GetComponentsInChildren<Renderer>(includeInactive: false);
-        }
-
+        /// <summary>
+        /// 일반 피해 진입점.
+        /// 하위 클래스가 ModifyIncomingDamage()를 오버라이드하면 몸통 방어, 보스 기본 피해 감소 등을 적용할 수 있습니다.
+        /// </summary>
         public void TakeDamage(KRDamageContext context)
         {
             if (IsDead) return;
 
-            _health -= context.DamageAmount;
+            float finalAmount = ModifyIncomingDamage(context);
+            ApplyDamageInternal(finalAmount, context);
+        }
+
+        /// <summary>
+        /// 보스의 부위별 약점 전용 직접 피해 진입점.
+        /// KRBossBodyPart가 이미 최종 피해량을 계산해서 넘겼다고 보고,
+        /// ModifyIncomingDamage()를 다시 거치지 않습니다.
+        /// </summary>
+        public void TakeDamageDirect(KRDamageContext context)
+        {
+            if (IsDead) return;
+
+            ApplyDamageInternal(context.DamageAmount, context);
+        }
+
+        private void ApplyDamageInternal(float amount, KRDamageContext context)
+        {
+            amount = Mathf.Max(0f, amount);
+
+            _health -= amount;
             _hitFlashEndTime = Time.time + _hitFlashDuration;
 
             SpawnHitEffect(context);
 
-            if (_health <= 0f) { EnterDead(); return; }
+            OnHealthChanged(Mathf.Clamp01(_health / _maxHealth));
+
+            if (_health <= 0f)
+            {
+                EnterDead();
+                return;
+            }
 
             if (!_isGroggy && _health <= _maxHealth * _groggyHealthRatio)
-                EnterGroggy();
+                EnterGroggy(_groggyDuration);
         }
+
+        /// <summary>
+        /// 들어오는 피해량을 실제로 적용하기 직전에 가공할 수 있는 훅입니다.
+        /// 기본 구현은 가공 없이 그대로 반환합니다.
+        /// 보스처럼 몸통 직접 피격 피해를 줄여야 하는 클래스에서 오버라이드하세요.
+        /// </summary>
+        protected virtual float ModifyIncomingDamage(KRDamageContext context) => context.DamageAmount;
+
+        /// <summary>
+        /// 피해 적용 직후 현재 체력 비율을 알려주는 훅입니다.
+        /// 보스 페이즈 전환 등에 사용합니다.
+        /// </summary>
+        protected virtual void OnHealthChanged(float ratio) { }
 
         public void Execute(KillRitual.Core.Interfaces.ExecutionSource source
             = KillRitual.Core.Interfaces.ExecutionSource.Default)
@@ -140,13 +175,16 @@ namespace KillRitual.Enemies
                     // 작두 — 탄약 오브 드롭.
                     var combatSystem = GameObject.FindGameObjectWithTag("Player")
                         ?.GetComponentInParent<KillRitual.Player.Combat.KRCombatSystem>();
+
                     GetComponent<KillRitual.Items.KRDropSpawner>()
-                        ?.SpawnDrops(transform.position, combatSystem?.CurrentElement
-                        ?? KRDamageType.Fire);
+                        ?.SpawnDrops(
+                            transform.position,
+                            combatSystem?.CurrentElement ?? KRDamageType.Fire
+                        );
                     break;
 
                 default:
-                    // 기타 — 기존 방식 그대로 (테스트 등)
+                    // 기타 — 테스트 또는 일반 처형.
                     break;
             }
 
@@ -159,61 +197,49 @@ namespace KillRitual.Enemies
         protected virtual void Awake()
         {
             _health = _maxHealth;
-            _agent = GetComponent<NavMeshAgent>();
-            _agent.speed = _moveSpeed;
 
-            Transform searchRoot = _modelRoot != null ? _modelRoot : transform;
-            _renderers = searchRoot.GetComponentsInChildren<Renderer>(includeInactive: false);
+            _agent = GetComponent<NavMeshAgent>();
+            if (_agent != null)
+                _agent.speed = _moveSpeed;
+
             _mpb = new MaterialPropertyBlock();
 
-            // 각 Renderer가 실제로 갖고 있던 원래 색을 읽어서 저장합니다.
-            // (텍스처 없이 _BaseColor/_Color 자체가 고유색인 머티리얼도 있으므로,
-            //  임의의 기본값(흰색/회색)을 쓰지 않고 반드시 머티리얼에서 직접 읽어옵니다.)
-            _originalColors = new Color[_renderers.Length];
-            for (int i = 0; i < _renderers.Length; i++)
-            {
-                Material mat = _renderers[i] != null ? _renderers[i].sharedMaterial : null;
+            CacheRenderersAndOriginalColors();
+            ApplyCurrentVisualColor();
 
-                if (mat != null && mat.HasProperty(kBaseColorId))
-                    _originalColors[i] = mat.GetColor(kBaseColorId);
-                else if (mat != null && mat.HasProperty(kColorId))
-                    _originalColors[i] = mat.GetColor(kColorId);
-                else
-                    _originalColors[i] = Color.white;
-            }
+            CacheOwnColliders();
 
-            ApplyHitFlash(false); // 시작 시엔 원래 색으로.
-
-            _ownColliders = GetComponentsInChildren<Collider>(includeInactive: false);
-
-            // KRGroggyOutline은 3D 모델(_modelRoot)에만 붙여야 합니다.
-            // 루트(gameObject)에 붙이면 Outline 컴포넌트가 GetComponentsInChildren<Renderer>()로
-            // 하위 전체(공격 이펙트 등 포함)를 훑어서 테두리를 적용해버립니다.
-            Transform outlineTarget = _modelRoot != null ? _modelRoot : transform;
-            _groggyOutline = outlineTarget.GetComponent<KRGroggyOutline>();
-            if (_groggyOutline == null)
-                _groggyOutline = outlineTarget.gameObject.AddComponent<KRGroggyOutline>();
+            CacheGroggyOutline();
         }
 
         private void OnEnable()
         {
             if (_ownColliders == null) return;
             if (KillRitual.Core.Managers.KRManagers.Combat == null) return;
+
             foreach (Collider col in _ownColliders)
+            {
+                if (col == null) continue;
                 KillRitual.Core.Managers.KRManagers.Combat.Register(col, this);
+            }
         }
 
         private void OnDisable()
         {
             if (_ownColliders == null) return;
             if (KillRitual.Core.Managers.KRManagers.Combat == null) return;
+
             foreach (Collider col in _ownColliders)
+            {
+                if (col == null) continue;
                 KillRitual.Core.Managers.KRManagers.Combat.Unregister(col);
+            }
         }
 
         protected virtual void Start()
         {
             GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+
             if (playerObject != null)
                 _player = playerObject.transform;
             else
@@ -226,12 +252,86 @@ namespace KillRitual.Enemies
 
             switch (_state)
             {
-                case EnemyState.Idle: UpdateIdle(); break;
-                case EnemyState.Chase: UpdateChase(); break;
-                case EnemyState.Attack: UpdateAttack(); break;
-                case EnemyState.Groggy: UpdateGroggy(); break;
-                case EnemyState.Dead: break;
+                case EnemyState.Idle:
+                    UpdateIdle();
+                    break;
+
+                case EnemyState.Chase:
+                    UpdateChase();
+                    break;
+
+                case EnemyState.Attack:
+                    UpdateAttack();
+                    break;
+
+                case EnemyState.Groggy:
+                    UpdateGroggy();
+                    break;
+
+                case EnemyState.Dead:
+                    break;
             }
+        }
+
+        // ── 초기화 보조 ────────────────────────────────────────────────
+
+        private void CacheRenderersAndOriginalColors()
+        {
+            Transform searchRoot = _modelRoot != null ? _modelRoot : transform;
+
+            _renderers = searchRoot.GetComponentsInChildren<Renderer>(includeInactive: false);
+            _originalColors = new Color[_renderers.Length];
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Renderer renderer = _renderers[i];
+
+                if (renderer == null)
+                {
+                    _originalColors[i] = Color.white;
+                    continue;
+                }
+
+                Material mat = renderer.sharedMaterial;
+
+                if (mat != null && mat.HasProperty(kBaseColorId))
+                    _originalColors[i] = mat.GetColor(kBaseColorId);
+                else if (mat != null && mat.HasProperty(kColorId))
+                    _originalColors[i] = mat.GetColor(kColorId);
+                else
+                    _originalColors[i] = Color.white;
+            }
+        }
+
+        private void CacheOwnColliders()
+        {
+            var ownColliderList = new List<Collider>();
+
+            foreach (Collider col in GetComponentsInChildren<Collider>(includeInactive: false))
+            {
+                if (col == null) continue;
+
+                // 보스 부위처럼 콜라이더 GameObject 자체에 다른 IDamageable이 붙어 있으면
+                // KREnemyBase가 해당 콜라이더를 가로채지 않도록 제외합니다.
+                IDamageable colDamageable = col.GetComponent<IDamageable>();
+
+                if (colDamageable != null && !ReferenceEquals(colDamageable, this))
+                    continue;
+
+                ownColliderList.Add(col);
+            }
+
+            _ownColliders = ownColliderList.ToArray();
+        }
+
+        private void CacheGroggyOutline()
+        {
+            Transform outlineTarget = _modelRoot != null ? _modelRoot : transform;
+
+            _groggyOutline = outlineTarget.GetComponent<KRGroggyOutline>();
+
+            if (_groggyOutline == null)
+                _groggyOutline = outlineTarget.gameObject.AddComponent<KRGroggyOutline>();
         }
 
         // ── FSM ────────────────────────────────────────────────────────
@@ -239,10 +339,13 @@ namespace KillRitual.Enemies
         protected virtual void UpdateIdle()
         {
             if (_player == null) return;
+
             if (DistanceToPlayer() <= _detectRange)
             {
                 _hasSpottedPlayer = true;
                 _state = EnemyState.Chase;
+
+                Debug.Log($"[KREnemyBase] {name}: 플레이어 감지(거리 {DistanceToPlayer():F1}) — Idle → Chase 전환");
             }
         }
 
@@ -250,6 +353,7 @@ namespace KillRitual.Enemies
         {
             if (_player == null) return false;
             if (_chaseForever && _hasSpottedPlayer) return true;
+
             return DistanceToPlayer() <= _detectRange;
         }
 
@@ -259,25 +363,39 @@ namespace KillRitual.Enemies
         protected virtual void UpdateGroggy()
         {
             StopMoving();
+
             if (Time.time >= _groggyEndTime)
                 ExitGroggy();
         }
 
         // ── 상태 전환 ──────────────────────────────────────────────────
 
-        private void EnterGroggy()
+        private void EnterGroggy(float duration)
         {
             _isGroggy = true;
             _state = EnemyState.Groggy;
-            _groggyEndTime = Time.time + _groggyDuration;
+            _groggyEndTime = Time.time + duration;
+
             StopMoving();
             _groggyOutline?.SetOutline(true);
+        }
+
+        /// <summary>
+        /// 외부에서 강제로 그로기 상태에 진입시킬 때 사용합니다.
+        /// duration을 생략하거나 0 이하로 넘기면 인스펙터의 기본 _groggyDuration을 사용합니다.
+        /// </summary>
+        protected void ForceGroggy(float duration = -1f)
+        {
+            if (IsDead) return;
+
+            EnterGroggy(duration > 0f ? duration : _groggyDuration);
         }
 
         private void ExitGroggy()
         {
             _isGroggy = false;
             _state = EnemyState.Chase;
+
             _groggyOutline?.SetOutline(false);
         }
 
@@ -288,6 +406,7 @@ namespace KillRitual.Enemies
             _health = 0f;
 
             _groggyOutline?.SetOutline(false);
+
             StopMoving();
 
             if (_agent != null && _agent.enabled)
@@ -295,33 +414,28 @@ namespace KillRitual.Enemies
 
             Collider[] colliders = GetComponentsInChildren<Collider>();
             for (int i = 0; i < colliders.Length; i++)
-                colliders[i].enabled = false;
+            {
+                if (colliders[i] != null)
+                    colliders[i].enabled = false;
+            }
 
-            // [2026-07-06 추가] 작두 자원 보충 — 처치 수단과 무관하게(총격/작두/기타) 적이 죽을 때마다
-            // 작두 충전량을 1 회복시킵니다. KRExecutionSuccessEvent를 쓰지 않는 이유는, 그 이벤트가
-            // 현재 프로젝트 어디에서도 Publish(발행)되지 않는 미사용 이벤트이기 때문입니다
-            // (KRExecutionSuccessEvent.cs 주석엔 "KREnemyEntity가 발행"이라 적혀 있으나 그 클래스는
-            // 더 이상 존재하지 않습니다). 그래서 여기서 KRJakduSystem을 직접 찾아 호출합니다.
             RefillJakduResourceOnKill();
 
             OnDeath();
+
             Destroy(gameObject, _despawnDelay);
         }
 
         /// <summary>
-        /// 적 처치 시 플레이어의 작두(Jakdu) 자원을 1 회복시킵니다.
-        /// _player는 Start()에서 "Player" 태그로 이미 캐싱해 둔 참조를 그대로 재사용합니다
-        /// (FindGameObjectWithTag를 매 처치마다 반복 호출하지 않기 위함).
+        /// 적 처치 시 플레이어의 작두 자원을 1 회복시킵니다.
+        /// 단, 작두가 자기 자신의 판정으로 처치한 경우에는 자기환급을 막기 위해 회복하지 않습니다.
         /// </summary>
         private void RefillJakduResourceOnKill()
         {
             if (_player == null) return;
 
-            // [2026-07-06 추가] 작두가 방금 자기 자신의 판정으로 처치한 대상이면 재충전하지 않습니다.
-            // 안 그러면 "작두 자원 소모 → 작두로 처치 → 같은 프레임에 자원 재충전"이 반복되어
-            // 작두가 사실상 자원을 소모하지 않는 것처럼 느껴지는 자기환급 버그가 생깁니다.
-            // (다른 무기/시스템으로 처치했을 때는 그대로 작두 자원이 재충전됩니다.)
-            if (KillRitual.Player.Combat.KRJakduSystem.IsSelfExecuting) return;
+            if (KillRitual.Player.Combat.KRJakduSystem.IsSelfExecuting)
+                return;
 
             var jakduSystem = _player.GetComponentInChildren<KillRitual.Player.Combat.KRJakduSystem>(true);
             jakduSystem?.AddResource(1);
@@ -331,11 +445,6 @@ namespace KillRitual.Enemies
 
         // ── 피격 파티클 이펙트 ─────────────────────────────────────────
 
-        /// <summary>
-        /// 피격 순간 파티클 프리팹(예: 피 튀는 이펙트)을 생성합니다.
-        /// KRDamageContext의 HitPoint / Direction을 사용해 피격 위치와 방향을 정합니다.
-        /// HitPoint가 Vector3.zero(설정 안 됨)인 경우에만 몬스터 위치 + _hitEffectFallbackHeight로 대체합니다.
-        /// </summary>
         private void SpawnHitEffect(KRDamageContext context)
         {
             if (_hitEffectPrefab == null) return;
@@ -360,8 +469,10 @@ namespace KillRitual.Enemies
         protected IDamageable FindPlayerDamageable(Transform playerTransform)
         {
             if (playerTransform == null) return null;
+
             var feedback = playerTransform.GetComponentInParent<KillRitual.Player.KRPlayerDamageFeedback>();
             if (feedback != null) return feedback;
+
             return playerTransform.GetComponentInParent<IDamageable>();
         }
 
@@ -373,7 +484,17 @@ namespace KillRitual.Enemies
 
         protected void MoveTowards(Vector3 targetPosition)
         {
-            if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
+            if (_agent == null || !_agent.enabled) return;
+
+            if (!_agent.isOnNavMesh)
+            {
+                Debug.LogWarning(
+                    $"[KREnemyBase] {name}: NavMeshAgent가 NavMesh 위에 있지 않아 이동이 무시됩니다. " +
+                    "씬에 NavMesh가 베이크되어 있는지, 스폰 위치가 NavMesh 범위 안인지 확인하세요."
+                );
+                return;
+            }
+
             _agent.isStopped = false;
             _agent.SetDestination(targetPosition);
         }
@@ -381,48 +502,113 @@ namespace KillRitual.Enemies
         protected void StopMoving()
         {
             if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
+
             _agent.isStopped = true;
             _agent.velocity = Vector3.zero;
         }
 
-        protected void FacePlayer()
+        /// <summary>
+        /// maxDegreesPerSecond를 생략하면 기존처럼 즉시 플레이어를 바라봅니다.
+        /// 양수로 넘기면 해당 초당 각도만큼 천천히 회전합니다.
+        /// 보스의 등/측면 약점 공략을 허용할 때 사용합니다.
+        /// </summary>
+        protected void FacePlayer(float maxDegreesPerSecond = -1f)
         {
             if (_player == null) return;
+
             Vector3 toPlayer = _player.position - transform.position;
             toPlayer.y = 0f;
-            if (toPlayer.sqrMagnitude > 0.0001f)
-                transform.rotation = Quaternion.LookRotation(toPlayer);
+
+            if (toPlayer.sqrMagnitude <= 0.0001f) return;
+
+            Quaternion targetRotation = Quaternion.LookRotation(toPlayer);
+
+            transform.rotation = maxDegreesPerSecond <= 0f
+                ? targetRotation
+                : Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    maxDegreesPerSecond * Time.deltaTime
+                );
         }
 
-        // ── 피격 깜빡임 (Hit Flash) ────────────────────────────────────
-        //
-        // 평소에는 각 파츠(Renderer)의 "원래 색"(Awake에서 캐싱한 _originalColors)을 그대로 유지하고,
-        // TakeDamage가 호출된 순간부터 _hitFlashDuration 동안만 _hitFlashColor로 바뀌었다가
-        // 자동으로 원래 색으로 복귀합니다. 코루틴 없이 시간 비교만으로 처리합니다.
+        // ── 색상 시각 피드백 ───────────────────────────────────────────
+
+        /// <summary>
+        /// 하위 클래스가 특정 구간 동안 강제로 몸 색을 바꾸고 싶을 때 사용합니다.
+        /// null이면 기존 피격 플래시 / 기본색 로직을 따릅니다.
+        /// 값이 있으면 히트 플래시보다 우선됩니다.
+        /// </summary>
+        protected Color? OverrideColor { get; set; }
 
         private void UpdateColorFeedback()
         {
-            // 그로기 상태의 시각 피드백은 색상 변경이 아닌 KRGroggyOutline(셰이더 테두리)으로 처리합니다.
-            bool isFlashing = Time.time < _hitFlashEndTime;
-            ApplyHitFlash(isFlashing);
+            ApplyCurrentVisualColor();
         }
 
-        private void ApplyHitFlash(bool isFlashing)
+        private void ApplyCurrentVisualColor()
+        {
+            if (OverrideColor.HasValue)
+            {
+                ApplyUniformColor(OverrideColor.Value);
+                return;
+            }
+
+            bool isFlashing = Time.time < _hitFlashEndTime;
+
+            if (isFlashing)
+            {
+                ApplyUniformColor(_hitFlashColor);
+                return;
+            }
+
+            ApplyNormalColor();
+        }
+
+        private void ApplyNormalColor()
         {
             if (_renderers == null) return;
+            if (_mpb == null) _mpb = new MaterialPropertyBlock();
 
             for (int i = 0; i < _renderers.Length; i++)
             {
-                Renderer r = _renderers[i];
-                if (r == null) continue;
+                Renderer renderer = _renderers[i];
+                if (renderer == null) continue;
 
-                Color color = isFlashing ? _hitFlashColor : _originalColors[i];
+                Color color = _useOriginalMaterialColors
+                    ? GetOriginalColor(i)
+                    : _baseColor;
 
-                r.GetPropertyBlock(_mpb);
+                renderer.GetPropertyBlock(_mpb);
                 _mpb.SetColor(kBaseColorId, color);
                 _mpb.SetColor(kColorId, color);
-                r.SetPropertyBlock(_mpb);
+                renderer.SetPropertyBlock(_mpb);
             }
+        }
+
+        private void ApplyUniformColor(Color color)
+        {
+            if (_renderers == null) return;
+            if (_mpb == null) _mpb = new MaterialPropertyBlock();
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Renderer renderer = _renderers[i];
+                if (renderer == null) continue;
+
+                renderer.GetPropertyBlock(_mpb);
+                _mpb.SetColor(kBaseColorId, color);
+                _mpb.SetColor(kColorId, color);
+                renderer.SetPropertyBlock(_mpb);
+            }
+        }
+
+        private Color GetOriginalColor(int index)
+        {
+            if (_originalColors == null) return Color.white;
+            if (index < 0 || index >= _originalColors.Length) return Color.white;
+
+            return _originalColors[index];
         }
 
         protected virtual void OnDrawGizmosSelected()
