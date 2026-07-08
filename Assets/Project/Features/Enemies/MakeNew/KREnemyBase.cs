@@ -128,6 +128,9 @@ namespace KillRitual.Enemies
         private void ApplyDamageInternal(float amount, KRDamageContext context)
         {
             amount = Mathf.Max(0f, amount);
+            // [2026-07-08 신규] 페이즈 전환 문턱 등에서 초과피해를 자르기 위한 훅. 기본 구현은
+            // 그대로 반환합니다 — 보스가 필요할 때만 오버라이드합니다.
+            amount = ClampFinalDamage(amount);
 
             _health -= amount;
             _hitFlashEndTime = Time.time + _hitFlashDuration;
@@ -152,6 +155,14 @@ namespace KillRitual.Enemies
         /// 보스처럼 몸통 직접 피격 피해를 줄여야 하는 클래스에서 오버라이드하세요.
         /// </summary>
         protected virtual float ModifyIncomingDamage(KRDamageContext context) => context.DamageAmount;
+
+        /// <summary>
+        /// [2026-07-08 신규] 체력에 실제로 반영되기 직전, 최종 피해량을 한 번 더 자를 수 있는
+        /// 훅입니다. ModifyIncomingDamage()와 달리 TakeDamage()/TakeDamageDirect() 양쪽 경로를
+        /// 전부 거치므로(부위 피격 포함), 보스 페이즈 전환 문턱에서 초과피해를 자르는 등
+        /// "체력 자체"를 기준으로 한 규칙에 씁니다. 기본 구현은 가공 없이 그대로 반환합니다.
+        /// </summary>
+        protected virtual float ClampFinalDamage(float amount) => amount;
 
         /// <summary>
         /// 피해 적용 직후 현재 체력 비율을 알려주는 훅입니다.
@@ -189,6 +200,17 @@ namespace KillRitual.Enemies
             }
 
             Debug.Log($"[KREnemyBase] {name} 처형됨 ({source})");
+            PerformExecution(source);
+        }
+
+        /// <summary>
+        /// [2026-07-08 신규] 처형이 실제로 대상에게 어떤 결과를 남길지 결정하는 훅입니다.
+        /// 기본 구현은 그대로 즉사(EnterDead)시킵니다 — 일반 잡몹은 이 기본 동작 그대로 씁니다.
+        /// 보스처럼 "처형당해도 안 죽고 큰 피해만 입어야" 하는 경우 오버라이드하세요.
+        /// </summary>
+        protected virtual void PerformExecution(
+            KillRitual.Core.Interfaces.ExecutionSource source)
+        {
             EnterDead();
         }
 

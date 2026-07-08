@@ -53,9 +53,37 @@ namespace KillRitual.Enemies
             if (_collider != null) _collider.enabled = false;
         }
 
+        /// <summary>
+        /// [2026-07-08 신규] "돌진 시각화를 콜라이더 폭만큼 보이게" 요청 반영 — 이 콜라이더의
+        /// 실제 폭(돌진 방향과 수직인 가로 폭)을 월드 스케일까지 반영해서 돌려줍니다. 돌진 경로
+        /// 시각화(면)를 실제 판정 폭과 정확히 맞추는 데 씁니다. CapsuleCollider(권장)면 지름
+        /// (반지름×2), BoxCollider면 가로(X) 크기를 씁니다 — 씬 설정에 따라 콜라이더 타입이
+        /// 바뀌어도 안전하게 동작하도록 둘 다 지원합니다.
+        /// </summary>
+        public float GetWidth()
+        {
+            if (_collider is CapsuleCollider capsule)
+            {
+                float scale = Mathf.Max(transform.lossyScale.x, transform.lossyScale.y);
+                return capsule.radius * 2f * scale;
+            }
+
+            if (_collider is BoxCollider box)
+                return box.size.x * transform.lossyScale.x;
+
+            return _collider != null ? _collider.bounds.size.x : 3f;
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             if (_hasHitThisDash) return; // 한 번의 돌진에 한 번만 — 다단히트 방지.
+
+            // [2026-07-08 신규 — KRBossArmorShard에서 발견된 것과 동일한 버그 예방]
+            // Player/CameraRoot 하위의 "Absortion Collider"(아이템 자동 흡수용, 스케일 15×13×23m
+            // 트리거)처럼 실제 몸이 아닌 게임플레이용 트리거 콜라이더까지 GetComponentInParent로
+            // "플레이어를 맞췄다"고 오판할 수 있습니다. 진짜 몸(피지컬) 콜라이더는 트리거가 아니므로
+            // (CharacterController), 트리거 콜라이더는 아예 판정에서 제외합니다.
+            if (other.isTrigger) return;
 
             // 기존 KREnemyBase.FindPlayerDamageable()과 동일한 우선순위입니다:
             // KRPlayerDamageFeedback을 우선 찾고 없으면 일반 IDamageable로 폴백합니다.
@@ -72,8 +100,9 @@ namespace KillRitual.Enemies
             direction.y = 0f;
             direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : transform.forward;
 
+            Debug.Log($"[불가살이] 돌진 콜라이더 적중 - {_damage} 데미지, 히트박스 위치 {transform.position}, " +
+                      $"충돌지점 {hitPoint}, 대상 콜라이더 {other.name}");
             target.TakeDamage(new KRDamageContext(_damage, KRDamageType.Fire, hitPoint, direction));
-            Debug.Log($"[불가살이] 돌진 콜라이더 적중 - {_damage} 데미지");
         }
     }
 }

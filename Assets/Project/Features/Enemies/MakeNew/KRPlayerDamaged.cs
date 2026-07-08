@@ -79,7 +79,8 @@ namespace KillRitual.Player
         {
             _health = _maxHealth;
 
-            EnsureHitColliderActive();
+            // [2026-07-08] EnsureHitColliderActive() 호출 삭제 — 요청에 따라 콜라이더 자동 활성화
+            // 코드를 되돌렸습니다(관련 메서드도 함께 삭제).
             CacheHealthBarReferences();
 
             if (_gameOverUI == null)
@@ -89,29 +90,6 @@ namespace KillRitual.Player
 
             UpdateHealthBar(true);
             HideOverlayInstantly();
-        }
-
-        /// <summary>
-        /// [2026-07-08 신규] 씬마다 사람이 직접 Inspector에서 설정해두는 방식이면 실수로 꺼먹기
-        /// 쉬워서(실제로 dev_hs 씬에서 이 문제로 보스 철갑 조각이 플레이어를 못 맞히고 있었습니다),
-        /// 씬 세팅에 기대지 않고 코드에서 항상 올바른 상태로 강제합니다. CharacterController는
-        /// Collider를 상속하는 별도 컴포넌트라 GetComponent&lt;CapsuleCollider&gt;()로 명시적으로
-        /// 찾아서 그것만 건드리고 CharacterController 자체는 손대지 않습니다.
-        /// </summary>
-        private void EnsureHitColliderActive()
-        {
-            CapsuleCollider hitCollider = GetComponent<CapsuleCollider>();
-            if (hitCollider == null)
-            {
-                Debug.LogWarning("[KRPlayerDamageFeedback] 피격 판정용 CapsuleCollider를 찾지 못했습니다 — " +
-                                  "레이캐스트 기반 투사체(보스 철갑 조각 등)가 플레이어를 못 맞힐 수 있습니다.");
-                return;
-            }
-
-            // Is Trigger로 켜서 CharacterController/Rigidbody의 이동 물리와는 절대 안 부딪히면서도
-            // 레이캐스트(Physics.queriesHitTriggers가 프로젝트 설정에서 켜져 있음)에는 그대로 잡힙니다.
-            hitCollider.enabled = true;
-            hitCollider.isTrigger = true;
         }
 
         private void OnDisable()
@@ -134,11 +112,33 @@ namespace KillRitual.Player
 
         public void TakeDamage(KRDamageContext context)
         {
-            if (IsDead) return;
-            if (_isInvincible) return;
+            // [2026-07-08 신규] "안 맞았는데 데미지를 입는다" 계열 버그를 추적하기 위해, 플레이어가
+            // 데미지를 받는 유일한 진입점인 여기서 전부 로그를 남깁니다. 특히 피격지점(HitPoint)과
+            // 플레이어 실제 위치 사이의 거리를 같이 찍어두면, "판정이 눈에 보이는 것보다 넓다"류의
+            // 문제를 재현 없이도 로그만으로 바로 확인할 수 있습니다.
+            float distanceFromPlayer = Vector3.Distance(transform.position, context.HitPoint);
+
+            if (IsDead)
+            {
+                Debug.Log($"[플레이어 피격] 무시(이미 사망) — 요청 데미지 {context.DamageAmount}, " +
+                          $"속성 {context.Type}, 피격지점 {context.HitPoint} (플레이어와 거리 {distanceFromPlayer:F2}m)");
+                return;
+            }
+
+            if (_isInvincible)
+            {
+                Debug.Log($"[플레이어 피격] 무시(무적 상태) — 요청 데미지 {context.DamageAmount}, " +
+                          $"속성 {context.Type}, 피격지점 {context.HitPoint} (플레이어와 거리 {distanceFromPlayer:F2}m)");
+                return;
+            }
 
             float previousHealth = _health;
             _health = Mathf.Max(0f, _health - context.DamageAmount);
+
+            Debug.Log($"[플레이어 피격] 데미지 {context.DamageAmount} (속성 {context.Type}) 적용 — " +
+                      $"체력 {previousHealth:F1} → {_health:F1} / {_maxHealth:F1}, " +
+                      $"피격지점 {context.HitPoint} (플레이어 위치 {transform.position}, 거리 {distanceFromPlayer:F2}m), " +
+                      $"방향 {context.Direction}");
 
             bool healthReduced = _health < previousHealth;
 
@@ -154,6 +154,7 @@ namespace KillRitual.Player
 
             if (_health <= 0f)
             {
+                Debug.Log("[플레이어 피격] 체력 0 도달 — 게임오버 처리");
                 TriggerGameOver();
             }
         }

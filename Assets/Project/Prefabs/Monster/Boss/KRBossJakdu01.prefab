@@ -72,16 +72,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _grade: 3
-  _maxHealth: 5000
+  _maxHealth: 7000
   _groggyHealthRatio: 0.3
   _groggyDuration: 3
   _detectRange: 20
   _chaseForever: 1
   _moveSpeed: 4.5
+  _useOriginalMaterialColors: 1
   _baseColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
   _hitFlashColor: {r: 1, g: 1, b: 1, a: 1}
   _hitFlashDuration: 0.08
+  _hitEffectPrefab: {fileID: 0}
+  _hitEffectFallbackHeight: 1
   _despawnDelay: 1.2
+  _modelRoot: {fileID: 0}
   _phase2HealthRatio: 0.5
   _fallbackDamageRatio: 0.15
   _armorBlockVfxPrefab: {fileID: 7700000000001001, guid: 3e77cff67bf84890b79812741e9dd153, type: 3}
@@ -111,22 +115,23 @@ MonoBehaviour:
     m_Bits: 4294967295
   _shardDamageableLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 1048576
+  _shardMinRange: 5
   _shardExplodeDelay: 1.5
   _shardExplosionRadius: 2.5
   _trunkWindup: 0.6
-  _trunkStrikeRange: 6
-  _trunkStrikeHalfAngle: 60
+  _trunkStrikeRange: 10
+  _trunkStrikeHalfAngle: 28.4
   _trunkDamage: 25
   _trunkComboInterval: 0.35
   _chargeWindup: 1
   _chargeSpeed: 22
-  _chargeMaxDistance: 20
+  _chargeMaxDistance: 40
   _chargeDamage: 30
   _chargeHitRadius: 2.5
   _chargeWallLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 263192439
   _chargeHitbox: {fileID: 7800000000000174}
   _wallStunDuration: 1.5
   _chargeSelfDamageOnWallHit: 35
@@ -137,6 +142,11 @@ MonoBehaviour:
   _armorRainFallSpeed: 12
   _armorRainDuration: 1.8
   _telegraphColor: {r: 1, g: 0.5, b: 0, a: 1}
+  _showAttackRangeIndicator: 1
+  _rangeIndicatorColor: {r: 1, g: 0.15, b: 0.1, a: 0.9}
+  _rangeCircleSegments: 48
+  _rangeIndicatorLineWidth: 0.18
+  _rangeIndicatorYOffset: 0.05
   _visualAnimator: {fileID: 8106111574867829202}
   _enableProceduralAttackMotion: 1
   _patternStuckTimeoutSeconds: 12
@@ -208,9 +218,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uBA38\uB9AC"
   _damageMultiplier: 1.3
-  _partHealth: 120
+  _partHealth: 220
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.4
 --- !u!1 &7800000000000151
 GameObject:
@@ -259,9 +271,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uB4B7\uB2E4\uB9AC"
   _damageMultiplier: 1
-  _partHealth: 150
+  _partHealth: 220
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.4
 --- !u!136 &7796415586649379305
 CapsuleCollider:
@@ -401,9 +415,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uAF2C\uB9AC"
   _damageMultiplier: 1.1
-  _partHealth: 100
+  _partHealth: 200
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.35
 --- !u!136 &1424327562175570245
 CapsuleCollider:
@@ -453,7 +469,7 @@ Transform:
   m_GameObject: {fileID: 7800000000000201}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.4, y: 0.6, z: 0.35}
+  m_LocalPosition: {x: -0.01, y: 0.85, z: 0.35}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -484,7 +500,7 @@ Transform:
   m_GameObject: {fileID: 7800000000000203}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.4, y: 0.6, z: 0.35}
+  m_LocalPosition: {x: 1.46, y: 0.85, z: 0.35}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -537,9 +553,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uAF2C\uB9AC"
   _damageMultiplier: 1.1
-  _partHealth: 100
+  _partHealth: 200
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.35
 --- !u!136 &1210939538166695398
 CapsuleCollider:
@@ -611,9 +629,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uC55E\uB2E4\uB9AC"
   _damageMultiplier: 1
-  _partHealth: 150
+  _partHealth: 220
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.4
 --- !u!136 &5282828348225919835
 CapsuleCollider:
@@ -706,9 +726,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uBAB8"
   _damageMultiplier: 1.1
-  _partHealth: 100
+  _partHealth: 200
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.35
 --- !u!1 &5929148397444523881
 GameObject:
@@ -757,9 +779,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uC55E\uB2E4\uB9AC"
   _damageMultiplier: 1
-  _partHealth: 150
+  _partHealth: 220
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.4
 --- !u!136 &9134570428951103424
 CapsuleCollider:
@@ -831,9 +855,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uB4B7\uB2E4\uB9AC"
   _damageMultiplier: 1
-  _partHealth: 150
+  _partHealth: 220
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.4
 --- !u!136 &6315196536452323224
 CapsuleCollider:
@@ -905,9 +931,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partName: "\uBAB8"
   _damageMultiplier: 1.1
-  _partHealth: 100
+  _partHealth: 200
   _hitFlashColor: {r: 1, g: 0.15, b: 0.1, a: 1}
   _breakMarkerColor: {r: 0.12, g: 0.12, b: 0.12, a: 1}
+  _bodyRenderer: {fileID: 0}
+  _materialSlotIndex: -1
   _breakMarkerScale: 0.35
 --- !u!136 &765456831342476088
 CapsuleCollider:
@@ -1043,11 +1071,23 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: a17e92c4b6f38d4419a2c7e0f3b5d891, type: 2}
+      objectReference: {fileID: 9100000, guid: 333ccd5fd9a14a9b8393a974c0ad3b95, type: 2}
     - target: {fileID: 5866666021909216657, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
       propertyPath: m_CullingMode
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7205140776170859923, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: fe8792e500640a0449de5c6eba600648, type: 2}
+    - target: {fileID: 7205140776170859923, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
+      propertyPath: m_Materials.Array.data[1]
+      value: 
+      objectReference: {fileID: 2100000, guid: fe8792e500640a0449de5c6eba600648, type: 2}
+    - target: {fileID: 7205140776170859923, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
+      propertyPath: m_Materials.Array.data[2]
+      value: 
+      objectReference: {fileID: 2100000, guid: fe8792e500640a0449de5c6eba600648, type: 2}
     - target: {fileID: 7898479413103297698, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.0032
@@ -1114,36 +1154,4 @@ Transform:
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &6584337157962603750 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 8823791837524869285, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
-  m_PrefabInstance: {fileID: 2383569884826917955}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &6602038861043520679 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8830155287043213540, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
-  m_PrefabInstance: {fileID: 2383569884826917955}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &7384019642456354374 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5146887117497135621, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
-  m_PrefabInstance: {fileID: 2383569884826917955}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &8008552345416591971 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -3589311989668628960, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
-  m_PrefabInstance: {fileID: 2383569884826917955}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &8106111574867829202 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
-  m_PrefabInstance: {fileID: 2383569884826917955}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &8307440980743815456 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -3288241664234136221, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
-  m_PrefabInstance: {fileID: 2383569884826917955}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &9000580199945078607 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6772384899824966412, guid: 254d372b39314524d99f6e157d76f9be, type: 3}
-  m_PrefabInstance: {fileID: 2383569884826917955}
-  m_PrefabAsset: {fileID: 0}
+  m_CorrespondingSourceObject: {fi
