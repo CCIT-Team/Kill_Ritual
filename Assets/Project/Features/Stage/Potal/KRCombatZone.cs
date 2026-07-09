@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using KillRitual.Enemies;
+using KillRitual.Player;          // KRPlayerDamageFeedback
+using KillRitual.Player.Combat;   // KRCombatSystem
 
 namespace KillRitual.CombatZones
 {
@@ -77,6 +79,46 @@ namespace KillRitual.CombatZones
         [Tooltip("체크하면 Destroy 대신 SetActive(false)를 사용합니다. 풀링/안전성 기준으로 true 권장.")]
         [SerializeField] private bool _deactivateMonstersInsteadOfDestroy = true;
 
+        [Header("자원 부족 시 긴급 소환 (아레나 단위, 포탈 열리면 자동 중단)")]
+        [Tooltip("체크하면 이 아레나 전투 중에는 체력/탄약이 부족해질 때 보급용 몬스터를 소환합니다.")]
+        [SerializeField] private bool _enableSupplySpawn = false;
+
+        [Tooltip("비워두면 씬에서 자동으로 찾습니다.")]
+        [SerializeField] private KRPlayerDamageFeedback _playerHealth;
+
+        [Tooltip("비워두면 씬에서 자동으로 찾습니다.")]
+        [SerializeField] private KRCombatSystem _playerCombat;
+
+        [Range(0f, 1f)]
+        [Tooltip("체력 비율이 이 값 이하로 떨어지면 소환 조건 충족.")]
+        [SerializeField] private float _lowHealthRatioThreshold = 0.3f;
+
+        [Range(0f, 1f)]
+        [Tooltip("현재 장착 무기의 탄약 비율이 이 값 이하로 떨어지면 소환 조건 충족.")]
+        [SerializeField] private float _lowAmmoRatioThreshold = 0.2f;
+
+        [Min(0.1f)]
+        [Tooltip("몇 초마다 체력/탄약 상태를 검사할지.")]
+        [SerializeField] private float _supplyCheckInterval = 1f;
+
+        [Min(0f)]
+        [Tooltip("한 번 소환한 뒤 다시 소환 가능해지기까지의 최소 대기 시간.")]
+        [SerializeField] private float _supplyCooldown = 8f;
+
+        [Tooltip("보급용으로 소환할 몬스터 프리팹. KRSkippableEnemyTag 여부는 상관없습니다(클리어 판정과 무관).")]
+        [SerializeField] private GameObject _supplyEnemyPrefab;
+
+        [Min(1)]
+        [SerializeField] private int _supplyEnemiesPerSpawn = 2;
+
+        [Tooltip("이 아레나에서 보급 소환을 허용할 최대 횟수. -1이면 무제한.")]
+        [SerializeField] private int _maxSupplySpawns = 2;
+
+        private Coroutine _supplyMonitorRoutine;
+        private float _nextSupplyAllowedTime;
+        private int _supplySpawnsUsed;
+        private int _activeSupplyEnemyCount;
+
         private int _importantAliveCount;
         private int _skippableAliveCount;
         private int _summonUsedCount;
@@ -149,6 +191,9 @@ namespace KillRitual.CombatZones
 
             if (_checkSummonOnZoneStart)
                 TryRequestTrashSummon();
+            // 여기 추가
+            if (_enableSupplySpawn)
+                StartSupplyMonitor();
         }
 
         private void RegisterInitialEnemies()
@@ -419,6 +464,10 @@ namespace KillRitual.CombatZones
 
             _summonInProgress = false;
 
+            // 여기 추가 — 포탈이 열리면 보급 소환도 즉시 중단
+            StopSupplyMonitor();
+
+
             if (_cleanupMonsterParentOnClear)
                 CleanupMonsterParent();
 
@@ -458,6 +507,136 @@ namespace KillRitual.CombatZones
             _registeredEnemyIds.Clear();
 
             Debug.Log($"[WaveCombatZone] {name}: Monster Parent 하위 몬스터 {cleanedCount}개 정리 완료.");
+        }
+
+        // ── 자원 부족 긴급 소환 ──────────────────────────────────────────
+
+        private void StartSupplyMonitor()
+        {
+            if (_playerHealth == null)
+                _playerHealth = FindObjectOfType<KRPlayerDamageFeedback>();
+
+            if (_playerCombat == null)
+                _playerCombat = FindObjectOfType<KRCombatSystem>();
+
+            if (_playerHealth == null && _playerCombat == null)
+            {
+                Debug.LogWarning($"[WaveCombatZone] {name}: 플레이어 체력/전투 스크립트를 찾지 못해 보급 소환을 시작하지 않습니다.");
+                return;
+            }
+
+            if (_supplyMonitorRoutine == null)
+                _supplyMonitorRoutine = StartCoroutine(SupplyMonitorRoutine());
+        }
+
+        private void StopSupplyMonitor()
+        {
+            if (_supplyMonitorRoutine != null)
+            {
+                StopCoroutine(_supplyMonitorRoutine);
+                _supplyMonitorRoutine = null;
+            }
+        }
+
+        private IEnumerator SupplyMonitorRoutine()
+        {
+            while (_zoneActivated && !_zoneCleared)
+            {
+                yield return new WaitForSeconds(_supplyCheckInterval);
+
+                if (_zoneCleared) yield break;
+
+                bool spawnCapReached = _maxSupplySpawns >= 0 && _supplySpawnsUsed >= _maxSupplySpawns;
+                if (spawnCapReached) continue;
+
+                if (Time.time < _nextSupplyAllowedTime) continue;
+                if (_activeSupplyEnemyCount > 0) continue; // 이전 보급 몬스터가 아직 살아있으면 대기
+
+                if (IsHealthLow() || IsAmmoLow())
+                {
+                    SpawnSupplyEnemies();
+                    _nextSupplyAllowedTime = Time.time + _supplyCooldown;
+                    _supplySpawnsUsed++;
+                }
+            }
+
+            _supplyMonitorRoutine = null;
+        }
+
+        private bool IsHealthLow()
+        {
+            if (_playerHealth == null) return false;
+            if (_playerHealth.MaxHealth <= 0f) return false;
+
+            return (_playerHealth.CurrentHealth / _playerHealth.MaxHealth) <= _lowHealthRatioThreshold;
+        }
+
+        private bool IsAmmoLow()
+        {
+            if (_playerCombat == null) return false;
+
+            float ratio = _playerCombat.GetResourceRatioBySlot(_playerCombat.CurrentSlotIndex);
+            return ratio <= _lowAmmoRatioThreshold;
+        }
+
+        private void SpawnSupplyEnemies()
+        {
+            if (_supplyEnemyPrefab == null)
+            {
+                Debug.LogWarning($"[WaveCombatZone] {name}: Supply Enemy Prefab이 비어있어 보급 소환을 건너뜁니다.");
+                return;
+            }
+
+            if (_spawnPoints == null || _spawnPoints.Count == 0)
+            {
+                Debug.LogWarning($"[WaveCombatZone] {name}: Spawn Points가 비어있어 보급 소환을 건너뜁니다.");
+                return;
+            }
+
+            int spawnedCount = 0;
+
+            for (int i = 0; i < _supplyEnemiesPerSpawn; i++)
+            {
+                Transform spawnPoint = GetRandomValidSpawnPoint();
+                if (spawnPoint == null) continue;
+
+                GameObject newEnemy = Instantiate(
+                    _supplyEnemyPrefab,
+                    spawnPoint.position,
+                    spawnPoint.rotation,
+                    _monsterParent
+                );
+
+                if (newEnemy == null) continue;
+
+                KREnemyBase enemyBase = newEnemy.GetComponent<KREnemyBase>()
+                    ?? newEnemy.GetComponentInChildren<KREnemyBase>(true);
+
+                if (enemyBase == null)
+                {
+                    Debug.LogWarning($"[WaveCombatZone] {name}: 보급 프리팹 '{newEnemy.name}'에서 KREnemyBase를 찾지 못했습니다.");
+                    continue;
+                }
+
+                enemyBase.gameObject.SetActive(true);
+
+                ArenaEnemyLink link = enemyBase.GetComponent<ArenaEnemyLink>();
+                if (link == null)
+                    link = enemyBase.gameObject.AddComponent<ArenaEnemyLink>();
+
+                link.InitAsSupplyEnemy(this);
+
+                _activeSupplyEnemyCount++;
+                spawnedCount++;
+            }
+
+            Debug.Log($"[WaveCombatZone] {name}: 자원 부족 감지 → 보급 몬스터 {spawnedCount}마리 소환 ({_supplySpawnsUsed + 1}/{(_maxSupplySpawns < 0 ? "무제한" : _maxSupplySpawns.ToString())}).");
+        }
+
+        /// <summary>ArenaEnemyLink.Die()에서 보급용 몬스터가 죽었을 때 호출됩니다. 클리어 판정과 무관합니다.</summary>
+        public void NotifySupplyEnemyDied()
+        {
+            _activeSupplyEnemyCount = Mathf.Max(0, _activeSupplyEnemyCount - 1);
         }
 
         private void SetGateClosed(bool closed)

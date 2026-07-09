@@ -12,12 +12,26 @@ namespace KillRitual.CombatZones
     {
         private WaveCombatZone _owner;
         private bool _isSkippable;
+        private bool _isSupplyEnemy;
         private bool _notified;
 
+        /// <summary>일반 웨이브 몬스터(초기 배치 / 트래시 보충) 등록용.</summary>
         public void Init(WaveCombatZone owner, bool isSkippable)
         {
             _owner = owner;
             _isSkippable = isSkippable;
+            _isSupplyEnemy = false;
+            _notified = false;
+        }
+
+        /// <summary>
+        /// 체력/탄약 부족 시 긴급 소환되는 보급용 몬스터 등록용.
+        /// 웨이브 클리어 판정(핵심/잡몹 카운트)에는 영향을 주지 않습니다.
+        /// </summary>
+        public void InitAsSupplyEnemy(WaveCombatZone owner)
+        {
+            _owner = owner;
+            _isSupplyEnemy = true;
             _notified = false;
         }
 
@@ -36,7 +50,12 @@ namespace KillRitual.CombatZones
 
             _notified = true;
 
-            if (_owner != null)
+            if (_owner == null)
+                return;
+
+            if (_isSupplyEnemy)
+                _owner.NotifySupplyEnemyDied();
+            else
                 _owner.NotifyEnemyDied(_isSkippable);
         }
 

@@ -1,4 +1,4 @@
-// Assets/Project/Features/Enemies/MakeNew/KRBossJakdu01.cs
+﻿// Assets/Project/Features/Enemies/MakeNew/KRBossJakdu01.cs
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -367,10 +367,12 @@ namespace KillRitual.Enemies
         private void RevealBossUiIfNeeded()
         {
             if (_bossUiRevealed) return;
-
             _bossUiRevealed = true;
+
             SetBossUiVisible(true);
-            UpdateBossHealthUI();
+
+            // 추가: 전투 시작 신호
+            GetComponent<KRBossSupplySpawner>()?.NotifyBossEngaged();
         }
 
         private void SetBossUiVisible(bool visible)
@@ -767,6 +769,9 @@ namespace KillRitual.Enemies
                 UpdateBossHealthUI();
                 ConsumeNextPhaseBreakObject();
             }
+
+            // 추가: 전투 종료 신호
+            GetComponent<KRBossSupplySpawner>()?.NotifyBossDefeated();
 
             base.OnDeath();
         }
