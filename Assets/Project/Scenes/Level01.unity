@@ -96,7 +96,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 869fd385675db524e94857d135a10342, type: 2}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -167514,7 +167514,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1260905881
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167547,26 +167547,24 @@ MonoBehaviour:
   _shamanSwordAnimator: {fileID: 602561249}
   _shamanSwordSwingClipLength: 0.33
   _jakduChargeUI: {fileID: 1260905881}
-  _currentResource: 10
+  _currentResource: 3
   _maxResource: 3
   _baseDamage: 300
   _multiplierFodder: 1
   _multiplierHeavy: 0.8
   _multiplierElite: 0.4
   _multiplierBoss: 0.2
-  _dropFodderKill: 0.1
-  _dropEliteHit: 0.05
-  _dropEliteKill: 0.2
-  _dropBossHit: 0.2
+  _dropFodderKill: 0.2
+  _dropEliteHit: 0.1
+  _dropEliteKill: 0.3
+  _dropBossHit: 0.3
   _dropBossKill: 0.5
-  _dropCap: 0.7
+  _dropCap: 0.8
   _ammoOrbPrefabs:
   - {fileID: 4674817366920187620, guid: e0ad2817a280c934ebb65638f86ee0a9, type: 3}
   - {fileID: 2100269200738529668, guid: 7706137ffd313494c9ec904a1fb8fc89, type: 3}
   - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
-  - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
-  - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
-  _ammoOrbEnabled: 0101010101
+  _ammoOrbEnabled: 0101010000
   _ammoOrbSplitCount: 4
   _ammoOrbOutwardForce: 3.5
   _ammoOrbUpForce: 4
@@ -167741,8 +167739,8 @@ MonoBehaviour:
   _healRatioHeavy: 0.2
   _healRatioElite: 0.3
   _healRatioBoss: 0.4
-  _dangerHealthRatio: 0.3
-  _guaranteedHealthRatio: 0.5
+  _dangerHealthRatio: 0.2
+  _guaranteedHealthRatio: 0.4
 --- !u!114 &1260905887
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174903,7 +174901,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1305433804
 MonoBehaviour:
   m_ObjectHideFlags: 0
