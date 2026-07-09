@@ -1,4 +1,4 @@
-// Assets/Project/Scripts/03_Weapons/KRWeaponBase.cs
+﻿// Assets/Project/Scripts/03_Weapons/KRWeaponBase.cs
 using UnityEngine;
 using KillRitual.Core.Damage;
 using KillRitual.Player.Combat;
@@ -103,7 +103,7 @@ namespace KillRitual.Weapons
                     }
 
                     _buttonHeld = true;
-                    Debug.Log($"[{_weaponName}] Tap Held / Visual={_visual}");
+                    //Debug.Log($"[{_weaponName}] Tap Held / Visual={_visual}");
                     TryFireNow();
                     break;
 
@@ -111,7 +111,7 @@ namespace KillRitual.Weapons
                     if (!_buttonHeld)
                     {
                         _buttonHeld = true;
-                        Debug.Log($"[{_weaponName}] Hold Start / Visual={_visual} / Slot={_visualAttackSlot}");
+                        //Debug.Log($"[{_weaponName}] Hold Start / Visual={_visual} / Slot={_visualAttackSlot}");
                         _visual?.PlayHoldStart(_visualAttackSlot);
                     }
 
@@ -120,7 +120,7 @@ namespace KillRitual.Weapons
 
                 case KRAttackInputType.ChargeRelease:
                     _buttonHeld = true;
-                    Debug.Log($"[{_weaponName}] Charge Held / Visual={_visual}");
+                    //Debug.Log($"[{_weaponName}] Charge Held / Visual={_visual}");
                     break;
             }
         }

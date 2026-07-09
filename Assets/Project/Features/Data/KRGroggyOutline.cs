@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace KillRitual.Enemies
 {
@@ -53,8 +53,8 @@ namespace KillRitual.Enemies
                 _isInRange = false;
             }
 
-            if (_logStateChange)
-                Debug.Log($"[KRGroggyOutline] {name}: SetOutline({groggy})");
+            //if (_logStateChange)
+            //    Debug.Log($"[KRGroggyOutline] {name}: SetOutline({groggy})");
 
             Refresh();
         }

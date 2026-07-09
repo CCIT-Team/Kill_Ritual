@@ -368,7 +368,7 @@ namespace KillRitual.Enemies
                 _hasSpottedPlayer = true;
                 _state = EnemyState.Chase;
 
-                Debug.Log($"[KREnemyBase] {name}: 플레이어 감지(거리 {DistanceToPlayer():F1}) — Idle → Chase 전환");
+                //Debug.Log($"[KREnemyBase] {name}: 플레이어 감지(거리 {DistanceToPlayer():F1}) — Idle → Chase 전환");
             }
         }
 
@@ -450,6 +450,8 @@ namespace KillRitual.Enemies
             // despawnDelay를 기다리지 않고 죽는 즉시 반영되며,
             // ArenaEnemyLink가 없는 적(구역 밖 일반 몬스터)이면 아무 동작 안 함.
             GetComponent<ArenaEnemyLink>()?.Die();
+            GetComponent<BossSupplyEnemyLink>()?.Die(); // 추가
+
 
             Destroy(gameObject, _despawnDelay);
         }
