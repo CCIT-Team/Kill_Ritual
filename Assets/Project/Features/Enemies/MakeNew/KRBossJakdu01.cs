@@ -617,13 +617,16 @@ namespace KillRitual.Enemies
 
             if (distance > _preferredDistance)
             {
-                // [2026-07-08 신규] "무작정 접근만 하면 패턴이 단조롭다"는 피드백 반영 — 접근
-                // 중에도 패턴 쿨다운이 다 찼으면 잠깐 멈춰서 원거리 철갑 발사(패턴0, 유일하게
-                // 거리 제한 없는 패턴)를 섞습니다. 근접 패턴(꼬리 휘두르기/돌진/철갑 폭우)은
-                // 어차피 이 거리에서 안 맞으니 제외하고 철갑 발사만 강제로 골라 씁니다.
+                // [2026-07-09 수정] 기존에는 접근 중 패턴 시간이 차면 RunRandomPattern()를
+                // 호출해서 무조건 철갑 발사(0)만 나갔습니다. 그 결과 돌진(2)은 원거리 패턴으로 설계돼
+                // 있어도 실제 선택 루트에 들어오지 못했습니다.
+                // 이제 접근 중에도 일반 거리 기반 패턴 선택을 그대로 사용합니다.
+                // - distance >= _trunkStrikeRange: 철갑발사(0) / 돌진(2) 후보
+                // - distance <  _trunkStrikeRange: 물기(1) 후보
+                // - 다리 파괴 시: IsPatternViableAtDistance()가 돌진을 자동 봉인
                 if (Time.time >= _nextPatternTime)
                 {
-                    StartCoroutine(RunRandomPattern(forceRangedOnly: true));
+                    StartCoroutine(RunRandomPattern());
                     return;
                 }
 
@@ -828,28 +831,20 @@ namespace KillRitual.Enemies
 
         // ── 패턴 선택/진행 ────────────────────────────────────────────────
 
-        /// <param name="forceRangedOnly">
-        /// [2026-07-08 신규] true면 패턴을 랜덤으로 고르지 않고 무조건 철갑 발사(0번, 유일한
-        /// 원거리 패턴)만 실행합니다. 아직 접근 중(거리가 _preferredDistance보다 먼 상태)일 때
-        /// TickBossLogic()이 이걸 호출해서 "그냥 걸어오기만 하면 단조롭다"는 피드백에 대응합니다.
-        /// </param>
-        private IEnumerator RunRandomPattern(bool forceRangedOnly = false)
+        /// <summary>
+        /// 현재 거리와 보스 상태를 기준으로 실행 가능한 패턴 후보를 뽑아 하나를 실행합니다.
+        /// [2026-07-09 수정] 원거리 철갑 발사 강제 분기를 제거했습니다. 그 분기가
+        /// 돌진 패턴의 선택 루트를 막고 있었기 때문입니다. 이제 접근 중/정지 중을 가리지 않고
+        /// PickPatternIndex(distance)를 통과하므로, 원거리에서는 철갑발사와 돌진이 함께 후보가 됩니다.
+        /// </summary>
+        private IEnumerator RunRandomPattern()
         {
             _isPatternActive = true;
             _patternActiveSince = Time.time;
             StopMoving();
 
-            int index;
-            if (forceRangedOnly)
-            {
-                index = 0;
-                RegisterPatternChoice(index);
-            }
-            else
-            {
-                float distance = DistanceToPlayer();
-                index = PickPatternIndex(distance);
-            }
+            float distance = DistanceToPlayer();
+            int index = PickPatternIndex(distance);
 
             yield return StartCoroutine(GetPatternCoroutine(index));
 
@@ -860,8 +855,8 @@ namespace KillRitual.Enemies
 
         /// <summary>
         /// [2026-07-08 신규] 패턴 선택 결과를 기록하면서 "3연속 금지"용 반복 횟수도 같이 갱신합니다.
-        /// forceRangedOnly 경로(PickPatternIndex를 거치지 않음)와 정상 선택 경로 둘 다 이 메서드로
-        /// 기록을 남겨야 반복 횟수가 정확히 유지됩니다.
+        /// 접근 중/정지 중 모두 PickPatternIndex()를 거치므로 이 메서드 한 곳에서 반복 횟수를
+        /// 일관되게 관리합니다.
         /// </summary>
         private void RegisterPatternChoice(int index)
         {

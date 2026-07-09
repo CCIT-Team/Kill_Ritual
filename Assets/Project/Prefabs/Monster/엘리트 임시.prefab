@@ -2128,9 +2128,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   _ammoOrbChance: 1
+  _ammoOrbCount: 4
   _spreadRadius: 0.5
   _spawnHeightOffset: 0.8
   _bounceUpForce: 4

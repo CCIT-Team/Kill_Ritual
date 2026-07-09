@@ -14731,8 +14731,6 @@ MonoBehaviour:
   - {fileID: 4674817366920187620, guid: e0ad2817a280c934ebb65638f86ee0a9, type: 3}
   - {fileID: 2100269200738529668, guid: 7706137ffd313494c9ec904a1fb8fc89, type: 3}
   - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
-  - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
-  - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
   _ammoOrbChance: 1
   _ammoOrbCount: 4
   _spreadRadius: 0.5
