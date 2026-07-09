@@ -129,6 +129,7 @@ namespace KillRitual.CombatZones
 
         private void ActivateZone()
         {
+            Debug.Log($"[WaveCombatZone] {name} ActivateZone 호출됨");
             if (_zoneActivated || _zoneCleared) return;
 
             _zoneActivated = true;
@@ -402,6 +403,7 @@ namespace KillRitual.CombatZones
 
         private void OpenZone()
         {
+            Debug.Log($"[WaveCombatZone] {name} OpenZone 호출됨");
             if (_zoneCleared)
                 return;
 
@@ -467,12 +469,23 @@ namespace KillRitual.CombatZones
         private void SetBlockers(bool blocked)
         {
             if (_portalBlockers == null)
+            {
+                Debug.LogWarning($"[WaveCombatZone] {name}: Portal Blockers 리스트가 null입니다.");
                 return;
+            }
+
+            Debug.Log($"[WaveCombatZone] {name}: SetBlockers({blocked}) 호출, 리스트 개수={_portalBlockers.Count}");
 
             foreach (Collider blocker in _portalBlockers)
             {
-                if (blocker == null) continue;
+                if (blocker == null)
+                {
+                    Debug.LogWarning($"[WaveCombatZone] {name}: Portal Blockers 리스트에 비어있는(None) 슬롯이 있습니다.");
+                    continue;
+                }
+
                 blocker.enabled = blocked;
+                Debug.Log($"[WaveCombatZone] {name}: {blocker.name}.enabled = {blocked}");
             }
         }
 

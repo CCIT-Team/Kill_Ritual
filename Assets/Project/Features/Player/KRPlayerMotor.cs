@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using KillRitual.Player.Combat; // [2026-07-06 추가] 작두 사용 중 감속 처리를 위해 KRJakduSystem을 참조합니다.
 
 namespace KillRitual
@@ -475,8 +475,8 @@ namespace KillRitual
         {
             remainingJumps = maxJumpCount;
 
-            if (showDebugLog)
-                Debug.Log("Player Landed");
+            //if (showDebugLog)
+            //    Debug.Log("Player Landed");
         }
 
         /// <summary>
@@ -637,12 +637,12 @@ namespace KillRitual
 
             characterController.stepOffset = 0f;
 
-            if (showDebugLog)
-            {
-                Debug.Log(
-                    $"Player Jump. verticalVelocity: {verticalVelocity}, remainingJumps: {remainingJumps}"
-                );
-            }
+            //if (showDebugLog)
+            //{
+            //    Debug.Log(
+            //        $"Player Jump. verticalVelocity: {verticalVelocity}, remainingJumps: {remainingJumps}"
+            //    );
+            //}
         }
 
         /// <summary>
@@ -772,8 +772,8 @@ namespace KillRitual
             if (softenFallingVelocityOnDash && verticalVelocity < 0f)
                 verticalVelocity = 0f;
 
-            if (showDebugLog)
-                Debug.Log($"Dash Start. Charges: {currentDashCharges}/{maxDashCharges}");
+            //if (showDebugLog)
+            //    Debug.Log($"Dash Start. Charges: {currentDashCharges}/{maxDashCharges}");
         }
 
         /// <summary>
@@ -800,8 +800,8 @@ namespace KillRitual
             float exitSpeed = maxRunSpeed * dashExitSpeedRatio;
             horizontalVelocity = dashDirection * exitSpeed;
 
-            if (showDebugLog)
-                Debug.Log("Dash End");
+            //if (showDebugLog)
+            //    Debug.Log("Dash End");
         }
 
         /// <summary>
@@ -822,8 +822,8 @@ namespace KillRitual
             else
                 nextDashRechargeTime = -999f;
 
-            if (showDebugLog)
-                Debug.Log($"Dash Recharged. Charges: {currentDashCharges}/{maxDashCharges}");
+            //if (showDebugLog)
+            //    Debug.Log($"Dash Recharged. Charges: {currentDashCharges}/{maxDashCharges}");
         }
 
         public float DashRechargeProgress01

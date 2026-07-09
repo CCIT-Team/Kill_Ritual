@@ -368,7 +368,7 @@ namespace KillRitual.Enemies
                 _hasSpottedPlayer = true;
                 _state = EnemyState.Chase;
 
-                Debug.Log($"[KREnemyBase] {name}: 플레이어 감지(거리 {DistanceToPlayer():F1}) — Idle → Chase 전환");
+                //Debug.Log($"[KREnemyBase] {name}: 플레이어 감지(거리 {DistanceToPlayer():F1}) — Idle → Chase 전환");
             }
         }
 
