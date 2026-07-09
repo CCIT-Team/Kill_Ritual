@@ -14701,7 +14701,7 @@ MonoBehaviour:
   _hitEffectPrefab: {fileID: 0}
   _hitEffectFallbackHeight: 1
   _despawnDelay: 1.2
-  _modelRoot: {fileID: 0}
+  _modelRoot: {fileID: 4098656891414642923}
   _attackRange: 60
   _fireCooldown: 5
   _attackEventTimeout: 1.5
@@ -14734,6 +14734,7 @@ MonoBehaviour:
   - {fileID: 1971737447026506813, guid: 9bb493b8cc7da5549b0108d61d27a3cb, type: 3}
   - {fileID: 298902378735765081, guid: 5f570913a5ec6194587f6707eb9d20d8, type: 3}
   _ammoOrbChance: 1
+  _ammoOrbCount: 4
   _spreadRadius: 0.5
   _spawnHeightOffset: 0.8
   _bounceUpForce: 4

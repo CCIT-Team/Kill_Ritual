@@ -18278,7 +18278,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &296398307
 Transform:
   m_ObjectHideFlags: 0
@@ -33573,7 +33573,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!95 &602561249
 Animator:
   serializedVersion: 5
@@ -89810,7 +89810,7 @@ MonoBehaviour:
   _targetHeightOffset: 1
   _maxGauge: 100
   _currentGauge: 100
-  _reflectCost: 10
+  _reflectCost: 33
   _useGaugeRegen: 1
   _gaugeRegenPerSecond: 1
   _gaugeRegenDelayAfterUse: 0.5
