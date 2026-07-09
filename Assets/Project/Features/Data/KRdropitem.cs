@@ -73,9 +73,11 @@ namespace KillRitual.Items
         [Header("흡수 설정")]
         [Tooltip("착지 후 이 거리 이하로 플레이어가 직접 걸어와야 회수(회복 적용 후 파괴)됩니다. " +
                  "[2026-07-06 변경] 자석 추적 기능은 제거되었으므로, 착지 후에는 이 값이 사실상 " +
-                 "유일한 수집 판정 범위입니다. 좁게 유지해서 '걸어가서 주워야 하는' 느낌을 유지하세요.")]
+                 "유일한 수집 판정 범위입니다. '걸어가서 주워야 하는' 느낌은 유지하되, 너무 좁으면 " +
+                 "오브 바로 위까지 정확히 밟아야만 먹혀서 '안 먹힌다'고 느껴집니다. " +
+                 "[2026-07-09 변경] '오브가 너무 안 먹어진다' 피드백으로 0.35 → 1.0으로 넉넉하게 조정.")]
         [Min(0.01f)]
-        [SerializeField] private float _collectRange = 0.35f;
+        [SerializeField] private float _collectRange = 1.0f;
 
         [Tooltip("[2026-07-08 신규] '날라가는 중에 플레이어랑 부디치면 바로 먹어지게도 해줘' 요청으로 " +
                  "추가 — 오브와 플레이어는 물리적으로 충돌하지 않도록 레이어가 꺼져 있어서 실제 " +
@@ -84,6 +86,21 @@ namespace KillRitual.Items
                  "대신 위 _collectRange(좁은 도보 회수 범위)를 씁니다.")]
         [Min(0.01f)]
         [SerializeField] private float _midairCollectRadius = 0.6f;
+
+        [Tooltip("[2026-07-09 신규] '오브 먹는 판정 흡수도 넣자' 요청으로 추가 — 착지한 오브는 " +
+                 "이전엔 플레이어가 몇 미터 밖에 있든 제자리에 가만히 있었습니다(자석 추적 기능은 " +
+                 "2026-07-06에 '걸어가서 주워야 하는' 컨셉 때문에 의도적으로 제거됨). 이제 착지 후 " +
+                 "이 거리 안에 플레이어가 들어오면 서서히 플레이어 쪽으로 끌려갑니다(자석 흡수). " +
+                 "[2026-07-09 변경 — '흡수 범위는 직접접촉 판정범위보다 좁게'] 일부러 _collectRange(1.0)" +
+                 "보다 작게 잡았습니다. 즉 자석이 당기기 시작하는 순간엔 이미 도보 회수 판정 범위 " +
+                 "안이라 바로 회수되는 경우가 많고, 멀리서부터 끌려오는 느낌은 없습니다 — 장거리 " +
+                 "자석이 아니라 마지막 순간의 작은 스냅 정도로만 작동합니다. 0이면 완전히 끕니다.")]
+        [Min(0f)]
+        [SerializeField] private float _magnetRange = 0.6f;
+
+        [Tooltip("자석으로 끌려갈 때 이동 속도(초당 유닛). 클수록 빠르게 딸려옵니다.")]
+        [Min(0.01f)]
+        [SerializeField] private float _magnetSpeed = 6f;
 
         [Header("낙하 속도")]
         [Tooltip("[2026-07-08 신규] '떨어지는 속도 빠르게 가능?' → '포물선 후 떨어질때 가속으로' 요청 " +
@@ -404,18 +421,32 @@ namespace KillRitual.Items
                 return;
             }
 
-            // [2026-07-06 변경] 자석 추적 로직을 삭제했습니다. 착지 후에는 오브가 플레이어를 쫓지 않고
-            // 떨어진 자리에 그대로 있으며, 플레이어가 _collectRange 안까지 직접 걸어와야만 회수됩니다.
-            // (기존에는 _magnetRange(6m) 안에 들어오면 플레이어 쪽으로 날아오는 자석 판정이 있었으나,
-            // "걸어가서 주워야 하는 잔여 자원" 컨셉과 맞지 않아 제거)
-            //
-            // [2026-07-06 변경] Vector3.Distance(3D 직선거리) 대신 수평(XZ) 거리만 계산합니다.
-            // 오브는 구 콜라이더 반지름만큼 땅 위에 떠서 멈추고 플레이어 트랜스폼 피벗은 그보다
-            // 낮아서, Y축까지 포함하면 항상 남는 높이 차이만으로 좁은 _collectRange를 다 써버려
-            // 실제로는 아무리 가까이 가도 주울 수 없는 문제가 있었습니다.
-            Vector3 delta = transform.position - _player.position;
-            delta.y = 0f;
-            float distance = delta.magnitude;
+            // [2026-07-06 변경, 2026-07-09 재도입] 한 번 삭제했던 자석 추적을 "오브 먹는 판정
+            // 흡수도 넣자" 요청으로 다시 넣었습니다. 이번엔 즉시 순간이동시키는 방식이 아니라,
+            // FloatAfterLandingRoutine()이 기준으로 삼는 _landedPosition 자체를 플레이어 쪽으로
+            // 서서히 이동시킵니다 — 뜨고 흔들리는(float/bob) 연출은 그 위에 그대로 얹히므로 두
+            // 시스템이 transform.position을 서로 덮어쓰며 충돌하지 않습니다. _magnetRange를 0으로
+            // 두면 예전처럼 제자리에 고정됩니다.
+            if (_magnetRange > 0f)
+            {
+                Vector3 toPlayerXZ = _player.position - _landedPosition;
+                toPlayerXZ.y = 0f;
+
+                if (toPlayerXZ.magnitude <= _magnetRange)
+                {
+                    Vector3 targetXZ = new Vector3(_player.position.x, _landedPosition.y, _player.position.z);
+                    _landedPosition = Vector3.MoveTowards(_landedPosition, targetXZ, _magnetSpeed * Time.deltaTime);
+                }
+            }
+
+            // [2026-07-06 변경, 2026-07-09 되돌림] 원래 Vector3.Distance(3D 직선거리) 대신 수평(XZ)
+            // 거리만 썼습니다 — 오브는 구 콜라이더 반지름만큼 땅 위에 떠서 멈추고 플레이어 트랜스폼
+            // 피벗은 그보다 낮아서, Y축까지 포함하면 그 고정 높이 차이만으로 당시 _collectRange(0.35)를
+            // 다 써버려 아무리 가까이 가도 주울 수 없었기 때문입니다. 이제 _collectRange를 1.0으로
+            // 넉넉하게 늘렸고 "y축 무시 없애줘" 요청도 있어 Y축을 포함한 3D 거리로 되돌렸습니다.
+            // 높이 차이가 커도 1.0m 예산 안에서 흡수될 가능성이 높지만, 만약 다시 "가까이 가도
+            // 안 먹힌다"는 문제가 재현되면 이 Y축 포함이 원인일 수 있습니다.
+            float distance = Vector3.Distance(transform.position, _player.position);
 
             if (distance <= _collectRange)
             {

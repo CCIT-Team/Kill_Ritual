@@ -121,15 +121,36 @@ namespace KillRitual.Enemies
         {
             if (_owner == null || _owner.IsDead) return;
 
-            float adjustedAmount = context.DamageAmount * _damageMultiplier;
-            var adjustedContext = new KRDamageContext(adjustedAmount, context.Type, context.HitPoint, context.Direction);
-
             if (!_isBroken)
             {
-                Debug.Log($"[KRBossBodyPart] {_partName}: {adjustedAmount:F1} 데미지 " +
-                          $"(부위 체력 {_currentPartHealth:F0} → {Mathf.Max(0f, _currentPartHealth - adjustedAmount):F0})");
+                // 부위가 살아있는 동안에만 _damageMultiplier(부위별 취약/저항 배율)를 적용합니다.
+                float adjustedAmount = context.DamageAmount * _damageMultiplier;
+                var adjustedContext = new KRDamageContext(adjustedAmount, context.Type, context.HitPoint, context.Direction);
+
                 SpawnFlash(context.HitPoint, _hitFlashColor);
-                ApplyPartDamage(adjustedAmount);
+
+                // [2026-07-09 변경 — "무령으로만 부위 파괴 되도록"] 부위 체력 차감(=파괴로 이어지는
+                // 판정)은 무령 반사탄(KRMuryeongProjectile, context.IsMuryeongReflected)에 맞았을
+                // 때만 진행합니다. 일반 무기로 맞아도 보스 본체에는 배율 적용된 피해가 그대로
+                // 들어가지만, 부위 자체 체력은 안 깎이고 절대 파괴되지 않습니다 — 부위파괴를 무령
+                // 패링 성공이라는 스킬 기반 행동에 직접 묶기 위한 의도적 게이트입니다.
+                if (context.IsMuryeongReflected)
+                {
+                    Debug.Log($"[KRBossBodyPart] {_partName}: 무령 반사 {adjustedAmount:F1} 데미지 " +
+                              $"(부위 체력 {_currentPartHealth:F0} → {Mathf.Max(0f, _currentPartHealth - adjustedAmount):F0})");
+                    ApplyPartDamage(adjustedAmount);
+                }
+                else
+                {
+                    Debug.Log($"[KRBossBodyPart] {_partName}: 일반 피해 {adjustedAmount:F1} " +
+                              $"(부위 파괴는 무령 반사탄 전용이라 부위 체력 변화 없음)");
+                }
+
+                // [기존과 동일한 이유] TakeDamage()가 아니라 TakeDamageDirect()를 씁니다 — 위에서 이미
+                // 부위 배율을 적용했으니, ModifyIncomingDamage()(몸통 전체 방어 훅)를 또 거쳐서
+                // 이중으로 깎이지 않도록 하기 위함입니다. 실제 체력/그로기/사망 처리는 그대로
+                // KREnemyBase가 전담합니다 — 부위별 컴포넌트는 자기 체력만 별도로 들고 있습니다.
+                _owner.TakeDamageDirect(adjustedContext);
             }
             else
             {
@@ -137,15 +158,17 @@ namespace KillRitual.Enemies
                 // SpawnFlash()를 안 불러서 부위가 이미 파괴된 뒤엔 맞아도 아무 시각 피드백이
                 // 없었습니다(로그만 남음). 파괴된 부위에 맞아도 그 피해가 그대로 보스 본체
                 // 체력에는 들어가고 있었으니, 맞았다는 걸 보여주도록 플래시를 추가했습니다.
-                Debug.Log($"[KRBossBodyPart] {_partName}: {adjustedAmount:F1} 데미지 (이미 파괴된 부위)");
+                //
+                // [2026-07-09 변경 — "부위 파괴 되면 추가딜이 아니고 원래 딜 들어가도록 할까?"]
+                // 예전엔 부위가 파괴된 뒤에도 _damageMultiplier가 계속 적용된 adjustedAmount를
+                // 보스 본체에 그대로 넘기고 있었습니다 — 즉 약점 부위(예: 머리, 배율 > 1)를
+                // 한 번 부수고 나면 그 자리는 파괴됐는데도 배율 보너스만 영구히 남는 상태였습니다.
+                // 이제는 부위가 파괴된 뒤에는 배율을 적용하지 않고 context(원래 데미지) 그대로
+                // 본체에 전달합니다 — "이미 부서진 자리를 계속 때려도 특별 취급 없음"이 됩니다.
+                Debug.Log($"[KRBossBodyPart] {_partName}: {context.DamageAmount:F1} 데미지 (이미 파괴된 부위, 배율 미적용)");
                 SpawnFlash(context.HitPoint, _hitFlashColor);
+                _owner.TakeDamageDirect(context);
             }
-
-            // [기존과 동일한 이유] TakeDamage()가 아니라 TakeDamageDirect()를 씁니다 — 위에서 이미
-            // 부위 배율을 적용했으니, ModifyIncomingDamage()(몸통 전체 방어 훅)를 또 거쳐서
-            // 이중으로 깎이지 않도록 하기 위함입니다. 실제 체력/그로기/사망 처리는 그대로
-            // KREnemyBase가 전담합니다 — 부위별 컴포넌트는 자기 체력만 별도로 들고 있습니다.
-            _owner.TakeDamageDirect(adjustedContext);
         }
 
         private void ApplyPartDamage(float amount)

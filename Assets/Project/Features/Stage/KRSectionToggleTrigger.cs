@@ -105,9 +105,9 @@ namespace KillRitual.Stage
 
             _hasTriggered = true;
 
-            // [2026-07-07 추가 - 디버깅용] 섹션 트리거 진입 자체를 콘솔에 남깁니다.
-            if (_linkCombat)
-                Debug.Log($"[KRSectionToggleTrigger] {name}: 섹션 진입 감지 (전투 연동 ON)");
+            // [2026-07-09 삭제] 디버깅용 로그 — 확인 끝나 제거.
+            // if (_linkCombat)
+            //     Debug.Log($"[KRSectionToggleTrigger] {name}: 섹션 진입 감지 (전투 연동 ON)");
 
             // [2026-07-07 추가] 전투 연동이 켜진 섹션이면, 시각 오브젝트 on/off와 별개로
             // 즉시 전투 참가자를 스캔해 KRCombatStartEvent를 발행합니다(연출 코루틴이 프레임에
@@ -153,16 +153,16 @@ namespace KillRitual.Stage
 
             if (_combatParticipants.Count == 0)
             {
-                // [2026-07-07 추가 - 디버깅용]
-                Debug.Log($"[KRSectionToggleTrigger] {name}: 전투 참가자 없음 → 전투 시작 안 함");
+                // [2026-07-09 삭제] 디버깅용 로그 — 확인 끝나 제거.
+                // Debug.Log($"[KRSectionToggleTrigger] {name}: 전투 참가자 없음 → 전투 시작 안 함");
                 return;
             }
 
             _combatActive = true;
             KRManagers.Event.Publish(new KRCombatStartEvent(_combatParticipants.Count));
 
-            // [2026-07-07 추가 - 디버깅용]
-            Debug.Log($"[KRSectionToggleTrigger] {name}: ▶ 전투 시작 (참가자 {_combatParticipants.Count}명) - KRCombatStartEvent 발행");
+            // [2026-07-09 삭제] 디버깅용 로그 — 확인 끝나 제거.
+            // Debug.Log($"[KRSectionToggleTrigger] {name}: ▶ 전투 시작 (참가자 {_combatParticipants.Count}명) - KRCombatStartEvent 발행");
         }
 
         /// <summary>
@@ -176,20 +176,21 @@ namespace KillRitual.Stage
             if (!_linkCombat || !_combatActive) return;
             if (!other.CompareTag(_playerTag)) return;
 
-            // [2026-07-07 추가 - 디버깅용] 이탈 시점에 전멸 여부를 "폴링(확인)"하는 순간입니다.
-            Debug.Log($"[KRSectionToggleTrigger] {name}: 섹션 이탈 감지 → 전멸 여부 확인 중...");
+            // [2026-07-09 삭제] 디버깅용 로그 — 확인 끝나 제거.
+            // Debug.Log($"[KRSectionToggleTrigger] {name}: 섹션 이탈 감지 → 전멸 여부 확인 중...");
 
             if (!AllCombatParticipantsDead())
             {
-                Debug.Log($"[KRSectionToggleTrigger] {name}: 아직 생존자 있음 → 전투 종료 보류");
+                // [2026-07-09 삭제] 디버깅용 로그 — 확인 끝나 제거.
+                // Debug.Log($"[KRSectionToggleTrigger] {name}: 아직 생존자 있음 → 전투 종료 보류");
                 return;
             }
 
             _combatActive = false;
             KRManagers.Event.Publish(new KRCombatEndEvent());
 
-            // [2026-07-07 추가 - 디버깅용]
-            Debug.Log($"[KRSectionToggleTrigger] {name}: ■ 전투 종료 (전멸 확인 + 섹션 이탈) - KRCombatEndEvent 발행");
+            // [2026-07-09 삭제] 디버깅용 로그 — 확인 끝나 제거.
+            // Debug.Log($"[KRSectionToggleTrigger] {name}: ■ 전투 종료 (전멸 확인 + 섹션 이탈) - KRCombatEndEvent 발행");
 
             // 전투 연동 섹션은 종료 이벤트를 발행한 뒤에야 트리거를 꺼도 안전합니다
             // (그 전에 꺼버리면 콜라이더가 비활성화돼 이 OnTriggerExit 자체가 호출되지 않습니다).

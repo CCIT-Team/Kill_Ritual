@@ -318,6 +318,14 @@ namespace KillRitual.Enemies
             if (_frontLegs != null) _frontLegs.OnBroken += HandleLegBroken;
             if (_backLegs != null) _backLegs.OnBroken += HandleLegBroken;
 
+            // [2026-07-09 신규] "보스는 그로기 안 걸리게 해줘" 요청 — KREnemyBase.TakeDamage()가
+            // (!_isGroggy && _health <= _maxHealth * _groggyHealthRatio)일 때 자동으로 그로기에
+            // 진입시킵니다. _groggyHealthRatio를 음수로 두면 이 조건이 체력이 얼마든 절대 참이
+            // 될 수 없어 보스는 체력 기반 그로기에 걸리지 않습니다(다리 파괴로 인한 강제 그로기는
+            // 2026-07-08에 이미 별도로 제거됨 — 이제 보스는 어떤 경로로도 그로기 상태에 들어가지
+            // 않습니다). base.Awake() 이후에 덮어써야 하므로 여기서 설정합니다.
+            _groggyHealthRatio = -1f;
+
             InitializeBossHealthUI();
         }
 
@@ -580,16 +588,17 @@ namespace KillRitual.Enemies
 
         private void TickBossLogic()
         {
-            if (Time.time >= _nextMoveDebugLogTime)
-            {
-                _nextMoveDebugLogTime = Time.time + 1f;
-                float d = _player != null ? DistanceToPlayer() : -1f;
-                Debug.Log($"[불가살이/이동진단] 거리={d:F1} (기준 {_preferredDistance}) " +
-                          $"패턴진행중={_isPatternActive} agent활성={(_agent != null && _agent.enabled)} " +
-                          $"onNavMesh={(_agent != null && _agent.isOnNavMesh)} " +
-                          $"agent속도={(_agent != null ? _agent.velocity.magnitude : -1f):F2} " +
-                          $"위치={transform.position}");
-            }
+            // [2026-07-09 삭제] 이동진단 디버그 로그 — 확인 끝나 제거.
+            // if (Time.time >= _nextMoveDebugLogTime)
+            // {
+            //     _nextMoveDebugLogTime = Time.time + 1f;
+            //     float d = _player != null ? DistanceToPlayer() : -1f;
+            //     Debug.Log($"[불가살이/이동진단] 거리={d:F1} (기준 {_preferredDistance}) " +
+            //               $"패턴진행중={_isPatternActive} agent활성={(_agent != null && _agent.enabled)} " +
+            //               $"onNavMesh={(_agent != null && _agent.isOnNavMesh)} " +
+            //               $"agent속도={(_agent != null ? _agent.velocity.magnitude : -1f):F2} " +
+            //               $"위치={transform.position}");
+            // }
 
             if (_isPatternActive)
             {
@@ -705,12 +714,13 @@ namespace KillRitual.Enemies
 
         protected override void OnHealthChanged(float ratio)
         {
-            if (!_health60Logged && ratio <= 0.6f)
-            {
-                _health60Logged = true;
-                Debug.Log($"[불가살이/체력진단] {name}: 체력 60% 도달 (현재 {ratio:P0}, 페이즈 " +
-                          $"{_phase}) — 2페이즈 진입 문턱은 {_phase2HealthRatio:P0}입니다.");
-            }
+            // [2026-07-09 삭제] 체력진단 디버그 로그 — 확인 끝나 제거.
+            // if (!_health60Logged && ratio <= 0.6f)
+            // {
+            //     _health60Logged = true;
+            //     Debug.Log($"[불가살이/체력진단] {name}: 체력 60% 도달 (현재 {ratio:P0}, 페이즈 " +
+            //               $"{_phase}) — 2페이즈 진입 문턱은 {_phase2HealthRatio:P0}입니다.");
+            // }
 
             if (_phase == BossPhase.Phase1 && ratio <= _phase2HealthRatio)
             {
@@ -842,7 +852,13 @@ namespace KillRitual.Enemies
             }
             else
             {
-                float distance = DistanceToPlayer();
+                // [2026-07-09 변경 — "빗나간다" 재현 원인 발견] 패턴 선택은 여기서 DistanceToPlayer()
+                // (보스 루트 transform 기준)로 거리를 재고, 실제 물기 명중 판정(TryHitTrunkStrike)은
+                // _head.Position 기준으로 다시 거리를 잽니다. 큰 몬스터 모델은 루트-머리 사이 거리가
+                // 꽤 떨어져 있어서, 루트 기준으론 물기가 "후보"로 뽑혔는데 정작 머리 기준으론 사거리
+                // 밖이라 실행 시점에 빗나가는 불일치가 있었습니다. 선택 단계부터 머리 기준 거리를
+                // 써서 선택-실행 판정 기준을 통일합니다.
+                float distance = DistanceToPlayerFromHead();
                 index = PickPatternIndex(distance);
             }
 
@@ -898,7 +914,13 @@ namespace KillRitual.Enemies
             // 불공정한 대미지를 주는 철갑 발사(0)보다 훨씬 안전한 기본값입니다.
             if (candidates.Count == 0) candidates.Add(1);
 
-            int index = candidates[Random.Range(0, candidates.Count)];
+            // [2026-07-09 변경 — 균등 랜덤 → 룰렛휠(Weighted Roulette Wheel) 선택]
+            // 예전엔 candidates[Random.Range(0, candidates.Count)]로 후보 중 완전 균등하게 뽑았습니다.
+            // 이제는 각 후보에 가중치를 매겨 누적 구간에 랜덤값을 던지는 방식으로 바꿨습니다 —
+            // 방금 쓴 패턴(_lastPatternIndex)은 가중치를 낮춰서(0.3) 곧바로 또 뽑힐 확률을 줄이고,
+            // 나머지 후보는 가중치 1.0으로 동등하게 취급합니다. "3연속 금지" 같은 하드 컷과 달리
+            // 0%가 아니라 확률만 낮추는 방식이라 변주가 더 자연스럽습니다.
+            int index = PickByRouletteWheel(candidates);
 
             // [2026-07-08 신규] "물기 패턴이 안 나온다" 진단용 — 매번 후보 목록과 실제 선택 결과를
             // 남깁니다. 물기(1)가 후보 목록에 계속 안 잡힌다면 거리 조건(distance < _trunkStrikeRange)
@@ -911,6 +933,40 @@ namespace KillRitual.Enemies
 
             RegisterPatternChoice(index);
             return index;
+        }
+
+        /// <summary>
+        /// [2026-07-09 신규] 후보 목록에서 가중치 기반으로 하나를 뽑습니다(룰렛휠 선택).
+        /// 방금 사용한 패턴(_lastPatternIndex)은 가중치 0.3, 나머지는 1.0으로 취급해 누적
+        /// 가중치 구간을 만들고, 그 총합 범위 안에서 랜덤값을 던져 해당 구간에 걸린 후보를
+        /// 고릅니다. 완전히 배제하는 게 아니라 확률만 낮추므로, 운이 나쁘면(혹은 좋으면) 같은
+        /// 패턴이 연속으로 나올 수도 있습니다 — 이게 균등 랜덤과의 핵심 차이입니다.
+        /// </summary>
+        private int PickByRouletteWheel(List<int> candidates)
+        {
+            const float kRecentlyUsedWeight = 0.3f;
+            const float kDefaultWeight = 1f;
+
+            float totalWeight = 0f;
+            var weights = new float[candidates.Count];
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                weights[i] = candidates[i] == _lastPatternIndex ? kRecentlyUsedWeight : kDefaultWeight;
+                totalWeight += weights[i];
+            }
+
+            float roll = Random.Range(0f, totalWeight);
+            float cursor = 0f;
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                cursor += weights[i];
+                if (roll <= cursor) return candidates[i];
+            }
+
+            // 부동소수점 오차로 roll이 마지막 누적값을 살짝 넘는 극히 드문 경우의 안전망입니다.
+            return candidates[candidates.Count - 1];
         }
 
         private static string PatternName(int index)
@@ -934,8 +990,10 @@ namespace KillRitual.Enemies
         /// 반대로 겹치는 구간이 생겨서 의도를 벗어난 선택이 나올 수 있었습니다. 지금은:
         /// - 철갑 발사(0): distance >= _trunkStrikeRange (10m 이상 — 진짜 원거리일 때만)
         /// - 물기(1): distance &lt; _trunkStrikeRange (10m 미만 — 근접일 때만)
-        /// - 돌진(2): 거리를 좁히는 패턴이라 철갑 발사와 같은 "원거리" 구간(10m 이상)에서만
-        ///   쓰고, 앞다리/뒷다리 중 하나라도 파괴됐으면 아예 못 씁니다(다리 없이 못 뛰므로).
+        /// - 돌진(2): [2026-07-09 변경 — "거리에 비례해서 안 나오게 하면 안 되는 거 아니야?"]
+        ///   예전엔 철갑 발사와 같은 "원거리" 구간(10m 이상)에서만 후보에 들어갔습니다. 거리로
+        ///   막는 하드 컷 자체를 없애고, 다리가 안 부러진 이상 거리와 무관하게 항상 후보에
+        ///   들어가도록 바꿨습니다(룰렛휠 가중치로 빈도를 조절하는 건 별개 문제입니다).
         /// - 철갑 폭우(3, 2페이즈): 범위 공격 — 범위 안일 때만(근접/원거리 구분과 무관).
         /// </summary>
         private bool IsPatternViableAtDistance(int index, float distance)
@@ -947,7 +1005,7 @@ namespace KillRitual.Enemies
                 case 2:
                     bool legsBroken = (_frontLegs != null && _frontLegs.IsBroken) ||
                                        (_backLegs != null && _backLegs.IsBroken);
-                    return !legsBroken && distance >= _trunkStrikeRange;
+                    return !legsBroken;
                 case 3: return distance <= _armorRainRadius;
                 default: return true;
             }
@@ -1157,6 +1215,22 @@ namespace KillRitual.Enemies
         }
 
         /// <summary>
+        /// [2026-07-09 신규] _head(없으면 보스 루트) 기준 플레이어와의 수평(XZ) 거리입니다.
+        /// TryHitTrunkStrike()의 실제 명중 판정과 PickPatternIndex()의 패턴 선택이 서로 다른
+        /// 기준점(루트 vs 머리)으로 거리를 재던 불일치를 없애기 위해, 두 곳 모두 이 메서드
+        /// 하나만 쓰도록 통일했습니다.
+        /// </summary>
+        private float DistanceToPlayerFromHead()
+        {
+            if (_player == null) return float.MaxValue;
+
+            Vector3 originPos = _head != null ? _head.Position : transform.position;
+            Vector3 toPlayer = _player.position - originPos;
+            toPlayer.y = 0f;
+            return toPlayer.magnitude;
+        }
+
+        /// <summary>
         /// [2026-07-07 변경] "꼬리 콜라이더를 기준으로 가자"는 요청 반영 — 판정 원점을 보스 루트
         /// (transform.position)가 아니라 실제 꼬리(_tail) 콜라이더 위치로 바꿨습니다.
         /// [2026-07-07 재수정 - 범위 버그 수정] 처음엔 "몸 뒤쪽만" 맞도록 각도까지 제한했는데,
@@ -1168,16 +1242,14 @@ namespace KillRitual.Enemies
         /// 정작 판정 기준점은 꼬리(_tail)에 그대로 둔 채였습니다 — 물기인데 꼬리를 기준으로 맞고
         /// 안 맞고가 갈리는 건 앞뒤가 안 맞아서, 기준점을 머리(_head) 콜라이더 위치로 바꿨습니다.
         /// _head가 비어있으면(아직 안 연결했으면) 보스 루트 위치로 대체합니다.
+        /// [2026-07-09 재수정 - 선택/실행 기준점 불일치 수정] 거리 계산을 DistanceToPlayerFromHead()로
+        /// 통일해서, 패턴 선택 단계와 실제 명중 판정이 서로 다른 기준점을 쓰던 문제를 없앴습니다.
         /// </summary>
         private void TryHitTrunkStrike()
         {
             if (_player == null) return;
 
-            Vector3 originPos = _head != null ? _head.Position : transform.position;
-
-            Vector3 toPlayer = _player.position - originPos;
-            toPlayer.y = 0f;
-            float distance = toPlayer.magnitude;
+            float distance = DistanceToPlayerFromHead();
             if (distance > _trunkStrikeRange)
             {
                 Debug.Log($"[불가살이] 물기 판정 - 빗나감 (거리 {distance:F2}m > 사거리 {_trunkStrikeRange}m)");
@@ -1187,6 +1259,12 @@ namespace KillRitual.Enemies
             IDamageable target = FindPlayerDamageable(_player);
             if (target == null || target.IsDead) return;
 
+            // [2026-07-09 변경] originPos/toPlayer가 DistanceToPlayerFromHead()로 옮겨가면서
+            // 이 메서드 안에서 다시 필요해져 동일한 방식으로 재계산합니다(거리 재는 기준은
+            // DistanceToPlayerFromHead()와 완전히 동일 — _head 우선, 없으면 보스 루트).
+            Vector3 originPos = _head != null ? _head.Position : transform.position;
+            Vector3 toPlayer = _player.position - originPos;
+            toPlayer.y = 0f;
             Vector3 hitDirection = distance > 0.0001f ? toPlayer.normalized : transform.forward;
             var context = new KRDamageContext(_trunkDamage, KRDamageType.Fire, _player.position, hitDirection);
             Debug.Log($"[불가살이] 물기 판정 - 명중 (원점 {originPos}, 거리 {distance:F2}m, 사거리 {_trunkStrikeRange}m)");

@@ -49,12 +49,21 @@ namespace KillRitual.Core.Damage
         /// <summary>데미지가 들어온 방향. 히트 리액션 연출 등에 사용됩니다.</summary>
         public readonly Vector3 Direction;
 
-        public KRDamageContext(float damageAmount, KRDamageType type, Vector3 hitPoint, Vector3 direction)
+        /// <summary>
+        /// [2026-07-09 신규] 무령(패링)으로 반사한 투사체(KRMuryeongProjectile)에 의한 피해인지
+        /// 여부입니다. "보스 부위파괴는 무령 반사탄으로만 가능" 같은 특수 규칙 판정에 씁니다.
+        /// 기본값 false — 생성자 마지막에 선택적 매개변수로 추가했으므로 기존 호출부(4개 인자만
+        /// 넘기던 곳)는 전부 그대로 컴파일되고 자동으로 false가 채워집니다.
+        /// </summary>
+        public readonly bool IsMuryeongReflected;
+
+        public KRDamageContext(float damageAmount, KRDamageType type, Vector3 hitPoint, Vector3 direction, bool isMuryeongReflected = false)
         {
             DamageAmount = damageAmount;
             Type = type;
             HitPoint = hitPoint;
             Direction = direction;
+            IsMuryeongReflected = isMuryeongReflected;
         }
     }
 }

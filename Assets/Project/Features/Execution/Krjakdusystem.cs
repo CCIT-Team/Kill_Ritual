@@ -386,7 +386,16 @@ namespace KillRitual.Player.Combat
         {
             // 기획 3-5: 적중 보상과 처치 보상은 대상마다 개별 지급하지 않고,
             // 이번 작두 발동에서 발생한 모든 대상의 보상을 전부 합산한 뒤 딱 한 번만 자원으로 환산합니다.
-            float totalDropRatio = 0f;
+            //
+            // [2026-07-09 변경 — 그리디 냅색(Greedy Knapsack) 적용]
+            // 예전에는 보상을 순서 상관없이 다 더한 뒤 총합만 상한(_dropCap)으로 잘랐습니다.
+            // 그러면 상한을 넘겼을 때 "누구 보상이 깎였는지"가 불명확했고, 보스를 같이 잡아도
+            // 잡몹 보상들 사이에서 비례로 뭉개질 수 있었습니다. 이제는 대상별 보상을 먼저
+            // 리스트에 모아뒀다가 가치(dropRatio)가 큰 순서로 정렬해서, 상한이 찰 때까지 높은
+            // 가치부터 순서대로 채택합니다 — 냅색 문제의 그리디 근사(가치 큰 것부터 담다가
+            // 용량이 차면 멈춤)와 동일한 방식입니다. 보스/정예 보상은 상한 안에서 항상 먼저
+            // 보장되고, 상한을 넘겨서 버려지는 몫은 가치가 낮은 잡몹 쪽부터 깎입니다.
+            var rewards = new System.Collections.Generic.List<(float ratio, Vector3 position)>();
 
             // [2026-07-08 신규] "적 위치에 소환되도록" 요청 반영 — 보상에 실제로 기여한 대상들의
             // 위치를 모아뒀다가, 나중에 그 평균 위치에서 탄약 조각을 흩뿌립니다(여러 마리를 한 번에
@@ -411,14 +420,12 @@ namespace KillRitual.Player.Combat
                     bool killed = ApplyDamage(target, damage);
 
                     // 기획 3-5: 적중 보상과 처치 보상은 중복 지급하지 않습니다(killed일 때만 처치 보상).
+                    // [2026-07-09 변경] 데미지는 지금까지와 완전히 동일하게 전원에게 적용하고,
+                    // 보상만 즉시 합산하지 않고 리스트에 모아뒀다가 뒤에서 가치순으로 골라냅니다.
                     float dropRatio = CalculateDropRatio(grade, killed);
-                    totalDropRatio += dropRatio;
 
                     if (dropRatio > 0f)
-                    {
-                        dropPositionSum += targetPosition;
-                        dropPositionCount++;
-                    }
+                        rewards.Add((dropRatio, targetPosition));
 
                     // TODO(넉백/경직): 기획 3-4 — 튼튼한 잡졸(장거리 넉백)/갑사(중거리 넉백)/
                     // 장령(짧은 경직)/보스(넉백 없음) 반응은 아직 구현하지 않았습니다. 별도 작업 필요.
@@ -429,8 +436,21 @@ namespace KillRitual.Player.Combat
                 IsSelfExecuting = false;
             }
 
-            // 기획 3-5: 1회 작두 최대 드랍 상한(70%) 적용
-            totalDropRatio = Mathf.Min(totalDropRatio, _dropCap);
+            // [2026-07-09 변경 — 그리디 냅색] 가치 내림차순 정렬 후 상한이 찰 때까지 채택합니다.
+            // 작두 한 번에 맞는 대상 수가 한 자릿수 수준이라 정렬 비용은 사실상 무시할 수 있습니다.
+            rewards.Sort((a, b) => b.ratio.CompareTo(a.ratio));
+
+            float totalDropRatio = 0f;
+
+            foreach (var reward in rewards)
+            {
+                // 상한을 넘기는 순간부터는 남은(가치가 더 낮은) 보상을 전부 포기합니다.
+                if (totalDropRatio + reward.ratio > _dropCap) break;
+
+                totalDropRatio += reward.ratio;
+                dropPositionSum += reward.position;
+                dropPositionCount++;
+            }
 
             if (totalDropRatio > 0f)
             {
@@ -438,12 +458,17 @@ namespace KillRitual.Player.Combat
                     ? dropPositionSum / dropPositionCount
                     : transform.position + transform.forward;
 
-                // [2026-07-08 신규] "슬롯 잠금의 총이 아닌 모든 총알이 나오게" 요청 반영 — 예전엔
-                // GetLowestRatioElement()로 고른 속성 하나에만 보상을 전부 몰아줬는데, 이제 5속성
-                // (화/수/목/토/금) 전부에 나눠서 흩뿌립니다. 총 보상 가치가 그냥 5배로 뻥튀기되지
-                // 않도록, totalDropRatio를 속성 개수로 나눠서 똑같이 배분합니다 — 합쳐보면 예전에
-                // 한 속성에 몰아주던 총량과 동일합니다.
-                float perElementRatio = totalDropRatio / _allElements.Length;
+                // [2026-07-09 변경 — 워터필링(Water-Filling) 알고리즘 적용]
+                // 예전엔 totalDropRatio를 속성 개수로 그냥 나눠서 5속성에 똑같이 배분했습니다.
+                // 문제는 이미 자원이 가득 찬 속성한테도 똑같은 비율을 주면 그만큼이 SpawnAmmoOrb()의
+                // "즉시 흡수(canReceive)" 단계에서 못 들어가고 바로 오브로 흘러넘친다는 점입니다 —
+                // 반대로 텅 빈 속성은 더 받을 수 있는데도 균등 배분 때문에 못 받는 몫이 생깁니다.
+                // 워터필링은 무선통신 채널별 전력 분배 이론에서 쓰는 방식으로, "이미 채워진 그릇"보다
+                // "비어있는 그릇"부터 우선 채우고, 남는 예산은 다음으로 낮은 그릇들에 순서대로
+                // 넘겨가며 채웁니다(그릇 = 5속성, 물 = totalDropRatio). 각 속성의 "현재 채워진 비율"
+                // (GetResourceRatio, 0~1)을 기준으로 계산하므로 속성마다 최대치가 달라도 공평하게
+                // 비교됩니다.
+                float[] waterFilledRatio = ComputeWaterFillingAllocation(totalDropRatio);
 
                 // [2026-07-08 수정 — "중점에서 지름으로 퍼지는 방식으로 하고 싶은데"]
                 // 이전엔 겹침을 막으려고 반지름을 크게 벌려서(4m) 스폰 자체를 이미 퍼진 위치에서
@@ -458,7 +483,7 @@ namespace KillRitual.Player.Combat
                 float burstBaseAngle = Random.Range(0f, 360f);
                 for (int i = 0; i < _allElements.Length; i++)
                 {
-                    SpawnAmmoOrb(_allElements[i], perElementRatio, dropPosition, i, burstBaseAngle, burstColliders);
+                    SpawnAmmoOrb(_allElements[i], waterFilledRatio[i], dropPosition, i, burstBaseAngle, burstColliders);
                 }
                 IgnoreCollisionsWithinBurst(burstColliders);
             }
@@ -513,6 +538,96 @@ namespace KillRitual.Player.Combat
                 EnemyGrade.Boss => killed ? _dropBossKill : _dropBossHit,
                 _ => 0f,
             };
+        }
+
+        /// <summary>
+        /// [2026-07-09 신규 — 워터필링(Water-Filling) 알고리즘]
+        /// 무선통신에서 채널별 전력을 분배할 때 쓰는 방식을 5속성 탄약 분배에 적용했습니다.
+        /// 각 속성을 "그릇", totalRatioBudget을 그릇에 붓는 "물"이라고 보면:
+        ///   1) 지금 가장 비어있는(GetResourceRatio가 가장 낮은) 그릇부터 채웁니다.
+        ///   2) 그 그릇이 바로 다음으로 낮은 그릇의 수위와 같아지면, 그 둘을 묶어서 같이 채웁니다.
+        ///   3) 물이 바닥날 때까지, 또는 모든 그릇이 상한(1.0 = 가득 참)에 도달할 때까지 반복합니다.
+        ///   4) 마지막에 물이 모자라면, 그 시점에 가장 낮은 그룹끼리 남은 물을 균등하게 나눠 갖습니다.
+        /// 결과적으로 텅 빈 속성을 우선 채우고, 이미 가득 찬 속성에는 배분하지 않습니다(SpawnAmmoOrb()의
+        /// 즉시 흡수 단계에서 낭비되지 않도록). _ammoOrbEnabled로 꺼둔 속성은 애초에 물을 못 받는
+        /// 그릇으로 취급해 제외합니다.
+        /// </summary>
+        /// <returns>_allElements와 같은 순서의 배열. 각 원소는 SpawnAmmoOrb()에 그대로 넘길 비율입니다.</returns>
+        private float[] ComputeWaterFillingAllocation(float totalRatioBudget)
+        {
+            int n = _allElements.Length;
+            float[] level = new float[n];      // 현재 채워진 비율 (0~1)
+            float[] allocated = new float[n];   // 이번에 배분할 비율
+            bool[] capped = new bool[n];        // 더 못 받는 속성(상한 도달 또는 드롭 비활성화)
+            int uncappedCount = n;
+
+            for (int i = 0; i < n; i++)
+            {
+                int elementIdx = (int)_allElements[i];
+                bool dropEnabled = _ammoOrbEnabled == null || elementIdx < 0
+                    || elementIdx >= _ammoOrbEnabled.Length || _ammoOrbEnabled[elementIdx];
+
+                if (!dropEnabled)
+                {
+                    capped[i] = true;
+                    uncappedCount--;
+                    continue;
+                }
+
+                level[i] = _combatSystem != null ? _combatSystem.GetResourceRatio(_allElements[i]) : 0f;
+            }
+
+            float remaining = totalRatioBudget;
+
+            while (remaining > 0.0001f && uncappedCount > 0)
+            {
+                // 아직 상한에 안 걸린 속성 중 가장 낮은 수위를 찾습니다.
+                float lowest = float.MaxValue;
+                for (int i = 0; i < n; i++)
+                    if (!capped[i] && level[i] < lowest) lowest = level[i];
+
+                // 그 다음으로 낮은 수위(=이번에 채울 수 있는 상한선)를 찾습니다. 없으면 1.0까지.
+                float nextTier = 1f;
+                for (int i = 0; i < n; i++)
+                    if (!capped[i] && level[i] > lowest && level[i] < nextTier) nextTier = level[i];
+
+                int lowestGroupCount = 0;
+                for (int i = 0; i < n; i++)
+                    if (!capped[i] && Mathf.Approximately(level[i], lowest)) lowestGroupCount++;
+
+                float costToRaiseGroup = (nextTier - lowest) * lowestGroupCount;
+
+                if (remaining >= costToRaiseGroup)
+                {
+                    // 예산이 충분하면 이 그룹 전원을 nextTier까지 채우고 다음 단계로 넘어갑니다.
+                    for (int i = 0; i < n; i++)
+                    {
+                        if (capped[i] || !Mathf.Approximately(level[i], lowest)) continue;
+
+                        allocated[i] += nextTier - level[i];
+                        level[i] = nextTier;
+
+                        if (level[i] >= 1f - 0.0001f)
+                        {
+                            capped[i] = true;
+                            uncappedCount--;
+                        }
+                    }
+                    remaining -= costToRaiseGroup;
+                }
+                else
+                {
+                    // 예산이 모자라면 지금 그룹끼리 남은 예산을 균등하게 나눠 갖고 종료합니다.
+                    float share = remaining / lowestGroupCount;
+                    for (int i = 0; i < n; i++)
+                        if (!capped[i] && Mathf.Approximately(level[i], lowest))
+                            allocated[i] += share;
+
+                    remaining = 0f;
+                }
+            }
+
+            return allocated;
         }
 
         /// <summary>

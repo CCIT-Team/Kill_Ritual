@@ -25,6 +25,7 @@ namespace KillRitual.Enemies
     public sealed class KRBossArmorShard : MonoBehaviour
     {
         private Rigidbody _rigidbody;
+        private SphereCollider _sphereCollider;
 
         private Vector3 _velocity;
         private float _damage;
@@ -86,6 +87,7 @@ namespace KillRitual.Enemies
 
             Collider col = GetComponent<Collider>();
             col.isTrigger = true;
+            _sphereCollider = col as SphereCollider;
 
             Transform visual = transform.Find("Visual");
             if (visual != null)
@@ -100,15 +102,43 @@ namespace KillRitual.Enemies
             if (_stuck) return;
             if (_velocity.sqrMagnitude <= 0f) return;
 
+            float moveDistance = _velocity.magnitude * Time.fixedDeltaTime;
+            Vector3 direction = _velocity.normalized;
+            float castRadius = _sphereCollider != null ? _sphereCollider.radius : 0.08f;
+
+            // [2026-07-10 신규 — "투사체가 땅/벽에 안 박힌다" 버그 수정]
+            // 원인은 레이어 충돌 매트릭스가 아니었습니다(Environment 레이어는 이미 켜져 있음).
+            // 실제 원인은 터널링입니다: 콜라이더 반지름이 0.08m로 작은데(과거 "너무 멀리서도
+            // 맞는다" 버그를 고치며 줄임), 속도는 초당 20m 안팎 — Fixed Timestep 0.02초 기준
+            // 한 스텝에 약 0.4m씩 이동합니다. Trigger 콜라이더의 OnTriggerEnter는 스텝이 끝난
+            // "그 순간"의 겹침 여부만 검사하는 이산(discrete) 판정이라(Continuous Speculative는
+            // Rigidbody 간의 물리적 충돌 해석에만 적용되고 트리거 겹침 검사에는 영향이 없음),
+            // 지름 0.16m짜리 콜라이더가 스텝당 0.4m를 이동하면 땅/벽 두께를 그냥 건너뛰어버려
+            // OnTriggerEnter 자체가 아예 발생하지 않는 경우가 생깁니다.
+            // 이동시키기 전에 SphereCast로 이번 스텝이 지나갈 경로를 먼저 검사해서, 터널링으로
+            // 놓칠 뻔한 충돌을 미리 잡아냅니다. QueryTriggerInteraction.Ignore로 다른 트리거
+            // 콜라이더(흡수 범위 등)는 애초에 검사 대상에서 제외합니다.
+            if (Physics.SphereCast(_rigidbody.position, castRadius, direction, out RaycastHit hit, moveDistance,
+                    _hitLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                if (!IsIgnoredCollider(hit.collider))
+                {
+                    ResolveHit(hit.collider, hit.point);
+                    if (_stuck) return;
+                }
+            }
+
             // [2026-07-08 변경] Kinematic Rigidbody는 transform.position을 직접 바꾸는 대신
             // MovePosition()으로 옮겨야 트리거 이벤트가 프레임 사이에서도 안정적으로 발생합니다.
             _rigidbody.MovePosition(_rigidbody.position + _velocity * Time.fixedDeltaTime);
         }
 
-        private void OnTriggerEnter(Collider other)
+        /// <summary>
+        /// [2026-07-10 신규] OnTriggerEnter와 SphereCast 예비검사 양쪽에서 공통으로 쓰는
+        /// 무시 대상 필터입니다(다른 철갑 조각 / 발사 주체 자신의 부위 콜라이더).
+        /// </summary>
+        private bool IsIgnoredCollider(Collider other)
         {
-            if (_stuck) return;
-
             // [2026-07-08 신규 — "생겼다가 그 자리에 멈춤" 버그의 실제 원인]
             // 철갑 발사 패턴은 한쪽 어깨에서 여러 발(기본 3발)을 "같은 muzzle.position"에서
             // 방향만 다르게 동시에 Instantiate합니다. 그러면 스폰되는 순간부터 이 조각들의
@@ -117,17 +147,26 @@ namespace KillRitual.Enemies
             // 보스 소유물이지만 서로는 보스 계층의 자식이 아니라 각자 독립된 루트 오브젝트라
             // IsOwnerHierarchy 체크도 통과하지 못해서 "그냥 벽에 맞은 것"으로 처리되어 그 자리에서
             // 즉시 멈춰버렸습니다. 다른 철갑 조각끼리는 아예 판정 대상에서 제외해 원천 차단합니다.
-            if (other.GetComponentInParent<KRBossArmorShard>() != null) return;
-
-            // [2026-07-08 신규] hitLayerMask에 안 걸리는 대상(예: 다른 투사체, 이펙트 전용 레이어 등)은
-            // 아예 무시합니다 — 레이캐스트 시절의 hitLayerMask 필터링을 그대로 이어받은 것입니다.
-            if (((1 << other.gameObject.layer) & _hitLayerMask.value) == 0) return;
+            if (other.GetComponentInParent<KRBossArmorShard>() != null) return true;
 
             // [2026-07-08 신규] 발사 위치(어깨 머즐)가 보스 자신의 부위 콜라이더 바로 옆이라, 맨 첫
             // 프레임에 자기 자신의 Head/Body 등 부위 콜라이더를 트리거로 맞힐 수 있습니다.
             // ReferenceEquals(target, _owner)만으로는 "부위 컴포넌트 != 보스 본체 컴포넌트"라
             // 못 걸러지므로, 계층구조 루트(transform.root)가 발사 주체와 같은지로 직접 판정합니다.
-            if (IsOwnerHierarchy(other)) return;
+            if (IsOwnerHierarchy(other)) return true;
+
+            return false;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (_stuck) return;
+
+            if (IsIgnoredCollider(other)) return;
+
+            // [2026-07-08 신규] hitLayerMask에 안 걸리는 대상(예: 다른 투사체, 이펙트 전용 레이어 등)은
+            // 아예 무시합니다 — 레이캐스트 시절의 hitLayerMask 필터링을 그대로 이어받은 것입니다.
+            if (((1 << other.gameObject.layer) & _hitLayerMask.value) == 0) return;
 
             // [2026-07-08 신규 — "맞지 않았는데 맞았다고 뜬다" 버그의 실제 원인]
             // 로그로 확인해보니 실제로 맞은 콜라이더가 플레이어 몸이 아니라 "Absortion Collider"
@@ -141,7 +180,16 @@ namespace KillRitual.Enemies
             if (other.isTrigger) return;
 
             Vector3 point = other.ClosestPoint(transform.position);
+            ResolveHit(other, point);
+        }
 
+        /// <summary>
+        /// [2026-07-10 신규] OnTriggerEnter와 SphereCast 예비검사(FixedUpdate)가 공유하는 실제
+        /// 피격 처리 로직입니다. 원래 OnTriggerEnter 안에 있던 내용을 그대로 옮겼습니다 —
+        /// 판정 결과(피해 적용 후 파괴 / 바닥에 박힘 / 이미 죽은 대상이라 무시)는 동일합니다.
+        /// </summary>
+        private void ResolveHit(Collider other, Vector3 point)
+        {
             // [2026-07-08 변경] KRBossChargeHitbox와 동일한 우선순위 — Combat 레지스트리에 기대지
             // 않고 GetComponentInParent로 직접 찾습니다(플레이어가 그 레지스트리에 등록되어 있지
             // 않아서 겪었던 문제를 원천적으로 피합니다).
@@ -161,6 +209,7 @@ namespace KillRitual.Enemies
                 // 플레이어(또는 다른 피격 대상)를 직접 맞췄으면 즉시 피해를 주고 사라집니다.
                 var context = new KRDamageContext(_damage, KRDamageType.Metal, point, _velocity.normalized);
                 target.TakeDamage(context);
+                _stuck = true; // FixedUpdate 쪽에서 이번 스텝 MovePosition을 건너뛰게 함.
                 Destroy(gameObject);
                 return;
             }

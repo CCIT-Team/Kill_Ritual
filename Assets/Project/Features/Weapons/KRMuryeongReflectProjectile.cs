@@ -7,14 +7,14 @@ using UnityEngine;
 namespace KillRitual.Enemies.Projectiles
 {
     /// <summary>
-    /// ¹«·ÉÀ¸·Î ¹İ»ç ¼º°ø ½Ã »õ·Î »ı¼ºµÇ´Â Àü¿ë Åõ»çÃ¼.
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½İ»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼.
     ///
     /// Æ¯Â¡:
-    /// - ±âÁ¸ EnemyProjectileÀ» Àç»ç¿ëÇÏÁö ¾ÊÀ½.
-    /// - Rigidbody / Trigger Ãæµ¹¿¡ ÀÇÁ¸ÇÏÁö ¾Ê°í SphereCast·Î Á÷Á¢ Ãæµ¹ °Ë»ç.
-    /// - »ı¼º Á÷ÈÄ ¹Ù·Î Æø¹ßÇÏÁö ¾Êµµ·Ï Arm Delay / Arm Distance¸¦ µÒ.
-    /// - ½ÇÁ¦·Î Àû/º®/ÁöÇü¿¡ ´ê¾ÒÀ» ¶§¸¸ Æø¹ß.
-    /// - µ¥¹ÌÁö´Â ÀÌ ½ºÅ©¸³Æ®ÀÇ ÀÎ½ºÆåÅÍ °ª ÇÏ³ª¸¸ »ç¿ë.
+    /// - ï¿½ï¿½ï¿½ï¿½ EnemyProjectileï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
+    /// - Rigidbody / Trigger ï¿½æµ¹ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê°ï¿½ SphereCastï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹ ï¿½Ë»ï¿½.
+    /// - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Êµï¿½ï¿½ï¿½ Arm Delay / Arm Distanceï¿½ï¿½ ï¿½ï¿½.
+    /// - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½/ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
+    /// - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ï³ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRMuryeongProjectile : MonoBehaviour
@@ -24,44 +24,44 @@ namespace KillRitual.Enemies.Projectiles
         [SerializeField] private float _lifeTime = 3f;
 
         [Header("Arming")]
-        [Tooltip("»ı¼º Á÷ÈÄ ÀÌ ½Ã°£ µ¿¾ÈÀº Ãæµ¹/Æø¹ß ÆÇÁ¤À» ÇÏÁö ¾Ê½À´Ï´Ù. »ı¼º À§Ä¡ ÁÖº¯ Äİ¶óÀÌ´õ¿¡ ¹Ù·Î ÅÍÁö´Â ¹®Á¦ ¹æÁö¿ë.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹/ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê½ï¿½ï¿½Ï´ï¿½. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½Öºï¿½ ï¿½İ¶ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ ï¿½Ù·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.")]
         [Min(0f)]
         [SerializeField] private float _armDelay = 0.05f;
 
-        [Tooltip("»ı¼º À§Ä¡¿¡¼­ ÀÌ °Å¸®¸¸Å­ ÀÌµ¿ÇÏ±â Àü±îÁö´Â Ãæµ¹/Æø¹ß ÆÇÁ¤À» ÇÏÁö ¾Ê½À´Ï´Ù.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Å¸ï¿½ï¿½ï¿½Å­ ï¿½Ìµï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹/ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê½ï¿½ï¿½Ï´ï¿½.")]
         [Min(0f)]
         [SerializeField] private float _armDistance = 0.6f;
 
         [Header("Hit Check")]
-        [Tooltip("¹«·ÉÅºÀÌ Ãæµ¹ÇÒ ¼ö ÀÖ´Â ·¹ÀÌ¾î. Enemy, Boss, Ground µîÀ» Æ÷ÇÔÇÏ¼¼¿ä. Player, Projectile, EnemyProjectileÀº »©´Â °É ±ÇÀåÇÕ´Ï´Ù.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½Åºï¿½ï¿½ ï¿½æµ¹ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½. Enemy, Boss, Ground ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¼ï¿½ï¿½ï¿½. Player, Projectile, EnemyProjectileï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.")]
         [SerializeField] private LayerMask _hitMask = ~0;
 
-        [Tooltip("ºü¸¥ Åõ»çÃ¼°¡ ÀûÀ» ¶Õ°í Áö³ª°¡Áö ¾Êµµ·Ï ÇÏ´Â SphereCast ¹İ°æ.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Õ°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Êµï¿½ï¿½ï¿½ ï¿½Ï´ï¿½ SphereCast ï¿½İ°ï¿½.")]
         [Min(0.01f)]
         [SerializeField] private float _hitRadius = 0.35f;
 
         [Header("Damage")]
-        [Tooltip("¹«·ÉÅºÀÇ µ¥¹ÌÁö. Á÷Á¢ Å¸°İ°ú Æø¹ß ¸ğµÎ ÀÌ °ªÀ» »ç¿ëÇÕ´Ï´Ù.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½Åºï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½İ°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.")]
         [Min(0f)]
         [SerializeField] private float _damage = 30f;
 
         [SerializeField] private KRDamageType _damageType = KRDamageType.Fire;
 
         [Header("Explosion")]
-        [Tooltip("ÄÑÁ® ÀÖÀ¸¸é Àû/º®/ÁöÇü¿¡ ´ê¾ÒÀ» ¶§ Æø¹ßÇÕ´Ï´Ù.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½/ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.")]
         [SerializeField] private bool _explodeOnHit = true;
 
-        [Tooltip("Æø¹ß ¹İ°æ. Explode On Hit°¡ ÄÑÁ® ÀÖÀ» ¶§¸¸ »ç¿ëµË´Ï´Ù.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½İ°ï¿½. Explode On Hitï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ë´Ï´ï¿½.")]
         [Min(0f)]
         [SerializeField] private float _explosionRadius = 2.5f;
 
-        [Tooltip("Æø¹ß µ¥¹ÌÁö¸¦ ¹ŞÀ» ·¹ÀÌ¾î. º¸Åë Enemy, Boss¸¸ ³Ö°í Ground´Â »©¼¼¿ä.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½. ï¿½ï¿½ï¿½ï¿½ Enemy, Bossï¿½ï¿½ ï¿½Ö°ï¿½ Groundï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.")]
         [SerializeField] private LayerMask _explosionDamageMask = ~0;
 
-        [Tooltip("Æø¹ß ½Ã°¢È¿°ú ÇÁ¸®ÆÕ. ºñ¿öµÎ¸é µ¥¹ÌÁö¸¸ Àû¿ëµË´Ï´Ù.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ë´Ï´ï¿½.")]
         [SerializeField] private GameObject _explosionVfxPrefab;
 
-        [Tooltip("Æø¹ß VFX ÀÚµ¿ Á¦°Å ½Ã°£. ÆÄÆ¼Å¬ÀÌ ÀÚÃ¼ Á¦°ÅµÇ¸é 0À¸·Î µÖµµ µË´Ï´Ù.")]
+        [Tooltip("ï¿½ï¿½ï¿½ï¿½ VFX ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½. ï¿½ï¿½Æ¼Å¬ï¿½ï¿½ ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ÅµÇ¸ï¿½ 0ï¿½ï¿½ï¿½ï¿½ ï¿½Öµï¿½ ï¿½Ë´Ï´ï¿½.")]
         [Min(0f)]
         [SerializeField] private float _explosionVfxLifeTime = 2f;
 
@@ -106,8 +106,8 @@ namespace KillRitual.Enemies.Projectiles
             Vector3 startPosition = transform.position;
             Vector3 nextPosition = startPosition + _direction * moveDistance;
 
-            // »ı¼º Á÷ÈÄ¿¡´Â ¸ÕÀú ÀÌµ¿¸¸ ½ÃÅ´.
-            // ÀÌ ±¸°£¿¡¼­ SphereCast¸¦ ÇÏÁö ¾ÊÀ¸¹Ç·Î ¹İ»ç ¼ø°£ ¹Ù·Î Æø¹ßÇÏÁö ¾ÊÀ½.
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ìµï¿½ï¿½ï¿½ ï¿½ï¿½Å´.
+            // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ SphereCastï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ ï¿½İ»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
             if (!IsArmed())
             {
                 transform.position = nextPosition;
@@ -196,8 +196,8 @@ namespace KillRitual.Enemies.Projectiles
             if (impactPoint == Vector3.zero)
                 impactPoint = transform.position;
 
-            // Æø¹ßÀ» Ä×À¸¸é "Á÷Á¢ Å¸°İ µ¥¹ÌÁö"°¡ ¾Æ´Ï¶ó Æø¹ß µ¥¹ÌÁö¸¸ Ã³¸®.
-            // Áï, Àû¿¡°Ô ´ê´Â ¼ø°£ Æø¹ßÇÏ°í, Æø¹ß ¹üÀ§ ¾È ´ë»óÀÌ ÇÇÇØ¸¦ ¹ŞÀ½.
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ "ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"ï¿½ï¿½ ï¿½Æ´Ï¶ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½.
+            // ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½, ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ø¸ï¿½ ï¿½ï¿½ï¿½ï¿½.
             if (_explodeOnHit && _explosionRadius > 0f)
             {
                 SpawnExplosionVfx(impactPoint, hit.normal);
@@ -228,11 +228,15 @@ namespace KillRitual.Enemies.Projectiles
             if (target.IsDead)
                 return;
 
+            // [2026-07-09 ì‹ ê·œ] isMuryeongReflected: true â€” "ë³´ìŠ¤ ë¶€ìœ„íŒŒê´´ëŠ” ë¬´ë ¹ ë°˜ì‚¬íƒ„ìœ¼ë¡œë§Œ
+            // ê°€ëŠ¥" ê·œì¹™ íŒì •ìš© í‘œì‹ì…ë‹ˆë‹¤. KRBossBodyPart.TakeDamage()ê°€ ì´ í”Œë˜ê·¸ë¥¼ ë³´ê³ 
+            // ë¶€ìœ„ ì²´ë ¥ ì°¨ê°(íŒŒê´´ íŒì •) ì—¬ë¶€ë¥¼ ê²°ì •í•©ë‹ˆë‹¤.
             KRDamageContext context = new KRDamageContext(
                 _damage,
                 _damageType,
                 hitPoint,
-                _direction);
+                _direction,
+                isMuryeongReflected: true);
 
             target.TakeDamage(context);
         }
@@ -273,11 +277,13 @@ namespace KillRitual.Enemies.Projectiles
 
                 Vector3 hitPoint = hit.ClosestPoint(center);
 
+                // [2026-07-09 ì‹ ê·œ] ìœ„ ApplyDirectDamage()ì™€ ë™ì¼í•œ ì´ìœ ë¡œ isMuryeongReflected: true.
                 KRDamageContext context = new KRDamageContext(
                     _damage,
                     _damageType,
                     hitPoint,
-                    _direction);
+                    _direction,
+                    isMuryeongReflected: true);
 
                 target.TakeDamage(context);
             }

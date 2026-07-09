@@ -122,8 +122,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _dropType: 2
   _restoreAmount: 25
-  _collectRange: 0.5
+  _collectRange: 1.2
+  _midairCollectRadius: 0.6
+  _fallGravityMultiplier: 2.5
+  _fallAccelRampTime: 0.3
   _lifetime: 12
+  _showTrail: 1
+  _trailTime: 0.35
+  _trailStartWidth: 0.15
+  _trailEndWidth: 0.02
+  _floatAfterLanding: 1
+  _floatHeight: 0.35
+  _floatBobAmplitude: 0.08
+  _floatBobSpeed: 2
+  _floatRiseDuration: 0.4
 --- !u!54 &3206457576950697060
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -47,6 +47,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea3b4f4d9693af24aa4c040a1157c576, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _explosionRingColor: {r: 1, g: 0.2, b: 0, a: 1}
+  _explosionRingSegments: 32
 --- !u!54 &7700000000001004
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -63,7 +65,7 @@ Rigidbody:
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8388608
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 4194304
