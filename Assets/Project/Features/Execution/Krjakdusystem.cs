@@ -558,7 +558,8 @@ namespace KillRitual.Player.Combat
             int n = _allElements.Length;
             float[] level = new float[n];      // 현재 채워진 비율 (0~1)
             float[] allocated = new float[n];   // 이번에 배분할 비율
-            bool[] capped = new bool[n];        // 더 못 받는 속성(상한 도달 또는 드롭 비활성화)
+            bool[] disabled = new bool[n];      // [2026-07-10 신규] 드롭 자체가 꺼진 속성(절대 배분 안 함)
+            bool[] capped = new bool[n];        // 이번 "우선순위로 채우기" 단계에서 더 안 받는 속성(비활성 포함)
             int uncappedCount = n;
 
             for (int i = 0; i < n; i++)
@@ -569,6 +570,7 @@ namespace KillRitual.Player.Combat
 
                 if (!dropEnabled)
                 {
+                    disabled[i] = true;
                     capped[i] = true;
                     uncappedCount--;
                     continue;
@@ -624,6 +626,31 @@ namespace KillRitual.Player.Combat
                             allocated[i] += share;
 
                     remaining = 0f;
+                }
+            }
+
+            // [2026-07-10 신규 — "처치해도 자원이 아예 안 나온다" 버그 수정]
+            // 위 while문은 "이미 가득 찬(1.0) 속성엔 우선순위를 안 준다"까지만 하는 역할인데,
+            // 5속성이 전부 가득 차서 uncappedCount가 0이 되면 while문이 그냥 끝나버리고 remaining에
+            // 남은 예산은 아무한테도 안 가고 버려졌습니다. totalDropRatio는 분명히 0보다 큰데
+            // waterFilledRatio 전부가 0이 되어 SpawnAmmoOrb()가 즉시 return — 처치해도 오브가
+            // 하나도 안 나오는 버그였습니다.
+            // 기획 4-4 원래 의도는 "가득 찬 속성도 초과분은 오브로 드롭"이므로, 우선순위 채우기가
+            // 끝난 뒤 남은 예산은 드롭이 꺼진 속성(disabled)만 빼고 전부에게 균등하게 마저
+            // 나눠줍니다. 이미 가득 찬 속성은 SpawnAmmoOrb()의 즉시 흡수 단계(canReceive=0)에서
+            // 자동으로 걸러지고 그 몫이 전부 물리 오브(초과분)로 드롭됩니다 — 낭비가 아니라
+            // 원래 설계된 오버플로우 경로입니다.
+            if (remaining > 0.0001f)
+            {
+                int spillCount = 0;
+                for (int i = 0; i < n; i++)
+                    if (!disabled[i]) spillCount++;
+
+                if (spillCount > 0)
+                {
+                    float share = remaining / spillCount;
+                    for (int i = 0; i < n; i++)
+                        if (!disabled[i]) allocated[i] += share;
                 }
             }
 
