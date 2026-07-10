@@ -121,7 +121,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _dropType: 2
   _restoreAmount: 25
-  _collectRange: 1.5
+  _collectRange: 5
   _despawnOnCombatEnd: 0
   _destroyOnCollect: 1
 --- !u!1001 &8180189024986213054
