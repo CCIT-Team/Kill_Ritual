@@ -17577,7 +17577,7 @@ MonoBehaviour:
   - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
   - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
   - {fileID: 4984794286230951079, guid: 16497abd02910154f805c0e28516c2d8, type: 3}
-  _ammoOrbEnabled: 0101010000
+  _ammoOrbEnabled: 1110010000
   _ammoOrbSplitCount: 2
   _ammoOrbOutwardForce: 1
   _ammoOrbUpForce: 10

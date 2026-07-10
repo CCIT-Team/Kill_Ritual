@@ -2,9 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using KillRitual.Enemies;
 using KillRitual.Player;          // KRPlayerDamageFeedback
 using KillRitual.Player.Combat;   // KRCombatSystem
+using KillRitual.UI;              // [2026-07-10 신규] KRSceneTransitionData, KRGameStartMode (허브 복귀용)
 
 namespace KillRitual.CombatZones
 {
@@ -38,6 +40,23 @@ namespace KillRitual.CombatZones
 
         [Header("포탈 연기 파티클 (닫혀 있을 때 재생, 열리면 정지)")]
         [SerializeField] private ParticleSystem _portalParticle;
+
+        [Header("최종 구역 설정 (2026-07-10 신규 — 클리어 시 허브 복귀)")]
+        [Tooltip("체크하면 이 구역이 스테이지의 마지막 구역입니다. 클리어되면(포탈이 열리면) 스테이지 " +
+                 "전체 클리어로 간주하고 잠시 뒤 허브 씬으로 돌아갑니다. 아직 신당(허브) 복귀 경로가 " +
+                 "없어서 신규로 추가했습니다 — Level01의 마지막 웨이브 구역에만 체크하세요.")]
+        [SerializeField] private bool _isFinalZone = false;
+
+        [Tooltip("허브로 복귀할 때 로드할 씬 이름입니다. 신당 씬 이름과 정확히 같아야 합니다.")]
+        [SerializeField] private string _hubSceneName = "Temple";
+
+        [Tooltip("씬 전환 시 거칠 로딩 씬 이름입니다. Temple↔Level01 이동에 이미 쓰이는 것과 " +
+                 "동일한 씬(Loading.unity)을 재사용합니다.")]
+        [SerializeField] private string _loadingSceneName = "Loading";
+
+        [Tooltip("포탈이 열리는 걸 플레이어가 볼 수 있도록, 허브 복귀 전 대기하는 시간(초)입니다.")]
+        [Min(0f)]
+        [SerializeField] private float _hubReturnDelay = 1.5f;
 
         [Header("이 구역 몬스터 루트")]
         [Tooltip("이 구역에 속한 몬스터들의 부모입니다. 초기 배치 몬스터와 소환 몬스터가 모두 이 하위에 들어갑니다.")]
@@ -474,6 +493,41 @@ namespace KillRitual.CombatZones
             SetGateClosed(false);
 
             Debug.Log($"[WaveCombatZone] {name}: 전투 구역 클리어. 포탈 통과 가능.");
+
+            // [2026-07-10 신규] 마지막 구역이면 스테이지 클리어로 간주하고 허브(신당)로 복귀합니다.
+            if (_isFinalZone)
+                StartCoroutine(ReturnToHubRoutine());
+        }
+
+        /// <summary>
+        /// [2026-07-10 신규] "아직 신당 복귀 경로가 없는데 만들어달라" 요청으로 추가 — 마지막 구역
+        /// 클리어(포탈이 열림) 후, 신당→Level01 진입 때와 동일한 로딩 씬 경유 전환(KRSceneTransitionData
+        /// + Loading 씬)을 재사용해 허브로 돌아갑니다. 포탈이 열리는 연출을 잠깐 보여주기 위해
+        /// _hubReturnDelay만큼 대기한 뒤 전환합니다.
+        /// </summary>
+        private IEnumerator ReturnToHubRoutine()
+        {
+            if (_hubReturnDelay > 0f)
+                yield return new WaitForSeconds(_hubReturnDelay);
+
+            if (string.IsNullOrWhiteSpace(_hubSceneName))
+            {
+                Debug.LogWarning($"[WaveCombatZone] {name}: Hub Scene Name이 비어있어 허브 복귀를 건너뜁니다.");
+                yield break;
+            }
+
+            Debug.Log($"[WaveCombatZone] {name}: 마지막 구역 클리어 → 허브({_hubSceneName})로 복귀합니다.");
+
+            KRSceneTransitionData.SetGameStart(
+                targetSceneName: _hubSceneName,
+                startMode: KRGameStartMode.NewGame,
+                saveSlotId: null
+            );
+
+            if (string.IsNullOrWhiteSpace(_loadingSceneName))
+                SceneManager.LoadScene(_hubSceneName);
+            else
+                SceneManager.LoadScene(_loadingSceneName);
         }
 
         private void CleanupMonsterParent()
