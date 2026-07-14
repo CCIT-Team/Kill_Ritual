@@ -2,27 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using KillRitual.Enemies;
 using KillRitual.Player;          // KRPlayerDamageFeedback
 using KillRitual.Player.Combat;   // KRCombatSystem
+using KillRitual.UI;              // KRSceneTransitionData
 
 namespace KillRitual.CombatZones
 {
-    /// <summary>
-    /// 전투 구역 관리 스크립트.
-    ///
-    /// 핵심 구조:
-    /// - _monsterParent 하위의 KREnemyBase를 이 구역 몬스터로 등록
-    /// - KRSkippableEnemyTag가 붙은 적은 잡몹
-    /// - KRSkippableEnemyTag가 없는 적은 핵심 몬스터
-    /// - 핵심 몬스터가 살아 있는데 잡몹이 0마리면 잡몹 보충 소환
-    /// - 소환된 잡몹도 _monsterParent 하위로 생성
-    /// - 구역 클리어 시 _monsterParent 하위 몬스터를 정리
-    ///
-    /// 포탈 파티클:
-    /// - 닫힘 / 차단 상태: 재생
-    /// - 열림 / 통과 가능 상태: 정지
-    /// </summary>
     public class WaveCombatZone : MonoBehaviour
     {
         [Header("진입 트리거 (전투구역 진입 감지)")]
@@ -38,6 +25,20 @@ namespace KillRitual.CombatZones
 
         [Header("포탈 연기 파티클 (닫혀 있을 때 재생, 열리면 정지)")]
         [SerializeField] private ParticleSystem _portalParticle;
+
+        [Header("최종 구역 → 신당 복귀")]
+        [Tooltip("체크하면 이 구역 클리어(포탈 열림) 시 신당(허브)으로 자동 복귀합니다. 마지막 웨이브 구역에만 체크하세요.")]
+        [SerializeField] private bool _isFinalZone = false;
+
+        [Tooltip("복귀할 허브 씬 이름.")]
+        [SerializeField] private string _hubSceneName = "Temple";
+
+        [Tooltip("허브로 돌아갈 때 경유하는 로딩 씬 이름.")]
+        [SerializeField] private string _loadingSceneName = "Loading";
+
+        [Min(0f)]
+        [Tooltip("구역 클리어 후 신당 복귀까지 대기하는 시간(초).")]
+        [SerializeField] private float _hubReturnDelay = 1.5f;
 
         [Header("이 구역 몬스터 루트")]
         [Tooltip("이 구역에 속한 몬스터들의 부모입니다. 초기 배치 몬스터와 소환 몬스터가 모두 이 하위에 들어갑니다.")]
@@ -150,9 +151,6 @@ namespace KillRitual.CombatZones
             TryActivateFromTrigger(other);
         }
 
-        /// <summary>
-        /// ZoneEntryRelay 같은 자식 콜라이더에서 호출할 수 있습니다.
-        /// </summary>
         public void NotifyEntryTriggered(Collider other)
         {
             Debug.Log($"[WaveCombatZone] {name} NotifyEntryTriggered (relay): {other.name}");
@@ -402,9 +400,6 @@ namespace KillRitual.CombatZones
             return null;
         }
 
-        /// <summary>
-        /// ArenaEnemyLink.Die() 또는 NotifyDead()에서 호출됩니다.
-        /// </summary>
         public void NotifyEnemyDied(bool wasSkippable)
         {
             if (!_zoneActivated || _zoneCleared)
@@ -467,13 +462,23 @@ namespace KillRitual.CombatZones
             // 여기 추가 — 포탈이 열리면 보급 소환도 즉시 중단
             StopSupplyMonitor();
 
-
             if (_cleanupMonsterParentOnClear)
                 CleanupMonsterParent();
 
             SetGateClosed(false);
 
             Debug.Log($"[WaveCombatZone] {name}: 전투 구역 클리어. 포탈 통과 가능.");
+
+            if (_isFinalZone)
+                StartCoroutine(ReturnToHubRoutine());
+        }
+
+        private IEnumerator ReturnToHubRoutine()
+        {
+            yield return new WaitForSeconds(_hubReturnDelay);
+
+            KRSceneTransitionData.SetGameStart(targetSceneName: _hubSceneName, startMode: KRGameStartMode.NewGame, saveSlotId: null);
+            SceneManager.LoadScene(_loadingSceneName);
         }
 
         private void CleanupMonsterParent()
@@ -633,7 +638,6 @@ namespace KillRitual.CombatZones
             Debug.Log($"[WaveCombatZone] {name}: 자원 부족 감지 → 보급 몬스터 {spawnedCount}마리 소환 ({_supplySpawnsUsed + 1}/{(_maxSupplySpawns < 0 ? "무제한" : _maxSupplySpawns.ToString())}).");
         }
 
-        /// <summary>ArenaEnemyLink.Die()에서 보급용 몬스터가 죽었을 때 호출됩니다. 클리어 판정과 무관합니다.</summary>
         public void NotifySupplyEnemyDied()
         {
             _activeSupplyEnemyCount = Mathf.Max(0, _activeSupplyEnemyCount - 1);

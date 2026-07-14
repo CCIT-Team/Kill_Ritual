@@ -7,29 +7,6 @@ using KillRitual.Enemies;
 
 namespace KillRitual.Stage
 {
-    /// <summary>
-    /// 전투 구간(웨이브) 트리거 볼륨입니다.
-    ///
-    /// [동작 방식]
-    /// 플레이어가 이 존(Box Collider Trigger)에 들어오면, 존의 범위(Bounds) 안에 있는
-    /// KREnemyBase를 전부 "이번 전투 참가자"로 스캔해 등록하고 KRCombatStartEvent를 발행합니다.
-    /// 이후 일정 주기로 참가자들이 전부 사망(IsDead)했는지 체크하고, 전멸하면
-    /// KRCombatEndEvent를 발행합니다.
-    ///
-    /// 이 컴포넌트는 "전투 시작/종료" 신호만 제공하는 최소 범위 구현입니다.
-    /// 적 스폰, 웨이브 순서 제어(1웨이브 클리어 후 2웨이브 소환 등)는 범위에 포함하지 않았습니다.
-    /// 나중에 진짜 스테이지/웨이브 매니저를 만들 때는 이 이벤트를 그대로 재사용하거나,
-    /// 이 컴포넌트를 웨이브 매니저의 하위 유닛으로 흡수시키면 됩니다.
-    ///
-    /// [설정 방법]
-    /// 1. 전투를 시작하고 싶은 구역에 빈 GameObject를 만들고 이름을 "CombatZone" 등으로 지정
-    /// 2. Box Collider 추가 후 Is Trigger = true
-    /// 3. 이 컴포넌트 추가
-    /// 4. Box Collider 크기/위치를 전투가 벌어질 구역 전체를 덮도록 배치
-    ///    (그 안에 미리 배치된 적들이 전투 참가자로 스캔됩니다. 존 밖에 있는 적은 무시됩니다)
-    /// 5. Layer는 ExecutionZone 또는 Ignore Raycast 권장 (플레이어/적과 물리 충돌 없이 트리거만 감지)
-    /// 6. _enemyLayerMask는 적이 실제로 사용하는 레이어(예: Damgeable)로 설정
-    /// </summary>
     [RequireComponent(typeof(Collider))]
     public sealed class KRCombatZone : MonoBehaviour
     {
@@ -64,11 +41,6 @@ namespace KillRitual.Stage
             TryStartCombat();
         }
 
-        /// <summary>
-        /// 존 범위 안의 살아있는 KREnemyBase를 스캔해 전투 참가자로 등록하고,
-        /// 한 마리 이상 발견되면 KRCombatStartEvent를 발행합니다.
-        /// 참가자가 없으면(이미 다 잡았거나 빈 구역이면) 아무 것도 하지 않습니다.
-        /// </summary>
         private void TryStartCombat()
         {
             _participants.Clear();

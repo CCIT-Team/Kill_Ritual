@@ -6,16 +6,6 @@ using KillRitual.Enemies;
 
 namespace KillRitual.Player.Combat
 {
-    /// <summary>
-    /// 흡혼 시스템 — 그로기 상태의 적을 처형하고 체력을 회복하는 전담 컴포넌트입니다.
-    ///
-    /// 기준:
-    /// - 돌진 프레임 수를 계산한 뒤, 마지막 N프레임 전에 Strike + Execute를 선행 호출합니다.
-    /// - 예: 돌진 5프레임 / 선행 3프레임이면 2프레임째에 Strike + Execute 시작
-    /// - 예: 돌진 10프레임 / 선행 3프레임이면 7프레임째에 Strike + Execute 시작
-    /// - 돌진이 끝나는 순간 플레이어 주먹 완전 신전 + 적 사망 리액션이 맞도록 구성합니다.
-    /// - 그 순간 킬 슬로우모션과 카메라 킥을 시작합니다.
-    /// </summary>
     public sealed class KRAbsorptionSystem : MonoBehaviour
     {
         [Header("References")]
@@ -266,14 +256,6 @@ namespace KillRitual.Player.Combat
             IsExecuting = false;
         }
 
-        /// <summary>
-        /// Punch.anim의 타격 프레임에서 KRPunchImpactRelay를 통해 호출될 수 있습니다.
-        ///
-        /// 현재 구조에서는 돌진 중 마지막 N프레임 전에 BeginPreImpact()가 먼저 Execute를 호출합니다.
-        /// 따라서 이 함수는 예비 안전장치입니다.
-        /// - 선행 타격이 이미 시작된 경우: 중복 Execute를 하지 않습니다.
-        /// - 돌진이 끝난 상태라면 충돌 연출만 보정합니다.
-        /// </summary>
         public void NotifyPunchImpact()
         {
             if (_pendingImpactTarget == null)
@@ -290,11 +272,6 @@ namespace KillRitual.Player.Combat
             }
         }
 
-        /// <summary>
-        /// 도움닫기.
-        /// 돌진 프레임 수를 계산하고, 마지막 _preImpactLeadFrames 프레임 전에
-        /// 플레이어 Strike와 적 Execute를 동시에 시작합니다.
-        /// </summary>
         private IEnumerator LungeToTarget(IDamageable target)
         {
             if (_characterController == null)
@@ -348,10 +325,6 @@ namespace KillRitual.Player.Combat
             _isLunging = false;
         }
 
-        /// <summary>
-        /// 돌진 종료 직전 N프레임에 호출됩니다.
-        /// 이 지점에서 플레이어 Strike와 적 Execute를 동시에 시작합니다.
-        /// </summary>
         private void BeginPreImpact(IDamageable target)
         {
             if (_preImpactStarted) return;
@@ -373,10 +346,6 @@ namespace KillRitual.Player.Combat
             target.Execute(KillRitual.Core.Interfaces.ExecutionSource.Absorption);
         }
 
-        /// <summary>
-        /// 실제 충돌이 성립한 프레임의 연출입니다.
-        /// 돌진 종료 프레임에서 호출되어야 합니다.
-        /// </summary>
         private void PlayImpactMoment()
         {
             if (_impactMomentPlayed) return;
@@ -624,7 +593,6 @@ namespace KillRitual.Player.Combat
             => _damageFeedback?.SetInvincible(invincible);
     }
 
-    /// <summary>적 등급 열거형. KREnemyBase와 KRAbsorptionSystem이 공유합니다.</summary>
     public enum EnemyGrade
     {
         Fodder,

@@ -5,19 +5,6 @@ using KillRitual.Core.Interfaces;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// Fodder(잡몹) 등급의 근접 몬스터입니다.
-    /// NavMeshAgent를 이용해 플레이어를 끝까지 추격하다가, 공격 사거리 안에 들어오면 멈춰서
-    /// 쿨다운마다 공격 애니메이션을 재생합니다.
-    ///
-    /// 실제 데미지는 공격 시작 순간이 아니라, 공격 애니메이션 클립 안의 Animation Event가
-    /// AnimEvent_DealMeleeDamage()를 호출하는 순간에 적용됩니다.
-    ///
-    /// 이동/추격/그로기/사망 등 공통 로직은 부모 클래스인 KREnemyBase가 처리합니다.
-    /// 이 클래스는 "추격 중일 때 무엇을 할지"(UpdateChase),
-    /// "공격 사거리 안에서 무엇을 할지"(UpdateAttack),
-    /// "근접 공격 데미지 타이밍"만 정의합니다.
-    /// </summary>
     public sealed class KRFodderMelee2 : KREnemyBase
     {
         [Header("근접 공격")]
@@ -73,10 +60,6 @@ namespace KillRitual.Enemies
         // 죽음 애니메이션 트리거 중복 방지.
         private bool _deathAnimationTriggered;
 
-        /// <summary>
-        /// Update는 부모 KREnemyBase가 사용할 가능성이 있으므로 건드리지 않습니다.
-        /// LateUpdate에서 사망 애니메이션 트리거와 공격 이벤트 누락 방지만 처리합니다.
-        /// </summary>
         private void LateUpdate()
         {
             TryTriggerDeathAnimation();
@@ -90,10 +73,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// 추격 상태: 공격 사거리 밖이면 플레이어에게 계속 다가갑니다.
-        /// 사거리 안에 들어오면 멈춰서 Attack 상태로 전환합니다.
-        /// </summary>
         protected override void UpdateChase()
         {
             if (IsDead)
@@ -134,10 +113,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// 공격 상태: 사거리 안에서는 플레이어를 바라보며 멈춰 서서 쿨다운마다 공격 애니메이션을 재생합니다.
-        /// 실제 데미지는 이 함수가 아니라 Animation Event에서 들어갑니다.
-        /// </summary>
         protected override void UpdateAttack()
         {
             if (IsDead)
@@ -183,11 +158,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// 공격 시작.
-        /// 여기서는 데미지를 주지 않고 Attack 트리거만 보냅니다.
-        /// 실제 데미지는 애니메이션 클립의 이벤트가 AnimEvent_DealMeleeDamage()를 호출할 때 적용됩니다.
-        /// </summary>
         private void BeginMeleeAttack()
         {
             if (_player == null || IsDead)
@@ -207,13 +177,6 @@ namespace KillRitual.Enemies
             SetAnimatorAttackTrigger();
         }
 
-        /// <summary>
-        /// Animation Event에서 호출할 함수입니다.
-        ///
-        /// 사용법:
-        /// Attack 애니메이션 클립을 열고, 실제 손/무기가 닿는 프레임에 Animation Event를 추가한 뒤
-        /// Function에 AnimEvent_DealMeleeDamage를 선택하세요.
-        /// </summary>
         public void AnimEvent_DealMeleeDamage()
         {
             if (!_isWaitingForAttackEvent)
@@ -225,19 +188,11 @@ namespace KillRitual.Enemies
             TryApplyMeleeDamage();
         }
 
-        /// <summary>
-        /// 함수 이름을 다르게 기억해도 쓸 수 있도록 둔 호환용 래퍼입니다.
-        /// Animation Event에서 이 이름을 선택해도 동일하게 작동합니다.
-        /// </summary>
         public void AnimationEvent_DealMeleeDamage()
         {
             AnimEvent_DealMeleeDamage();
         }
 
-        /// <summary>
-        /// 실제 데미지 적용.
-        /// 반드시 Animation Event를 통해 호출되는 구조로 사용합니다.
-        /// </summary>
         private void TryApplyMeleeDamage()
         {
             if (_player == null || IsDead)
@@ -314,10 +269,6 @@ namespace KillRitual.Enemies
             _animator.SetTrigger(AnimParamIsDead);
         }
 
-        /// <summary>
-        /// 씬 뷰에서 몬스터를 선택했을 때, 공격 사거리를 빨간 원으로 표시합니다.
-        /// 부모의 노란 원 = 감지 범위, 이 빨간 원 = 공격 사거리입니다.
-        /// </summary>
         protected override void OnDrawGizmosSelected()
         {
             base.OnDrawGizmosSelected();

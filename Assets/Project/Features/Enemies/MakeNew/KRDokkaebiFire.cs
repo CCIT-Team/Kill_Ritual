@@ -3,21 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// 도깨비불 원거리 몬스터입니다.
-    ///
-    /// 플레이어가 공격 사거리 밖에 있으면 접근하고,
-    /// 사거리 안에 들어오면 멈춰서 플레이어를 바라본 뒤 Attack 애니메이션을 재생합니다.
-    ///
-    /// 실제 투사체 발사는 Attack Trigger가 들어간 순간이 아니라,
-    /// Attack 애니메이션 클립 안의 Animation Event가
-    /// AnimEvent_FireProjectile()을 호출하는 순간에 발생합니다.
-    ///
-    /// Animator 파라미터:
-    /// - Walk   : Bool    선택. 없으면 무시됨.
-    /// - Attack : Trigger 필수 권장. 없으면 애니메이션 없이 즉시 발사 fallback.
-    /// - IsDead : Trigger 권장. 없으면 사망 애니메이션 트리거만 무시됨.
-    /// </summary>
     public sealed class KRDokkaebiFire : KREnemyBase
     {
         [Header("도깨비불 공격")]
@@ -139,11 +124,6 @@ namespace KillRitual.Enemies
             _animator.SetBool(WalkHash, isWalking);
         }
 
-        /// <summary>
-        /// Attack Trigger를 발동합니다.
-        /// true를 반환하면 애니메이션 이벤트를 기다리고,
-        /// false를 반환하면 애니메이션 없이 즉시 발사 fallback을 사용합니다.
-        /// </summary>
         private bool PlayAttackAnimation()
         {
             if (!HasAnimatorParameter(AttackHash, AnimatorControllerParameterType.Trigger))
@@ -272,9 +252,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// Attack 애니메이션 클립의 발사 프레임에 Animation Event로 호출하세요.
-        /// </summary>
         public void AnimEvent_FireProjectile()
         {
             if (!_isWaitingForAttackEvent)
@@ -286,17 +263,11 @@ namespace KillRitual.Enemies
             FireProjectile();
         }
 
-        /// <summary>
-        /// Animation Event 이름 실수 방지용 호환 함수입니다.
-        /// </summary>
         public void AnimationEvent_FireProjectile()
         {
             AnimEvent_FireProjectile();
         }
 
-        /// <summary>
-        /// Attack 이벤트 이름을 짧게 쓰고 싶을 때 사용할 수 있는 호환 함수입니다.
-        /// </summary>
         public void AnimEvent_Attack()
         {
             AnimEvent_FireProjectile();
@@ -478,15 +449,6 @@ namespace KillRitual.Enemies
         }
     }
 
-    /// <summary>
-    /// Animator가 자식 오브젝트에 있고 KRDokkaebiFire가 부모 오브젝트에 있을 때 사용하는 Animation Event 중계기입니다.
-    ///
-    /// Unity Animation Event는 보통 Animator가 붙은 GameObject의 컴포넌트 함수를 찾습니다.
-    /// 따라서 Animator가 Model 자식에 있고 KRDokkaebiFire가 Enemy Root에 있으면 이벤트 함수가 안 잡힐 수 있습니다.
-    ///
-    /// 그 경우 Animator가 붙은 자식 오브젝트에 이 컴포넌트를 붙이고,
-    /// Target에 부모의 KRDokkaebiFire를 연결하세요.
-    /// </summary>
     public sealed class KRDokkaebiFireAnimationRelay : MonoBehaviour
     {
         [SerializeField] private KRDokkaebiFire _target;

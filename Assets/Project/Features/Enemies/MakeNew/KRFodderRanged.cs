@@ -3,20 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// Fodder(잡몹) 등급의 원거리 몬스터입니다.
-    /// 플레이어와 일정 거리를 유지하면서 사거리 안에 있으면 Attack 애니메이션을 재생하고,
-    /// 실제 투사체 발사는 Attack 애니메이션 클립 안의 Animation Event가 호출하는 시점에 발생합니다.
-    ///
-    /// 기존 방식:
-    /// - Attack Trigger 발생
-    /// - Invoke 지연 후 FireProjectile()
-    ///
-    /// 수정 방식:
-    /// - Attack Trigger 발생
-    /// - 애니메이션의 발사 프레임에서 AnimEvent_FireProjectile() 호출
-    /// - 그 순간 투사체 발사
-    /// </summary>
     public sealed class KRFodderRanged : KREnemyBase
     {
         [Header("원거리 공격")]
@@ -83,10 +69,6 @@ namespace KillRitual.Enemies
         private float _nextFireTime;
         private float _attackEventExpireTime;
 
-        /// <summary>
-        /// 부모 KREnemyBase의 Update 흐름을 건드리지 않기 위해 LateUpdate에서
-        /// 사망 애니메이션 트리거와 Animation Event 누락 방지만 처리합니다.
-        /// </summary>
         private void LateUpdate()
         {
             TryTriggerDeathAnimation();
@@ -100,7 +82,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>Animator가 비어 있으면 자식에서 자동으로 찾습니다.</summary>
         private void EnsureAnimatorReady()
         {
             if (_animator == null)
@@ -109,7 +90,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>Walk Bool 파라미터를 갱신합니다(값이 바뀔 때만 SetBool 호출).</summary>
         private void SetWalking(bool isWalking)
         {
             EnsureAnimatorReady();
@@ -128,7 +108,6 @@ namespace KillRitual.Enemies
             _animator.SetBool(WalkHash, isWalking);
         }
 
-        /// <summary>Attack Trigger 파라미터를 발동합니다.</summary>
         private void PlayAttackAnimation()
         {
             EnsureAnimatorReady();
@@ -142,10 +121,6 @@ namespace KillRitual.Enemies
             _animator.SetTrigger(AttackHash);
         }
 
-        /// <summary>
-        /// 추격: 공격 사거리 밖이면 플레이어에게 다가가고,
-        /// 사거리 안에 들어오면 멈춰서 Attack 상태로 전환합니다.
-        /// </summary>
         protected override void UpdateChase()
         {
             if (IsDead)
@@ -192,10 +167,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// 공격: 사거리 안에서는 멈춰서 플레이어를 바라보며 쿨다운마다 Attack 애니메이션을 재생합니다.
-        /// 실제 투사체 발사는 이 함수가 아니라 Animation Event에서 발생합니다.
-        /// </summary>
         protected override void UpdateAttack()
         {
             if (IsDead)
@@ -243,11 +214,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// 원거리 공격 시작.
-        /// 여기서는 투사체를 발사하지 않고 Attack 애니메이션만 재생합니다.
-        /// 실제 투사체는 Attack 애니메이션 이벤트에서 발사됩니다.
-        /// </summary>
         private void BeginRangedAttack()
         {
             if (_player == null || IsDead)
@@ -267,10 +233,6 @@ namespace KillRitual.Enemies
             PlayAttackAnimation();
         }
 
-        /// <summary>
-        /// Attack 애니메이션 클립에 넣을 Animation Event 함수입니다.
-        /// 발사체가 실제로 손/입/무기에서 나가야 하는 프레임에 이 함수를 호출하세요.
-        /// </summary>
         public void AnimEvent_FireProjectile()
         {
             if (!_isWaitingForAttackEvent)
@@ -282,23 +244,16 @@ namespace KillRitual.Enemies
             FireProjectile();
         }
 
-        /// <summary>
-        /// Animation Event 이름을 다르게 기억했을 때를 위한 호환용 래퍼입니다.
-        /// </summary>
         public void AnimationEvent_FireProjectile()
         {
             AnimEvent_FireProjectile();
         }
 
-        /// <summary>
-        /// 더 짧은 이름을 쓰고 싶을 때를 위한 호환용 래퍼입니다.
-        /// </summary>
         public void AnimEvent_Attack()
         {
             AnimEvent_FireProjectile();
         }
 
-        /// <summary>플레이어를 향해 발사체 1발을 생성해 날립니다.</summary>
         private void FireProjectile()
         {
             if (_player == null || IsDead)

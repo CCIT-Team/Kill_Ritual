@@ -5,19 +5,6 @@ using KillRitual.Core.Interfaces;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// 적 약점 오브젝트입니다.
-    ///
-    /// 동작:
-    /// - 약점 오브젝트가 피해를 받으면 본체에도 피해를 전달합니다.
-    /// - 본체 전달 피해는 기본 1.5배입니다.
-    /// - 약점 체력은 따로 감소합니다.
-    /// - 약점 체력이 0이 되면 약점이 파괴되고 본체가 그로기에 빠집니다.
-    ///
-    /// 주의:
-    /// - 이 스크립트는 약점 오브젝트에 붙이세요.
-    /// - 적 루트에 붙이면 적 전체 Collider/Renderer를 끌 수 있습니다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KREnemyWeakPoint : MonoBehaviour, IDamageable
     {

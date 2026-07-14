@@ -6,33 +6,6 @@ using KillRitual.Core.Interfaces;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// 근거리/원거리 하이브리드 몬스터입니다.
-    ///
-    /// 근접 공격:
-    /// - KRFodderMelee2와 같은 구조입니다.
-    /// - 공격 시작 시 데미지를 주지 않습니다.
-    /// - Attack Trigger만 넣습니다.
-    /// - 실제 데미지는 Animation Event가 AnimEvent_DealMeleeDamage()를 호출할 때만 들어갑니다.
-    /// - 이벤트가 누락되면 데미지를 강제로 넣지 않고, 대기 상태만 해제합니다.
-    ///
-    /// 원거리 공격:
-    /// - 기존 도깨비불 방식처럼 Attack Trigger / Animation Event 기반입니다.
-    /// - 실제 발사는 AnimEvent_FireProjectile() 또는 AnimEvent_FireProjectiles()에서 시작합니다.
-    /// - 이벤트가 없을 경우 _rangedFireDelay 뒤에 연사 fallback이 실행됩니다.
-    /// - 투사체는 동시에 5발 생성하지 않고, 짧은 간격으로 연사합니다.
-    ///
-    /// Animator 파라미터:
-    /// - IsWalking    : Bool
-    /// - MeleeAttack  : Trigger
-    /// - Attack       : Trigger
-    /// - Groggy       : Trigger
-    /// - IsDead       : Trigger
-    ///
-    /// 인스펙터에서 근접도 기존 잡몹처럼 Attack Trigger를 쓰고 싶으면
-    /// Melee Attack Trigger Name을 "Attack"으로 바꾸면 됩니다.
-    /// 단, 근접/원거리 애니메이션을 분리하려면 MeleeAttack / Attack처럼 Trigger를 분리하는 편이 안전합니다.
-    /// </summary>
     public sealed class KRHybridMeleeRangedEnemy : KREnemyBase
     {
         [Header("공격 거리")]
@@ -230,10 +203,6 @@ namespace KillRitual.Enemies
         }
 #endif
 
-        /// <summary>
-        /// Update는 부모 KREnemyBase가 사용할 수 있으므로 건드리지 않습니다.
-        /// LateUpdate에서 사망 애니메이션, 근접 이벤트 누락, 원거리 fallback만 처리합니다.
-        /// </summary>
         private void LateUpdate()
         {
             TryTriggerDeathAnimation();
@@ -416,11 +385,6 @@ namespace KillRitual.Enemies
         // Melee: KRFodderMelee2와 같은 구조
         // ─────────────────────────────────────────────
 
-        /// <summary>
-        /// 공격 시작.
-        /// 여기서는 데미지를 주지 않고 근접 Attack Trigger만 보냅니다.
-        /// 실제 데미지는 Animation Event가 AnimEvent_DealMeleeDamage()를 호출할 때 적용됩니다.
-        /// </summary>
         private void BeginMeleeAttack()
         {
             if (_player == null || IsDead)
@@ -443,10 +407,6 @@ namespace KillRitual.Enemies
             SetAnimatorMeleeAttackTrigger();
         }
 
-        /// <summary>
-        /// Animation Event에서 호출할 함수입니다.
-        /// Attack 애니메이션 클립에서 실제 손/무기가 닿는 프레임에 이 함수를 넣으세요.
-        /// </summary>
         public void AnimEvent_DealMeleeDamage()
         {
             if (!_isWaitingForMeleeAttackEvent)
@@ -458,9 +418,6 @@ namespace KillRitual.Enemies
             TryApplyMeleeDamage();
         }
 
-        /// <summary>
-        /// 함수 이름 호환용 래퍼입니다.
-        /// </summary>
         public void AnimationEvent_DealMeleeDamage()
         {
             AnimEvent_DealMeleeDamage();
@@ -471,11 +428,6 @@ namespace KillRitual.Enemies
             AnimEvent_DealMeleeDamage();
         }
 
-        /// <summary>
-        /// 공용 Attack 이벤트가 들어왔을 때,
-        /// 근접 대기 중이면 근접 데미지,
-        /// 원거리 공격 중이면 원거리 발사를 실행합니다.
-        /// </summary>
         public void AnimEvent_Attack()
         {
             if (_isWaitingForMeleeAttackEvent)
@@ -1112,10 +1064,6 @@ namespace KillRitual.Enemies
         }
     }
 
-    /// <summary>
-    /// Animator가 자식 오브젝트에 있고 KRHybridMeleeRangedEnemy가 부모 오브젝트에 있을 때 사용하는 Animation Event 중계기입니다.
-    /// Animator가 붙은 자식 오브젝트에 이 컴포넌트를 붙이고 Target에 부모의 KRHybridMeleeRangedEnemy를 연결하세요.
-    /// </summary>
     public sealed class KRHybridMeleeRangedEnemyAnimationRelay : MonoBehaviour
     {
         [SerializeField] private KRHybridMeleeRangedEnemy _target;

@@ -3,21 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// Hitscan / HitscanSpread(레이캐스트 즉발) 무기 발사 시, 사람 눈에 "총알이 날아갔다"는
-    /// 인상을 주기 위한 시각 효과입니다.
-    ///
-    /// 레이캐스트는 물리적으로 한 프레임에 즉시 결과가 결정되므로 실제로 날아가는 발사체가
-    /// 존재하지 않습니다. 이 컴포넌트는 발사 시작점(총구)과 명중/사거리 소진 지점을 잇는
-    /// 짧은 선분을, "탄속(VisualSpeed)"에 맞춰 끝점 쪽으로 빠르게 훑고 지나가도록 그려서
-    /// "총알 꼬리"를 흉내 냅니다.
-    ///
-    /// [LineRenderer + Moving Particle]
-    /// LineRenderer는 실제 Transform이 이동하는 것이 아니라 월드 좌표 두 점을 그리는 방식입니다.
-    /// 따라서 자식 ParticleSystem을 붙여도 자동으로 선을 따라가지 않습니다.
-    /// 이 스크립트는 MovingParticleRoot를 직접 start → end 방향으로 이동시켜,
-    /// 총알 머리/불씨/탄흔 파티클이 트레이서를 따라가는 것처럼 보이게 만듭니다.
-    /// </summary>
     [RequireComponent(typeof(LineRenderer))]
     public sealed class KRHitscanTracer : MonoBehaviour
     {
@@ -85,9 +70,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>
-        /// 사각형으로 보이는 문제의 핵심 원인(평면 고정 정렬, 직각 끝처리)을 코드로 강제 보정합니다.
-        /// </summary>
         private void ConfigureLineRenderer()
         {
             _line.positionCount = 2;
@@ -103,14 +85,6 @@ namespace KillRitual.Weapons
             _line.useWorldSpace = true;
         }
 
-        /// <summary>
-        /// 트레이서를 재생합니다. 외부(KRHitscanWeapon)에서 Instantiate 직후 1회 호출합니다.
-        /// </summary>
-        /// <param name="start">총구(FirePoint) 월드 좌표</param>
-        /// <param name="end">명중 지점 또는 사거리 소진 지점의 월드 좌표</param>
-        /// <param name="color">속성별 트레이서 색상</param>
-        /// <param name="visualSpeedOverride">0 이하면 인스펙터 기본값(_visualSpeed) 사용</param>
-        /// <param name="maxLengthOverride">음수면 인스펙터 기본값(_maxVisualLength) 사용. 0이면 길이 제한 없음</param>
         public void Play(
             Vector3 start,
             Vector3 end,

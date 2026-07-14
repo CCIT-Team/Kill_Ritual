@@ -4,13 +4,6 @@ using UnityEngine;
 
 namespace KillRitual.Weapons.Visual
 {
-    /// <summary>
-    /// 공격 애니메이션 클립의 Animation Event를 받아
-    /// 카메라 셰이크 같은 연출 신호로 전달하는 브릿지.
-    ///
-    /// 애니메이션 클립은 카메라를 직접 건드리지 않고,
-    /// 이 컴포넌트에 "어떤 연출을 실행할지"만 알려준다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRAttackAnimationSignal : MonoBehaviour
     {
@@ -30,14 +23,6 @@ namespace KillRitual.Weapons.Visual
             }
         }
 
-        /// <summary>
-        /// Animation Event에서 호출.
-        /// String Parameter에 Shake ID를 넣으면 된다.
-        ///
-        /// 예:
-        /// Function: CameraShake
-        /// String: Shotgun_Heavy
-        /// </summary>
         public void CameraShake(string shakeId)
         {
             if (_cameraShake == null)
@@ -54,9 +39,6 @@ namespace KillRitual.Weapons.Visual
             _cameraShake.PlayShake(shakeId);
         }
 
-        /// <summary>
-        /// Animation Event가 문자열 파라미터를 못 받는 상황용 기본 셰이크.
-        /// </summary>
         public void CameraShakeDefault()
         {
             CameraShake(_defaultShakeId);

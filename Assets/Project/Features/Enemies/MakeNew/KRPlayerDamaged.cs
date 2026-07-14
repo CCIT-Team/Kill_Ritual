@@ -9,27 +9,6 @@ using KillRitual.UI;
 
 namespace KillRitual.Player
 {
-    /// <summary>
-    /// 플레이어 체력, 피격 UI, 저체력 비네트, 피격 카메라 흔들림을 담당합니다.
-    ///
-    /// 체력바:
-    ///   - Image.fillAmount를 쓰지 않고 RectTransform Width를 직접 조절합니다.
-    ///   - Fill / Follow Bar는 오른쪽 기준으로 고정됩니다.
-    ///   - 체력이 줄어들면 왼쪽에서 오른쪽 방향으로 깎입니다.
-    ///
-    /// 화면 피격 효과:
-    ///   - KRScreenDamageVignette에 체력 비율을 전달합니다.
-    ///   - 피격 순간에는 Flash()를 호출합니다.
-    ///   - 저체력 상태에서는 체력 비율에 따라 빨간 테두리가 지속 표시됩니다.
-    ///
-    /// 카메라 피격 흔들림:
-    ///   - CameraRoot / CameraShake는 건드리지 않습니다.
-    ///   - HitShake Transform 하나만 localPosition / localRotation으로 짧게 흔듭니다.
-    ///   - 기존 Look, FOV, 다른 셰이크와 충돌하지 않도록 별도 계층을 사용합니다.
-    ///
-    /// 무령 잔흔:
-    ///   - 무령 반사 성공 직후 일정 시간 동안 받는 피해를 KRMuryeongController에서 감산합니다.
-    /// </summary>
     public sealed class KRPlayerDamageFeedback : MonoBehaviour, IDamageable
     {
         [Header("체력")]
@@ -280,7 +259,6 @@ namespace KillRitual.Player
             UpdateScreenDamageVignette();
         }
 
-        /// <summary>흡혼 시퀀스 중 무적 상태를 설정합니다.</summary>
         public void SetInvincible(bool invincible)
         {
             _isInvincible = invincible;

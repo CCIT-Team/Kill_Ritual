@@ -3,23 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 토(土) 유형II "스컬크러셔" 전용 무기 클래스입니다.
-    /// KRHitscanWeapon을 그대로 상속해 레이캐스트/트레이서 로직은 재사용하고,
-    /// 발사 버튼을 계속 누르고 있을수록 두 가지가 점진적으로 변화합니다:
-    ///
-    ///   ① 연사 속도 가속: Cooldown(느림) → MinCooldown(빠름)
-    ///   ② 펠릿 수 증가:   BasePelletCount(1발) → MaxPelletCount(여러 발 동시 발사)
-    ///
-    /// [부채꼴 발사 패턴]
-    /// 펠릿이 콘(원뿔) 안에서 무작위로 흩뿌려지는 기존 방식 대신, 전체 탄퍼짐 각도 안에서
-    /// 균등한 간격으로 한 발씩 배치되는 결정론적 "부채꼴(Fan)" 패턴을 사용합니다.
-    /// 예를 들어 5발에 탄퍼짐 40도라면, -20°/-10°/0°/+10°/+20°처럼 정확히 등간격으로
-    /// 펼쳐져 나갑니다. 매번 같은 모양으로 퍼지기 때문에 무작위 산탄보다 훨씬 디자인적이고
-    /// 예측 가능한 모양으로 보입니다(KRHitscanWeapon.ComputePelletDirection 오버라이드).
-    ///
-    /// 버튼을 떼는 즉시 가속도가 0으로 초기화됩니다.
-    /// </summary>
     public sealed class KRRampingHitscanWeapon : KRHitscanWeapon
     {
         [Header("연사 가속")]
@@ -70,7 +53,6 @@ namespace KillRitual.Weapons
         private float _rampLevel;
         private Coroutine _burstCoroutine;
 
-        /// <summary>현재 가속 비율 0~1. 펠릿 수/탄퍼짐/연사속도를 보간하는 공통 기준입니다.</summary>
         private float RampRatio => _rampUpDuration > 0f ? _rampLevel / _rampUpDuration : 1f;
 
         public override void NotifyHeld()
@@ -89,24 +71,16 @@ namespace KillRitual.Weapons
             return Mathf.Lerp(_cooldown, _minCooldown, RampRatio);
         }
 
-        /// <summary>가속 비율에 따라 펠릿 수를 _pelletCount(시작) → _maxPelletCount(최대)로 보간합니다.</summary>
         protected override int GetCurrentPelletCount()
         {
             return Mathf.RoundToInt(Mathf.Lerp(_pelletCount, _maxPelletCount, RampRatio));
         }
 
-        /// <summary>가속 비율에 따라 탄퍼짐을 _spreadAngleDegrees(시작) → _maxSpreadAngleDegrees(최대)로 보간합니다.</summary>
         protected override float GetCurrentSpreadAngle()
         {
             return Mathf.Lerp(_spreadAngleDegrees, _maxSpreadAngleDegrees, RampRatio);
         }
 
-        /// <summary>
-        /// [부채꼴 패턴] 부모의 기본 구현(ApplySpreadJitter)은 매번 무작위 위치로 흩뿌려지지만,
-        /// 이 클래스는 전체 탄퍼짐 각도 안에서 펠릿 인덱스에 비례한 결정론적 각도를 계산해
-        /// 균등한 간격으로 펼쳐지는 부채꼴 모양을 만듭니다. (수직 방향은 흔들리지 않고 수평으로만
-        /// 펼쳐지므로, 일반 무작위 산탄보다 훨씬 또렷한 "부채" 실루엣이 나옵니다.)
-        /// </summary>
         protected override Vector3 ComputePelletDirection(Vector3 baseDirection, float spreadAngleDegrees,
             int pelletIndex, int totalPellets)
         {
@@ -125,11 +99,6 @@ namespace KillRitual.Weapons
             return fanRotation * baseDirection;
         }
 
-        /// <summary>
-        /// 부모(KRHitscanWeapon)의 DoFire()는 모든 펠릿을 같은 프레임에 동시 발사해
-        /// 레이저 빔처럼 보일 수 있습니다. 이 클래스는 _pelletStaggerInterval만큼 시차를 두고
-        /// 한 발씩 순차 발사하는 코루틴으로 대체해, 부채꼴이 빠르게 펼쳐지는 느낌을 살립니다.
-        /// </summary>
         protected override void DoFire(float damagePerPellet)
         {
             if (_burstCoroutine != null)
@@ -171,11 +140,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>
-        /// 부모(KRHitscanWeapon)의 기본 트레이서(가는 선) 대신, 화염방사기 느낌의 "날아가는
-        /// 불덩이" 시각효과를 생성합니다. UseFlameVisual이 false면 부모의 기본 트레이서로
-        /// 폴백합니다. 데미지는 이미 즉시 적용된 상태이므로 이 메서드는 순수 시각효과입니다.
-        /// </summary>
         protected override void SpawnPelletVisual(Vector3 origin, Vector3 endPoint)
         {
             if (!_useFlameVisual)

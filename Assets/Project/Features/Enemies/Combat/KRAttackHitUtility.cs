@@ -32,34 +32,6 @@ public static class KRAttackHitUtility
         return dot >= minDot;
     }
 
-    public static bool TryDamageTargetInCone(KRAITarget target, Transform attacker, float damage, float radius, float angle)
-    {
-        if (target == null || attacker == null || !target.IsValidTarget())
-            return false;
-
-        Vector3 hitPoint = target.AimPoint.position;
-
-        if (!IsPointInCone(attacker, hitPoint, radius, angle))
-            return false;
-
-        Vector3 hitDirection = hitPoint - attacker.position;
-        return KRDamageUtility.ApplyDamageToAITarget(target, damage, hitPoint, hitDirection, attacker);
-    }
-
-    public static bool TryDamageTargetInRadius(KRAITarget target, Transform attacker, float damage, float radius)
-    {
-        if (target == null || attacker == null || !target.IsValidTarget())
-            return false;
-
-        Vector3 hitPoint = target.AimPoint.position;
-
-        if ((hitPoint - attacker.position).sqrMagnitude > radius * radius)
-            return false;
-
-        Vector3 hitDirection = hitPoint - attacker.position;
-        return KRDamageUtility.ApplyDamageToAITarget(target, damage, hitPoint, hitDirection, attacker);
-    }
-
     public static int DamageOverlapSphere(Vector3 center, float radius, LayerMask targetMask, float damage, Transform attacker)
     {
         int count = Physics.OverlapSphereNonAlloc(

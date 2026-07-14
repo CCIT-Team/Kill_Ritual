@@ -3,10 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 별도의 파티클 시스템이나 머티리얼 에셋을 미리 만들어두지 않아도 바로 사용할 수 있는
-    /// 간단한 폭발 시각효과입니다. 구체가 빠르게 커지면서 투명해지다가 스스로 사라집니다.
-    /// </summary>
     [RequireComponent(typeof(Renderer))]
     public sealed class KRExplosionFlash : MonoBehaviour
     {
@@ -52,10 +48,6 @@ namespace KillRitual.Weapons
             transform.localScale = Vector3.one * _startScale;
         }
 
-        /// <summary>
-        /// Built-in Standard 셰이더에서 투명도가 정상 동작하도록 설정합니다.
-        /// _Mode = 3(Transparent), 키워드 설정, 블렌드 모드를 모두 적용합니다.
-        /// </summary>
         private static void ConfigureTransparency(Material mat)
         {
             // Built-in Standard 셰이더 투명 모드

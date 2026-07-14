@@ -3,15 +3,6 @@ using UnityEngine.UI;
 
 namespace KillRitual
 {
-    /// <summary>
-    /// 대시 충전 상태를 슬롯 UI로 표시합니다.
-    ///
-    /// 핵심:
-    /// - Image.fillAmount 사용 안 함.
-    /// - Sliced Image의 Width를 직접 조절함.
-    /// - Anchor/Pivot을 강제로 바꾸지 않음.
-    /// - 시작 시 배치된 위치와 너비를 기준으로 왼쪽 끝을 고정하고 오른쪽으로 차오르게 함.
-    /// </summary>
     public sealed class KRDashChargeUI : MonoBehaviour
     {
         [Header("Slot Fill Images")]
@@ -83,11 +74,6 @@ namespace KillRitual
             }
         }
 
-        /// <summary>
-        /// currentCharges: 현재 사용 가능한 대시 횟수
-        /// maxCharges: 최대 대시 횟수
-        /// recharge01: 다음 대시 충전 진행률 0~1
-        /// </summary>
         public void SetDashState(int currentCharges, int maxCharges, float recharge01)
         {
             if (slotFillRects == null || slotFillRects.Length == 0)
@@ -117,10 +103,6 @@ namespace KillRitual
             }
         }
 
-        /// <summary>
-        /// Anchor/Pivot을 건드리지 않고, 시작 시 왼쪽 끝을 기준으로 오른쪽으로 차오르게 만든다.
-        /// Pivot이 0이 아니어도 왼쪽 끝이 고정되도록 anchoredPosition을 보정한다.
-        /// </summary>
         private void SetSlotWidthRightToLeft(int index, float width)
         {
             RectTransform rect = slotFillRects[index];

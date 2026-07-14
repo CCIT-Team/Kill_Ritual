@@ -4,12 +4,6 @@ using KillRitual.Weapons.Visual;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 충전 발사형 투사체 무기 전용 클래스입니다. (수(水) 유형II 충전구체, 금(金) 유형II BFG)
-    /// KRProjectileWeapon을 그대로 상속해 투사체/폭발 로직은 재사용하고,
-    /// "누르고 있는 동안 충전되고, 떼는 순간 그때까지 충전된 만큼의 크기로 발사된다"는
-    /// 활시위 당기기(Bow-draw) 방식의 차징을 추가합니다.
-    /// </summary>
     public sealed class KRChargeProjectileWeapon : KRProjectileWeapon
     {
         [Header("차징 발사")]
@@ -150,10 +144,6 @@ namespace KillRitual.Weapons
             ResetChargeState();
         }
 
-        /// <summary>
-        /// 무기 전환(퀵스왑) 시 호출됩니다.
-        /// 마우스를 실제로 뗀 것이 아니므로 충전 중이던 샷을 발사하지 않고 취소합니다.
-        /// </summary>
         public override void NotifyCancelled()
         {
             if (_isCharging || _chargeElapsed > 0f)
@@ -167,13 +157,8 @@ namespace KillRitual.Weapons
             ResetChargeState();
         }
 
-        /// <summary>이번 발사에 사용할 충전 비율을 부모(KRProjectileWeapon)의 DoFire()에 제공합니다.</summary>
         protected override float GetChargeRatio() => _pendingChargeRatio;
 
-        /// <summary>
-        /// 부모(KRProjectileWeapon)의 발사 로직을 그대로 사용한 뒤, 이 클래스에서만
-        /// 유도 추적탄을 추가로 설정합니다.
-        /// </summary>
         protected override void DoFire(float damage)
         {
             base.DoFire(damage);
@@ -206,7 +191,6 @@ namespace KillRitual.Weapons
             _isCharging = false;
         }
 
-        /// <summary>부모의 기본 기즈모(사거리/폭발 반경)에 유도 추적탄 탐지 반경을 추가로 표시합니다.</summary>
         protected override void OnDrawGizmosSelected()
         {
             base.OnDrawGizmosSelected();

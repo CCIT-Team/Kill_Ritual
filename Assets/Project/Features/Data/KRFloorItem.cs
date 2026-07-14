@@ -6,29 +6,6 @@ using KillRitual.Player.Combat;
 
 namespace KillRitual.Items
 {
-    /// <summary>
-    /// 처형 드롭(KRDropItem)과 달리, 레벨 디자이너가 씬에 직접 배치해 둔 3D 오브젝트에
-    /// 붙이는 "고정 배치형" 회복 아이템 컴포넌트입니다.
-    ///
-    /// [KRDropItem과의 차이]
-    ///   - KRDropItem: 처형 성공 시 KRDropSpawner가 런타임에 Instantiate하는 오브입니다.
-    ///     Rigidbody로 중력 낙하 후 바닥에 닿으면(OnCollisionEnter) 고정되는 물리 기반 오브입니다.
-    ///   - KRFloorItem(이 스크립트): 씬 에디터에서 사람이 직접 위치를 잡아 미리 배치해 둔
-    ///     3D 오브젝트용입니다. 이미 바닥 위 정확한 위치에 놓여 있으므로 낙하/착지 물리가
-    ///     필요 없습니다. Rigidbody 없이도 동작합니다.
-    ///   - 흡수 판정(수평 거리, _collectRange), 타입별 색상, 회복 효과 적용 로직은 KRDropItem과
-    ///     동일한 방식을 그대로 따릅니다.
-    ///
-    /// [사용 방법]
-    ///   1. 씬에 원하는 3D 오브젝트(모델/메시)를 원하는 위치에 배치합니다.
-    ///   2. 그 오브젝트에 이 컴포넌트를 붙입니다. Collider/Rigidbody는 필요 없습니다
-    ///      (트리거 판정을 물리 콜라이더가 아니라 거리 계산으로 하기 때문입니다).
-    ///   3. Inspector에서 Type(오행/체력)과 회복량을 지정합니다. 색상은 Awake 시 자동으로
-    ///      타입에 맞게 적용됩니다.
-    ///   4. 필요하면 _despawnOnCombatEnd를 켜서 전투 종료 시 함께 사라지도록 할 수 있습니다.
-    ///      기본값은 꺼짐(false)입니다 — 레벨에 고정 배치된 아이템은 보통 전투와 무관하게
-    ///      계속 존재해야 하는 경우가 많기 때문입니다. 상황에 맞게 조절하세요.
-    /// </summary>
     public sealed class KRFloorItem : MonoBehaviour
     {
         [Header("오브 설정")]
@@ -161,7 +138,6 @@ namespace KillRitual.Items
             }
         }
 
-        /// <summary>DropType에 따라 오브 색상을 자동으로 설정합니다. 별도 머티리얼 없이 런타임에 적용됩니다.</summary>
         private void ApplyTypeColor()
         {
             Renderer rend = GetComponentInChildren<Renderer>();

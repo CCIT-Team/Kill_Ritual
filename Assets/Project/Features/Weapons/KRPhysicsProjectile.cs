@@ -6,23 +6,6 @@ using KillRitual.Core.Managers;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 물리 투사체(Projectile / ExplosiveBurst 계열)의 비행 궤적과 충돌 판정을 전담하는 컴포넌트입니다.
-    ///
-    /// [유도 추적탄(Homing Tracer) 기능 - BFG 전용 옵션]
-    /// ConfigureHomingTracers()를 호출해두면, 비행 중 일정 주기마다 자신을 중심으로 반경 내
-    /// 적을 탐지하고, 레이캐스트로 시야가 실제로 막혀있지 않은지(벽 뒤 적이 아닌지) 확인한 뒤,
-    /// 시야가 확보된 대상에게만 소량의 즉발 데미지를 자동으로 적용합니다. 이는 BFG가 비행하며
-    /// 주변 적을 자동 조준해 작은 탄을 계속 쏘는 고전적인 효과를 구현합니다.
-    /// 이 기능을 호출하지 않은 일반 투사체(플라즈마건, 그레네이드런처 등)는 기존과 동일하게
-    /// 충돌/폭발 시에만 데미지를 입힙니다.
-    ///
-    /// [디버그 통계 구조]
-    /// 이 클래스는 #if UNITY_EDITOR || DEVELOPMENT_BUILD 블록 안에서만 컴파일되는
-    /// KRExplosionStats 구조체를 통해 폭발 1회당 연산 지표를 수집합니다.
-    /// 수집된 데이터는 KRCombatDebugOverlay가 OnGUI로 화면에 렌더링하며,
-    /// 릴리즈 빌드에서는 관련 코드 전체가 제거되어 런타임 비용이 0입니다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRPhysicsProjectile : MonoBehaviour
     {
@@ -103,38 +86,23 @@ namespace KillRitual.Weapons
         // 릴리즈 빌드에서는 컴파일 자체가 되지 않으므로 런타임 비용 0.
         // -----------------------------------------------------------------------
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        /// <summary>
-        /// 폭발(Explode) 1회 실행 시 수집되는 연산 지표입니다.
-        /// KRCombatDebugOverlay가 이 구조체를 구독해 OnGUI로 시각화합니다.
-        /// </summary>
         public struct KRExplosionStats
         {
-            /// <summary>OverlapSphereNonAlloc이 반환한 원시 콜라이더 수 (브로드페이즈 통과 수)</summary>
             public int RawColliderCount;
 
-            /// <summary>GetComponentInParent 호출 횟수. 현재 구조에서는 중복 검사 포함 최대 O(n²)번 호출됨</summary>
             public int ComponentLookupCount;
 
-            /// <summary>중복 콜라이더로 판정되어 건너뛴 횟수</summary>
             public int DuplicateSkipCount;
 
-            /// <summary>실제로 TakeDamage가 호출된 유효 피격 대상 수</summary>
             public int ActualHitCount;
 
-            /// <summary>IsAlreadyHandled 내부의 이중 루프 총 반복 횟수. O(n²) 비용의 직접 지표</summary>
             public int DeduplicationIterations;
 
-            /// <summary>폭발 발생 월드 좌표</summary>
             public Vector3 Center;
 
-            /// <summary>폭발 반경</summary>
             public float Radius;
         }
 
-        /// <summary>
-        /// 폭발 1회 완료 시 발행되는 이벤트.
-        /// KRCombatDebugOverlay가 구독해 통계를 누적합니다.
-        /// </summary>
         public static event System.Action<KRExplosionStats> OnExplosionDebugStats;
 #endif
 
@@ -168,15 +136,6 @@ namespace KillRitual.Weapons
             _initialized = true;
         }
 
-        /// <summary>
-        /// [선택적 기능] 비행 중 유도 추적탄(자동 조준 잔탄)을 활성화합니다.
-        /// Initialize() 직후, 발사 전 호출해야 합니다. 호출하지 않으면 일반 투사체로 동작합니다.
-        /// </summary>
-        /// <param name="radius">추적탄이 적을 탐지하는 반경</param>
-        /// <param name="interval">추적탄 발사 주기(초). 0.1이면 초당 약 10발의 작은 탄이 나갑니다.</param>
-        /// <param name="tracerDamage">추적탄 1발당 데미지 (메인 폭발 데미지와는 별개입니다)</param>
-        /// <param name="tracerVisualPrefab">추적탄이 명중할 때 보여줄 시각효과 프리팹 (KRHitscanTracer). null이면 시각효과 생략.</param>
-        /// <param name="tracerVisualColor">추적탄 시각효과 색상</param>
         public void ConfigureHomingTracers(float radius, float interval, float tracerDamage,
             GameObject tracerVisualPrefab, Color tracerVisualColor)
         {
@@ -189,12 +148,6 @@ namespace KillRitual.Weapons
             _tracerTimer = 0f;
         }
 
-        /// <summary>
-        /// [선택적 기능] 폭발 시 실제로 화면에 보이는 시각효과(파티클 등)를 지정합니다.
-        /// 호출하지 않으면 데미지 판정은 그대로 동작하되 시각효과 없이 조용히 폭발합니다.
-        /// </summary>
-        /// <param name="vfxPrefab">폭발 지점에 생성할 프리팹. ParticleSystem이 있으면 재생 시간에 맞춰 자동 정리되고,
-        /// 없으면 3초 후 안전하게 제거됩니다.</param>
         public void ConfigureExplosionVisual(GameObject vfxPrefab)
         {
             _explosionVfxPrefab = vfxPrefab;
@@ -255,11 +208,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>
-        /// [유도 추적탄] 일정 주기마다 주변 적을 탐지하고, 레이캐스트로 실제 시야가 확보된
-        /// 대상에게만 소량의 즉발 데미지를 적용합니다. 시야 확인에 KRManagers.Combat의 O(1)
-        /// 캐시 조회를 사용해, 광역 폭발 최적화와 동일한 원칙(해시 기반 사전 매핑)을 재사용합니다.
-        /// </summary>
         private void UpdateHomingTracers()
         {
             _tracerTimer += Time.deltaTime;
@@ -306,7 +254,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>유도 추적탄이 명중했을 때의 시각효과(작은 트레이서)를 생성합니다. 프리팹이 없으면 생략됩니다.</summary>
         private void SpawnTracerVisual(Vector3 origin, Vector3 targetPosition)
         {
             if (_tracerVisualPrefab == null) return;
@@ -326,11 +273,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>
-        /// 폭발 지점에 시각효과 프리팹을 생성합니다. ParticleSystem이 붙어 있으면 그 재생 시간에
-        /// 맞춰 자동으로 정리하고, 일반 메시/스프라이트 등이면 안전하게 3초 후 제거합니다.
-        /// 프리팹이 비어있으면 데미지 판정에는 영향 없이 시각효과만 생략됩니다.
-        /// </summary>
         private void SpawnExplosionVisual(Vector3 center)
         {
             if (_explosionVfxPrefab == null) return;
@@ -387,15 +329,6 @@ namespace KillRitual.Weapons
             return true;
         }
 
-        /// <summary>
-        /// [최적화 적용] OverlapSphereNonAlloc으로 폭발 반경 내 IDamageable을 수집하고
-        /// 선형 감쇠 데미지(D = Dmax × (1 - d/R))를 적용합니다.
-        ///
-        /// 개선 내용 (SAP 내로우페이즈 원칙 적용):
-        ///   ① GetComponentInParent 제거 → KRManagers.Combat.Lookup(collider) O(1) 조회
-        ///   ② O(n²) 이중 루프 중복 제거 → _handledInstanceIds[] 배열 마킹 O(n)
-        ///   ③ _explosionLayerMask 분리 → 브로드페이즈 후보 수 자체를 줄임 (환경 레이어 제외)
-        /// </summary>
         private void Explode(Vector3 center)
         {
             // 실제 데미지 판정과 무관하게, 누구를 맞췄는지와 별개로 폭발 시각효과는 항상 재생합니다.

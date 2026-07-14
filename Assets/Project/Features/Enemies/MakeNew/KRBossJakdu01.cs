@@ -8,31 +8,6 @@ using KillRitual.Core.Interfaces;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// 1스테이지 보스 컨트롤러입니다. 클래스/파일 이름은 예전 "작두 보스" 설계 때 이름을
-    /// 그대로 쓰고 있지만(씬/프리팹이 이미 이 스크립트를 참조하고 있어 이름을 바꾸면 GUID 연결이
-    /// 꼬일 위험이 있어 유지했습니다), 내용은 두 번 전면 재설계됐습니다.
-    ///
-    /// [2026-07-07 두 번째 전면 재작성 — "부위타격" 중심 컨셉으로 교체]
-    /// 첫 번째 재작성("불가살이": 평소 거의 무적, 특정 패턴 직후에만 부위가 잠깐 노출)을 버리고,
-    /// 몬스터헌터류의 "부위별 체력 + 파괴(break)" 시스템으로 교체했습니다. 계기는 새로 받은
-    /// 모델(Four Legged Predator.fbx)이 머리/몸통/다리 텍스처가 이미 부위별로 나뉘어 있어서,
-    /// 그 구분을 그대로 게임플레이에 살리는 게 자연스럽다는 판단입니다.
-    ///
-    /// [무엇이 바뀌었나]
-    /// - 부위(KRBossBodyPart)는 이제 항상 맞을 수 있습니다. "패턴이 끝난 뒤에만 노출" 같은
-    ///   시간 제한이 전부 사라졌습니다 — 패턴들은 이제 순수하게 "예고 → 공격" 위협일 뿐이고,
-    ///   부위를 노리는 건 전투 내내 가능합니다.
-    /// - 부위마다 자기 체력이 있고(KRBossBodyPart._partHealth), 0이 되면 "파괴"되며 실제
-    ///   전투에 영향을 주는 행동 변화가 걸립니다(이동속도 감소/돌진 봉인 — 아래 참고).
-    ///   [2026-07-08 삭제] 다리 파괴 시 강제 그로기(다운)는 뺐습니다 — 이제 이동속도 감소/돌진
-    ///   봉인만 걸리고, 그로기는 예전처럼 체력이 낮아졌을 때만 자연스럽게 걸립니다.
-    /// - 부위 구성도 재설계했습니다: 어깨(Shoulder_L/R)·코(Trunk)·등(Back) → 머리/몸통/앞다리/
-    ///   뒷다리/꼬리 5부위로 변경(모델의 실제 텍스처 구분과 일치).
-    /// - 돌진 패턴이 부위 파괴와 직접 연동됩니다: 앞다리나 뒷다리 중 하나라도 파괴되면 돌진을
-    ///   아예 못 쓰고(다리 없이 못 뛴다는 논리), 돌진 중 벽에 부딪히면 그 충격으로 앞다리 자신에게
-    ///   피해가 들어갑니다(무리하게 자주 돌진하면 스스로 다리를 부러뜨리게 되는 리스크/리워드).
-    /// </summary>
     public sealed class KRBossJakdu01 : KREnemyBase
     {
         private enum BossPhase { Phase1, Phase2 }
@@ -108,9 +83,6 @@ namespace KillRitual.Enemies
         [Range(0.1f, 1f)]
         [SerializeField] private float _legBreakSpeedMultiplier = 0.65f;
 
-        // [2026-07-08 삭제] _legBreakGroggyDuration — "다리 파괴시 그로기되는거 빼줘" 요청으로
-        // 다리 파괴 시 강제 그로기 자체를 없애면서 같이 삭제했습니다.
-
         [Header("이동 / 패턴 진행")]
         [Tooltip("초당 회전 각도(도). 유한하게 두면 거대한 몸집답게 천천히 돌게 되고, 플레이어가 " +
                  "실제로 등/옆으로 돌아가서 때릴 수 있게 됩니다.")]
@@ -159,8 +131,6 @@ namespace KillRitual.Enemies
         [Min(0f)][SerializeField] private float _shardDamage = 15f;
         [SerializeField] private LayerMask _shardHitLayerMask = ~0;
         [SerializeField] private LayerMask _shardDamageableLayerMask = ~0;
-        // [2026-07-08 삭제] _shardMinRange(원거리 최소 사거리) — 안 쓰는 필드였습니다.
-        // '원거리 10m 이상/물기 10m 미만' 경계를 _trunkStrikeRange 하나로 통일하면서 대체됨.
         [Tooltip("[2026-07-08 신규] '모션이랑 투사체 발사랑 싱크 안 맞아' 문제 수정 — Attack " +
                  "트리거를 건 시점부터 실제로 철갑을 던지는(발사하는) 순간까지의 지연 시간입니다. " +
                  "[2026-07-08 최종 수정] '모션과 동시에' 요청에 따라 0으로 맞췄습니다 — 트리거를 " +
@@ -193,7 +163,6 @@ namespace KillRitual.Enemies
                  "기본값을 6→10으로 올린 이유도 이것 하나입니다.")]
         [Min(0.05f)][SerializeField] private float _trunkWindup = 0.6f;
         [Min(0.5f)][SerializeField] private float _trunkStrikeRange = 10f;
-        // [2026-07-08 삭제] _trunkStrikeHalfAngle(각도 제한용) — 각도 제한 자체를 없애면서 안 쓰는 필드였습니다.
         [Min(0f)][SerializeField] private float _trunkDamage = 25f;
         [Tooltip("연속 타격 사이의 간격(초, 2페이즈 3연타용).")]
         [Min(0.05f)][SerializeField] private float _trunkComboInterval = 0.35f;
@@ -204,8 +173,6 @@ namespace KillRitual.Enemies
         [Tooltip("[2026-07-08 수정] '돌진거리 두배까지 이동하게 해줘' 요청으로 20m → 40m로 늘렸습니다.")]
         [Min(1f)][SerializeField] private float _chargeMaxDistance = 40f;
         [Min(0f)][SerializeField] private float _chargeDamage = 30f;
-        // [2026-07-08 삭제] _chargeHitRadius(예전 원형 판정 반경) — _chargeHitbox(Trigger 콜라이더)가
-        // 판정을 전담하게 되면서 안 쓰는 필드였습니다.
         [Tooltip("벽 감지용 레이어 — 플레이어/적 레이어는 반드시 제외하세요. 지형/벽 레이어만 포함.")]
         [SerializeField] private LayerMask _chargeWallLayerMask = ~0;
         [Tooltip("돌진 전용 피해 판정 콜라이더(KRBossChargeHitbox). 돌진 중에만 켜져서 " +
@@ -269,9 +236,6 @@ namespace KillRitual.Enemies
         private float _patternActiveSince;
         private int _lastPatternIndex = -1;
 
-        // [2026-07-08 신규] "같은 공격 패턴 3연속 금지" 요청 반영 — 직전 패턴이 연속으로 몇 번째
-        // 나왔는지 셉니다. 2번 연속까지는 허용하고, 이 값이 2 이상일 때(=이미 2연속)만 그 패턴을
-        // 후보에서 제외해서 3번째 연속 사용을 막습니다.
         private int _patternRepeatCount;
 
         private float _nextPatternTime;
@@ -279,8 +243,6 @@ namespace KillRitual.Enemies
         private int _brokenLegCount;
         private float _legSpeedMultiplier = 1f;
 
-        // [2026-07-08 신규] 공격 범위 시각화용 LineRenderer — 씬/프리팹에 미리 안 만들어둬도
-        // 최초 필요 시점에 코드로 자동 생성됩니다(EnsureIndicators() 참고).
         private LineRenderer _circleIndicator;
         private LineRenderer _chargeLineIndicator;
 
@@ -298,32 +260,12 @@ namespace KillRitual.Enemies
 
             _bodyBaseScale = transform.localScale;
 
-            // [2026-07-08 신규] 이동/회전이 전부 코드로 제어됩니다 — MoveTowards()(NavMeshAgent),
-            // DoChargeDash()의 수동 transform.position 이동, TurnBackTowardsPlayer()의 수동
-            // transform.rotation Slerp, FacePlayer()의 수동 회전까지 전부 스크립트가 직접 계산합니다.
-            // 여기에 애니메이션 클립 자체의 루트모션(특히 attack/Powerfull_attack처럼 제자리에서
-            // 안 멈추는 클립)까지 더해지면, 실제 위치가 코드가 계산한 위치와 어긋나서 꼬리 휘두르기
-            // 사거리 판정이나 돌진 거리 계산이 눈에 보이는 것과 안 맞게 됩니다.
-            // 그래서 에디터의 Apply Root Motion 체크박스는 그대로 켜둬도 되지만(사용자가 명시적으로
-            // 켠 설정이라 되돌리지 않습니다), 런타임에서는 여기서 강제로 꺼서 위치/회전 제어권을
-            // 코드가 전담하도록 합니다. 클립 재생 자체(다리 움직임 등 제자리 애니메이션)에는 영향
-            // 없고, "클립에 저장된 이동/회전량을 실제로 반영할지"만 꺼집니다.
             if (_visualAnimator != null)
                 _visualAnimator.applyRootMotion = false;
 
-            // [2026-07-07 신규] 부위 파괴 이벤트 구독 — 다리(앞/뒤) 파괴 시 이동속도 감소를
-            // 적용합니다(2026-07-08: 강제 다운은 삭제). 돌진 가능 여부는
-            // IsPatternViableAtDistance()에서 _frontLegs.IsBroken / _backLegs.IsBroken을 직접
-            // 확인합니다(별도 이벤트 불필요).
             if (_frontLegs != null) _frontLegs.OnBroken += HandleLegBroken;
             if (_backLegs != null) _backLegs.OnBroken += HandleLegBroken;
 
-            // [2026-07-09 신규] "보스는 그로기 안 걸리게 해줘" 요청 — KREnemyBase.TakeDamage()가
-            // (!_isGroggy && _health <= _maxHealth * _groggyHealthRatio)일 때 자동으로 그로기에
-            // 진입시킵니다. _groggyHealthRatio를 음수로 두면 이 조건이 체력이 얼마든 절대 참이
-            // 될 수 없어 보스는 체력 기반 그로기에 걸리지 않습니다(다리 파괴로 인한 강제 그로기는
-            // 2026-07-08에 이미 별도로 제거됨 — 이제 보스는 어떤 경로로도 그로기 상태에 들어가지
-            // 않습니다). base.Awake() 이후에 덮어써야 하므로 여기서 설정합니다.
             _groggyHealthRatio = -1f;
 
             InitializeBossHealthUI();
@@ -444,29 +386,14 @@ namespace KillRitual.Enemies
             RefreshPhaseBreakObjectVisibility();
         }
 
-        /// <summary>
-        /// [2026-07-07 신규] 다리(앞다리 또는 뒷다리) 파괴 시 공통으로 호출됩니다.
-        /// 이동속도를 곱셈으로 줄입니다(양쪽 다 부러지면 더 느려짐).
-        /// [2026-07-08 삭제] "다리 파괴시 그로기되는거 빼줘" 요청으로 강제 그로기(ForceGroggy)
-        /// 호출을 없앴습니다 — 이제 다리가 부러져도 그로기(다운)되지 않고, 그로기는 체력이
-        /// _groggyHealthRatio 이하로 내려갔을 때(KREnemyBase 쪽)만 자연스럽게 걸립니다.
-        /// </summary>
         private void HandleLegBroken()
         {
             _brokenLegCount++;
-            // [2026-07-07 변경] 여기서 바로 _agent.speed를 정하지 않습니다 — 전력 질주 배율과
-            // 곱셈이 겹쳐야 하므로, 실제 속도 계산은 TickBossLogic()이 매 틱마다 담당하고
-            // 여기서는 "다리 파괴로 인한 배율"만 갱신해 둡니다.
             _legSpeedMultiplier = Mathf.Pow(_legBreakSpeedMultiplier, _brokenLegCount);
 
             Debug.Log($"[불가살이] {name}: 다리 파괴! (누적 {_brokenLegCount}개) " +
                       $"이동속도 {_legSpeedMultiplier:P0}로 감소, 돌진 패턴 봉인");
         }
-
-        // ── 공격 범위 시각화 (2026-07-08 신규) ──────────────────────────────
-        // "공격 범위 시각적으로 보여줘" 요청 반영. 원형 판정(물기/철갑 폭우)은 바닥에 원으로,
-        // 직선 판정(돌진)은 바닥에 선으로 표시합니다. 씬에 미리 준비해둘 프리팹/머티리얼이
-        // 필요 없도록 런타임에 LineRenderer를 코드로 생성해서 씁니다(내장 Sprites/Default 셰이더).
 
         private LineRenderer CreateIndicatorLineRenderer(string objectName, bool loop)
         {
@@ -494,12 +421,9 @@ namespace KillRitual.Enemies
             if (_circleIndicator == null)
                 _circleIndicator = CreateIndicatorLineRenderer("[AttackRangeCircle]", loop: true);
             if (_chargeLineIndicator == null)
-                // [2026-07-08 수정] "선말고 면으로" 요청 반영 — 이제 중심선 하나가 아니라 실제
-                // 콜라이더 폭만큼의 직사각형 테두리를 그리므로 닫힌 루프(loop: true)로 만듭니다.
                 _chargeLineIndicator = CreateIndicatorLineRenderer("[ChargePathArea]", loop: true);
         }
 
-        /// <summary>물기(원형 범위)나 철갑 폭우처럼 "중심점 + 반지름"으로 표현되는 범위를 바닥에 원으로 표시합니다.</summary>
         private void ShowCircleIndicator(Vector3 center, float radius)
         {
             if (!_showAttackRangeIndicator) return;
@@ -523,12 +447,6 @@ namespace KillRitual.Enemies
             if (_circleIndicator != null) _circleIndicator.enabled = false;
         }
 
-        /// <summary>
-        /// 돌진처럼 "시작점 + 방향 + 길이 + 폭"으로 표현되는 범위를 바닥에 표시합니다.
-        /// [2026-07-08 수정] "돌진 시각화 콜라이더 넓이만큼 보이게, 선말고 면으로" 요청 반영 —
-        /// 예전엔 중심선 하나만 그렸는데, 이제 실제 ChargeHitbox 폭(width)만큼 좌우로 벌어진
-        /// 직사각형 테두리로 그려서 실제 판정 범위(면) 전체를 보여줍니다.
-        /// </summary>
         private void ShowChargeLineIndicator(Vector3 origin, Vector3 direction, float length, float width)
         {
             if (!_showAttackRangeIndicator) return;
@@ -566,12 +484,6 @@ namespace KillRitual.Enemies
         {
             RevealBossUiIfNeeded();
 
-            // [2026-07-07 변경] 패턴(예고~공격)이 진행 중일 땐 더 이상 매 프레임 플레이어 쪽으로
-            // 재조준하지 않습니다. 예전엔 여기서 무조건 FacePlayer를 불러서, 회전속도가 유한해도
-            // 결국 시간이 지나면 항상 정면이 플레이어를 향하게 됐습니다(플레이어가 옆/뒤로 돌아가도
-            // 보스가 서서히 따라 돌아버림). 이제는 "접근 중(추격)"에만 조준하고, 일단 패턴을 시작하면
-            // 그 순간의 방향을 그대로 유지합니다 — 꼬리 휘두르기 등을 노리고 옆/뒤로 도는 플레이어에게
-            // 실제로 의미 있는 사각(死角)을 만들어 주기 위함입니다.
             if (!_isPatternActive) FacePlayer(_turnSpeedDegreesPerSecond);
             TickBossLogic();
         }
@@ -588,17 +500,6 @@ namespace KillRitual.Enemies
 
         private void TickBossLogic()
         {
-            // [2026-07-09 삭제] 이동진단 디버그 로그 — 확인 끝나 제거.
-            // if (Time.time >= _nextMoveDebugLogTime)
-            // {
-            //     _nextMoveDebugLogTime = Time.time + 1f;
-            //     float d = _player != null ? DistanceToPlayer() : -1f;
-            //     Debug.Log($"[불가살이/이동진단] 거리={d:F1} (기준 {_preferredDistance}) " +
-            //               $"패턴진행중={_isPatternActive} agent활성={(_agent != null && _agent.enabled)} " +
-            //               $"onNavMesh={(_agent != null && _agent.isOnNavMesh)} " +
-            //               $"agent속도={(_agent != null ? _agent.velocity.magnitude : -1f):F2} " +
-            //               $"위치={transform.position}");
-            // }
 
             if (_isPatternActive)
             {
@@ -624,10 +525,6 @@ namespace KillRitual.Enemies
 
             if (distance > _preferredDistance)
             {
-                // [2026-07-08 신규] "무작정 접근만 하면 패턴이 단조롭다"는 피드백 반영 — 접근
-                // 중에도 패턴 쿨다운이 다 찼으면 잠깐 멈춰서 원거리 철갑 발사(패턴0, 유일하게
-                // 거리 제한 없는 패턴)를 섞습니다. 근접 패턴(꼬리 휘두르기/돌진/철갑 폭우)은
-                // 어차피 이 거리에서 안 맞으니 제외하고 철갑 발사만 강제로 골라 씁니다.
                 if (Time.time >= _nextPatternTime)
                 {
                     StartCoroutine(RunRandomPattern(forceRangedOnly: true));
@@ -636,12 +533,6 @@ namespace KillRitual.Enemies
 
                 MoveTowards(_player.position);
 
-                // [2026-07-08 변경] "뛰기(Run) 애니메이션 상태 자체를 없애자" 요청 반영 — Run은
-                // 더 이상 이동 중 Speed 파라미터로 계속 들어가는 상태가 아니라, 돌진(Pattern_Charge)
-                // 전용 트리거로만 재생됩니다. 그래서 평소 이동 애니메이션은 항상 Walk(1) 하나로
-                // 통일합니다 — 실제 이동속도(_agent.speed)는 예전처럼 전력 질주/평소 추격/살살
-                // 접근 세 단계를 그대로 유지하지만(체감 속도 차이는 그대로 있음), 재생되는 클립만
-                // Walk로 고정됩니다.
                 bool isSprinting = distance > _preferredDistance * _sprintDistanceMultiplier;
                 bool isWalkZone = !isSprinting && distance <= _preferredDistance + _walkZoneWidth;
 
@@ -665,15 +556,6 @@ namespace KillRitual.Enemies
 
         // ── 페이즈 전환 ──────────────────────────────────────────────────
 
-        /// <summary>
-        /// [2026-07-08 신규] "2페이즈 되기 전에 해당 체력 초과하면 데미지 안 들어가게" 요청 반영.
-        /// 1페이즈 중 한 방의 피해가 2페이즈 진입 체력(_phase2HealthRatio) 문턱을 넘어서 그대로
-        /// 깎여버리면, 페이즈 전환(포효 모션 등)을 온전히 보여줄 틈도 없이 체력이 훅 빠지거나
-        /// 심하면 그 한 방으로 거의 죽어버릴 수 있습니다. 그래서 1페이즈 동안은 이 문턱 아래로
-        /// 내려가는 초과분을 잘라내고, 딱 문턱 체력에 맞춰서 멈춥니다(문턱 자체는 통과 — 이
-        /// 프레임에 OnHealthChanged가 바로 이어서 호출되어 2페이즈로 전환됩니다). 일단 2페이즈로
-        /// 전환된 뒤에는(_phase != Phase1) 더 이상 자르지 않고 정상적으로 죽을 수 있습니다.
-        /// </summary>
         protected override float ClampFinalDamage(float amount)
         {
             if (_phase != BossPhase.Phase1) return amount;
@@ -687,15 +569,6 @@ namespace KillRitual.Enemies
             return clamped;
         }
 
-        /// <summary>
-        /// [2026-07-08 신규] "그로기 처형시 죽는거 말고 한 500딜정도" 요청 반영. 기본 구현은
-        /// 처형 = 즉사(EnterDead)지만, 보스는 그로기 상태에서 처형당해도 죽지 않고 고정 피해
-        /// (_executeDamage)만 입도록 오버라이드합니다. TakeDamageDirect()로 넣어서 일반 피해와
-        /// 동일한 경로(체력 반영/ClampFinalDamage/OnHealthChanged/그로기·사망 판정)를 그대로
-        /// 타므로, 이 한 방으로 진짜 죽거나(체력이 이미 얼마 안 남아 있었다면) 2페이즈로
-        /// 전환되는 것도 자연스럽게 가능합니다 — "안 죽는다"가 아니라 "이걸로 즉사만 안 한다"는
-        /// 뜻입니다.
-        /// </summary>
         protected override void PerformExecution(
             KillRitual.Core.Interfaces.ExecutionSource source)
         {
@@ -705,22 +578,10 @@ namespace KillRitual.Enemies
             TakeDamageDirect(context);
         }
 
-        // [2026-07-08 신규] "2페이즈 시전이 안 되는 것 같다" 진단용 — 체력 60% 지점을 딱 한 번
-        // 지날 때 로그를 남깁니다. 콘솔에서 이 로그가 뜨는지부터 확인하면 원인을 좁힐 수 있습니다:
-        // 이 로그조차 안 뜨면 애초에 이 훅(TakeDamage 계열)으로 피해가 안 들어가고 있다는 뜻이고,
-        // 이건 뜨는데 그 아래 "2페이즈 진입" 로그가 60% 이후 안 뜨면 _phase2HealthRatio 값
-        // (현재 인스펙터 값)이나 ClampFinalDamage()를 의심하면 됩니다.
         private bool _health60Logged;
 
         protected override void OnHealthChanged(float ratio)
         {
-            // [2026-07-09 삭제] 체력진단 디버그 로그 — 확인 끝나 제거.
-            // if (!_health60Logged && ratio <= 0.6f)
-            // {
-            //     _health60Logged = true;
-            //     Debug.Log($"[불가살이/체력진단] {name}: 체력 60% 도달 (현재 {ratio:P0}, 페이즈 " +
-            //               $"{_phase}) — 2페이즈 진입 문턱은 {_phase2HealthRatio:P0}입니다.");
-            // }
 
             if (_phase == BossPhase.Phase1 && ratio <= _phase2HealthRatio)
             {
@@ -731,14 +592,6 @@ namespace KillRitual.Enemies
                 Debug.Log($"[불가살이] {name}: 2페이즈 진입 (체력 {ratio:P0}) — 공격 속도 증가, " +
                           "철갑 발사 폭발/코 채찍 3연타/돌진 연속/철갑 폭우 해금");
 
-                // [2026-07-08 신규] "2페이즈 전환시 무조건 포효모션이 우선되도록" 요청 반영.
-                // 예전엔 그냥 트리거만 걸었는데, OnHealthChanged는 _isPatternActive와 무관하게
-                // 아무 때나(다른 패턴이 한창 진행 중이어도) 호출될 수 있어서, 트리거를 건 직후에
-                // 진행 중이던 다른 패턴이 계속 자기 트리거를 걸거나 새 패턴이 곧바로 시작되면
-                // PlayActionTrigger()의 상호배타 로직 때문에 방금 건 Roar 트리거가 그대로
-                // 취소되고 포효가 아예 재생되지 못하는 경우가 있었습니다. 그래서 지금 진행 중이던
-                // 패턴 코루틴을 즉시 끊고, 포효를 그 자체로 하나의 "패턴"처럼 _isPatternActive로
-                // 점유해서 다른 어떤 트리거도 끼어들 수 없게 만들었습니다.
                 StopAllCoroutines();
                 OverrideColor = null;
                 HideCircleIndicator();
@@ -750,13 +603,6 @@ namespace KillRitual.Enemies
             UpdateBossHealthUI();
         }
 
-        /// <summary>
-        /// [2026-07-08 신규] 2페이즈 전환 포효를 다른 패턴이 끼어들 수 없게 독점 재생합니다.
-        /// 페이즈변경 상태는 원래 속도(1배)인데, 클립 실제 프레임레이트가 25fps(PAL)라서
-        /// 200프레임 = 8초, ExitTime 0.9 기준 실제 종료는 약 7.2초입니다. 그 실제 재생시간보다
-        /// 넉넉하게(_roarDuration) _isPatternActive를 켜 둔 채로 기다린 뒤에야 일반 패턴 로직에
-        /// 제어를 돌려줍니다.
-        /// </summary>
         private IEnumerator PhaseTransitionRoar()
         {
             _isPatternActive = true;
@@ -781,11 +627,6 @@ namespace KillRitual.Enemies
             base.OnDeath();
         }
 
-        /// <summary>
-        /// [2026-07-07 변경] 부위 콜라이더 어디에도 안 걸린 애매한 곳(루트의 큰 캡슐 콜라이더)에
-        /// 직접 맞았을 때만 적용되는 보정입니다. 부위별 피해(KRBossBodyPart)는 TakeDamageDirect()로
-        /// 별도 처리되어 이 훅을 거치지 않습니다.
-        /// </summary>
         protected override float ModifyIncomingDamage(KRDamageContext context)
         {
             if (_armorBlockVfxPrefab != null)
@@ -833,11 +674,6 @@ namespace KillRitual.Enemies
 
         // ── 패턴 선택/진행 ────────────────────────────────────────────────
 
-        /// <param name="forceRangedOnly">
-        /// [2026-07-08 신규] true면 패턴을 랜덤으로 고르지 않고 무조건 철갑 발사(0번, 유일한
-        /// 원거리 패턴)만 실행합니다. 아직 접근 중(거리가 _preferredDistance보다 먼 상태)일 때
-        /// TickBossLogic()이 이걸 호출해서 "그냥 걸어오기만 하면 단조롭다"는 피드백에 대응합니다.
-        /// </param>
         private IEnumerator RunRandomPattern(bool forceRangedOnly = false)
         {
             _isPatternActive = true;
@@ -852,12 +688,6 @@ namespace KillRitual.Enemies
             }
             else
             {
-                // [2026-07-09 변경 — "빗나간다" 재현 원인 발견] 패턴 선택은 여기서 DistanceToPlayer()
-                // (보스 루트 transform 기준)로 거리를 재고, 실제 물기 명중 판정(TryHitTrunkStrike)은
-                // _head.Position 기준으로 다시 거리를 잽니다. 큰 몬스터 모델은 루트-머리 사이 거리가
-                // 꽤 떨어져 있어서, 루트 기준으론 물기가 "후보"로 뽑혔는데 정작 머리 기준으론 사거리
-                // 밖이라 실행 시점에 빗나가는 불일치가 있었습니다. 선택 단계부터 머리 기준 거리를
-                // 써서 선택-실행 판정 기준을 통일합니다.
                 float distance = DistanceToPlayerFromHead();
                 index = PickPatternIndex(distance);
             }
@@ -869,11 +699,6 @@ namespace KillRitual.Enemies
             _isPatternActive = false;
         }
 
-        /// <summary>
-        /// [2026-07-08 신규] 패턴 선택 결과를 기록하면서 "3연속 금지"용 반복 횟수도 같이 갱신합니다.
-        /// forceRangedOnly 경로(PickPatternIndex를 거치지 않음)와 정상 선택 경로 둘 다 이 메서드로
-        /// 기록을 남겨야 반복 횟수가 정확히 유지됩니다.
-        /// </summary>
         private void RegisterPatternChoice(int index)
         {
             _patternRepeatCount = (index == _lastPatternIndex) ? _patternRepeatCount + 1 : 1;
@@ -884,11 +709,6 @@ namespace KillRitual.Enemies
         {
             int count = _phase == BossPhase.Phase2 ? 4 : 3;
 
-            // [2026-07-08 변경 — "같은 패턴 3연속 금지" 요청 반영]
-            // 예전엔 직전에 쓴 패턴을 무조건 후보에서 뺐습니다(최대 1회 연속만 허용). 이제는
-            // "2연속까지는 허용, 그 상태에서 또 같은 패턴이 뽑히면(=3연속이 됨) 후보에서 제외"로
-            // 바꿨습니다 — _patternRepeatCount가 2 이상(=이미 2연속 사용됨)일 때만 직전 패턴을
-            // 후보에서 뺍니다.
             bool excludeLastForRepeat = _patternRepeatCount >= 2;
 
             var candidates = new List<int>(count);
@@ -898,11 +718,6 @@ namespace KillRitual.Enemies
                 if (IsPatternViableAtDistance(i, distance)) candidates.Add(i);
             }
 
-            // [2026-07-08 수정 — "시작하자마자 죽는다" 재발 방지]
-            // 예전엔 여기서 거리 적합성(IsPatternViableAtDistance)을 아예 무시하고 "마지막에 쓴
-            // 패턴만 아니면 아무거나" 식으로 후보를 채웠습니다. 그러면 근접거리인데도 원거리
-            // 전용인 철갑 발사(0)가 뽑힐 수 있었고, 6발이 부채꼴로 동시 명중해 큰 피해를 줬습니다.
-            // 이제는 "3연속 금지" 제약만 풀고, 거리 적합성은 그대로 지킵니다.
             if (candidates.Count == 0)
             {
                 for (int i = 0; i < count; i++)
@@ -914,18 +729,8 @@ namespace KillRitual.Enemies
             // 불공정한 대미지를 주는 철갑 발사(0)보다 훨씬 안전한 기본값입니다.
             if (candidates.Count == 0) candidates.Add(1);
 
-            // [2026-07-09 변경 — 균등 랜덤 → 룰렛휠(Weighted Roulette Wheel) 선택]
-            // 예전엔 candidates[Random.Range(0, candidates.Count)]로 후보 중 완전 균등하게 뽑았습니다.
-            // 이제는 각 후보에 가중치를 매겨 누적 구간에 랜덤값을 던지는 방식으로 바꿨습니다 —
-            // 방금 쓴 패턴(_lastPatternIndex)은 가중치를 낮춰서(0.3) 곧바로 또 뽑힐 확률을 줄이고,
-            // 나머지 후보는 가중치 1.0으로 동등하게 취급합니다. "3연속 금지" 같은 하드 컷과 달리
-            // 0%가 아니라 확률만 낮추는 방식이라 변주가 더 자연스럽습니다.
             int index = PickByRouletteWheel(candidates);
 
-            // [2026-07-08 신규] "물기 패턴이 안 나온다" 진단용 — 매번 후보 목록과 실제 선택 결과를
-            // 남깁니다. 물기(1)가 후보 목록에 계속 안 잡힌다면 거리 조건(distance < _trunkStrikeRange)
-            // 자체를 못 만족하고 있다는 뜻이라, 이 로그만 보면 원인이 "안 뽑힘"인지 "애초에 후보가
-            // 아니었음"인지 바로 구분됩니다.
             string candidateNames = string.Join(", ", candidates.ConvertAll(i => PatternName(i)));
             Debug.Log($"[불가살이/패턴선택] 거리={distance:F1}m (근접/원거리 경계 {_trunkStrikeRange}m) " +
                       $"후보=[{candidateNames}] → 선택={PatternName(index)} " +
@@ -935,13 +740,6 @@ namespace KillRitual.Enemies
             return index;
         }
 
-        /// <summary>
-        /// [2026-07-09 신규] 후보 목록에서 가중치 기반으로 하나를 뽑습니다(룰렛휠 선택).
-        /// 방금 사용한 패턴(_lastPatternIndex)은 가중치 0.3, 나머지는 1.0으로 취급해 누적
-        /// 가중치 구간을 만들고, 그 총합 범위 안에서 랜덤값을 던져 해당 구간에 걸린 후보를
-        /// 고릅니다. 완전히 배제하는 게 아니라 확률만 낮추므로, 운이 나쁘면(혹은 좋으면) 같은
-        /// 패턴이 연속으로 나올 수도 있습니다 — 이게 균등 랜덤과의 핵심 차이입니다.
-        /// </summary>
         private int PickByRouletteWheel(List<int> candidates)
         {
             const float kRecentlyUsedWeight = 0.3f;
@@ -981,21 +779,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// 패턴별 "이 거리/상태에서 쓰는 게 말이 되는가"를 판단합니다.
-        /// [2026-07-08 재설계 — "원거리공격은 10m 이상, 물기는 10m 미만" 요청 반영]
-        /// _trunkStrikeRange(기본 10) 하나를 근접/원거리를 가르는 공통 경계값으로 씁니다.
-        /// 예전엔 원거리(0)는 _shardMinRange(5), 물기(1)/돌진(2)은 _trunkStrikeRange(6)로
-        /// 서로 다른 기준을 썼는데, 그러면 두 값 사이(5~6m) 같은 애매한 구간이 생기거나
-        /// 반대로 겹치는 구간이 생겨서 의도를 벗어난 선택이 나올 수 있었습니다. 지금은:
-        /// - 철갑 발사(0): distance >= _trunkStrikeRange (10m 이상 — 진짜 원거리일 때만)
-        /// - 물기(1): distance &lt; _trunkStrikeRange (10m 미만 — 근접일 때만)
-        /// - 돌진(2): [2026-07-09 변경 — "거리에 비례해서 안 나오게 하면 안 되는 거 아니야?"]
-        ///   예전엔 철갑 발사와 같은 "원거리" 구간(10m 이상)에서만 후보에 들어갔습니다. 거리로
-        ///   막는 하드 컷 자체를 없애고, 다리가 안 부러진 이상 거리와 무관하게 항상 후보에
-        ///   들어가도록 바꿨습니다(룰렛휠 가중치로 빈도를 조절하는 건 별개 문제입니다).
-        /// - 철갑 폭우(3, 2페이즈): 범위 공격 — 범위 안일 때만(근접/원거리 구분과 무관).
-        /// </summary>
         private bool IsPatternViableAtDistance(int index, float distance)
         {
             switch (index)
@@ -1087,16 +870,6 @@ namespace KillRitual.Enemies
             StartCoroutine(HopBounce(height, upDuration, downDuration));
         }
 
-        /// <summary>
-        /// [2026-07-08 신규 — "돌진 중에 원거리 공격 모션이 나온다" 버그 예방]
-        /// Attack/PowerfulAttack/Roar/Run 네 트리거는 전부 AnyState에서 서로 배타적으로 딱 하나만
-        /// 재생돼야 하는 "한 번 재생 액션"들입니다. Animator의 Trigger 파라미터는 조건을 실제로
-        /// 소비하는 전이가 그 프레임에 평가되지 않으면 값이 계속 true로 남아있을 수 있는데, 그
-        /// 상태에서 다른 트리거를 새로 걸면(예: 돌진의 Run) 예전에 걸어뒀던 트리거(예: 철갑발사의
-        /// Attack)가 나중에 뒤늦게 함께/대신 소비되면서 의도한 것과 다른 애니메이션이 튀어나올 수
-        /// 있습니다. 새 트리거를 걸기 직전에 나머지 셋을 전부 ResetTrigger로 확실히 꺼서, 항상
-        /// 지금 의도한 것 하나만 남도록 보장합니다.
-        /// </summary>
         private void PlayActionTrigger(int triggerHash)
         {
             if (_visualAnimator == null) return;
@@ -1122,31 +895,11 @@ namespace KillRitual.Enemies
             PlayScalePunch(new Vector3(0.92f, 1.12f, 0.92f), 0.08f, 0.2f);
             PlayActionTrigger(kAttackTrigger);
 
-            // [2026-07-08 신규 — "모션이랑 투사체 발사랑 싱크 안 맞아" 버그 수정]
-            // 예전엔 트리거를 건 바로 그 프레임에 곧바로 철갑을 발사했습니다. 그런데 실제 attack
-            // 클립은 200프레임짜리 애니메이션이라, 트리거를 건 순간엔 아직 팔/입을 들어올리는
-            // 예비 동작만 시작된 상태입니다 — 실제로 "던지는" 동작이 나오기도 전에 투사체가 먼저
-            // 튀어나가 버렸던 겁니다.
-            // [2026-07-08 수정] 처음엔 5.5배로 압축했다가("모션이 부자연스럽다") 1배로 되돌렸다가
-            // ("걷기 모션이 안 나온다"), '모션시간 2배 줄이고' 요청에 따라 공격1 상태 m_Speed를
-            // 2배로 맞췄습니다(컨트롤러 쪽). 지연 시간(_shardLaunchDelay)은 '모션과 동시에' 요청에
-            // 따라 최종적으로 0으로 맞췄습니다 — 트리거를 건 바로 그 프레임에 발사됩니다.
             yield return new WaitForSeconds(_shardLaunchDelay);
 
             FireShardsFromMuzzle(_shoulderLMuzzle);
             FireShardsFromMuzzle(_shoulderRMuzzle);
 
-            // [2026-07-07 변경] 이전엔 여기서 어깨(_shoulderL/R)를 잠깐 노출시켰지만, 이제 부위는
-            // 항상 맞을 수 있으므로 그 개념 자체가 사라졌습니다 — 패턴은 순수 공격 시퀀스입니다.
-
-            // [2026-07-08 신규 — "걷기 모션이 다시 빠졌다" / "애니메이션이 캔슬되는거 같아서" 버그 수정]
-            // 처음엔 클립이 30fps짜리라고 잘못 가정해서 실제 재생시간을 너무 짧게 계산했습니다.
-            // FBX를 직접 확인해보니 실제 프레임레이트는 25fps(PAL)였습니다 — 200프레임 = 8초
-            // (1배속), 공격1은 2배속이니 실제 재생시간 약 4초, ExitTime 0.9 기준 실제 종료는 약
-            // 3.6초입니다. 이 대기(_shardRecoveryDelay)를 포함한 코루틴 총 시간 + 쿨다운이 그
-            // 3.6초보다 늦게 끝나야, 애니메이션이 자기 힘으로 대기/이동에 복귀한 뒤에야 다음
-            // 철갑발사가 잡힙니다. 그렇지 않으면 다음 트리거가 AnyState로 먼저 끼어들어
-            // 애니메이션이 끝까지 재생되지 못하고 캔슬됩니다.
             yield return new WaitForSeconds(_shardRecoveryDelay);
         }
 
@@ -1173,11 +926,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        // ── 패턴 2: 물기 ────────────────────────────────────────────────
-        // [2026-07-08 변경] "꼬리 휘두르기"에서 다시 "물기"로 컨셉 변경(요청 반영). 판정 자체는
-        // 그대로 꼬리 위치 기준 원형 범위를 씁니다 — 바뀐 건 이름/로그/재생하는 애니메이션뿐이고,
-        // 히트 판정 로직(TryHitTrunkStrike)은 손 안 댔습니다.
-
         private IEnumerator Pattern_TrunkWhip()
         {
             int swings = _phase == BossPhase.Phase2 ? 3 : 1;
@@ -1185,8 +933,6 @@ namespace KillRitual.Enemies
 
             for (int i = 0; i < swings; i++)
             {
-                // [2026-07-08 신규] 판정 원점(_head)을 중심으로 실제 사거리(_trunkStrikeRange)를
-                // 바닥에 원으로 보여줍니다 — 윈드업 동안 켜졌다가 타격 순간 곧바로 꺼집니다.
                 Vector3 originPos = _head != null ? _head.Position : transform.position;
                 ShowCircleIndicator(originPos, _trunkStrikeRange);
 
@@ -1196,10 +942,6 @@ namespace KillRitual.Enemies
                 OverrideColor = null;
                 PlayScalePunch(new Vector3(0.95f, 1.02f, 1.15f), 0.06f, 0.15f);
 
-                // [2026-07-08 변경] "강공격 애니메이션으로 바꾸자" 요청 반영 — Attack 대신
-                // PowerfulAttack 트리거를 씁니다. 첫 타에서만 쏘는 이유는 그대로입니다: 2페이즈
-                // 3연타 내내 매번 재발동시키면 "재생 중 애니메이션이 발작하듯 재시작"하는 문제가
-                // 재현됩니다(AnyState→PowerfulAttack 전환이 자기 자신으로도 걸리면서 끊겼다 재시작).
                 if (i == 0) PlayActionTrigger(kPowerfulAttackTrigger);
 
                 TryHitTrunkStrike();
@@ -1210,16 +952,8 @@ namespace KillRitual.Enemies
                     yield return new WaitForSeconds(_trunkComboInterval);
             }
 
-            // [2026-07-07 변경] 이전엔 여기서 머리(구 _trunk)를 잠깐 노출시켰지만, 이제 부위는
-            // 항상 맞을 수 있으므로 노출 창 개념이 사라졌습니다.
         }
 
-        /// <summary>
-        /// [2026-07-09 신규] _head(없으면 보스 루트) 기준 플레이어와의 수평(XZ) 거리입니다.
-        /// TryHitTrunkStrike()의 실제 명중 판정과 PickPatternIndex()의 패턴 선택이 서로 다른
-        /// 기준점(루트 vs 머리)으로 거리를 재던 불일치를 없애기 위해, 두 곳 모두 이 메서드
-        /// 하나만 쓰도록 통일했습니다.
-        /// </summary>
         private float DistanceToPlayerFromHead()
         {
             if (_player == null) return float.MaxValue;
@@ -1230,21 +964,6 @@ namespace KillRitual.Enemies
             return toPlayer.magnitude;
         }
 
-        /// <summary>
-        /// [2026-07-07 변경] "꼬리 콜라이더를 기준으로 가자"는 요청 반영 — 판정 원점을 보스 루트
-        /// (transform.position)가 아니라 실제 꼬리(_tail) 콜라이더 위치로 바꿨습니다.
-        /// [2026-07-07 재수정 - 범위 버그 수정] 처음엔 "몸 뒤쪽만" 맞도록 각도까지 제한했는데,
-        /// 이러면 평소처럼 정면에서 쫓아오다 이 패턴에 걸리는 일반적인 상황에서 플레이어가 사거리
-        /// 안에 있어도 거의 항상 빗나가는 문제가 있었습니다(각도 조건이 항상 실패). 이제는 방향/각도
-        /// 조건 없이, 원점을 중심으로 한 순수 원형 범위 판정으로 바꿨습니다 — 정면이든 후면이든
-        /// 사거리 안이면 맞습니다.
-        /// [2026-07-08 재수정 - 기준점 오류 수정] 패턴 컨셉을 "꼬리 휘두르기"에서 "물기"로 되돌리면서
-        /// 정작 판정 기준점은 꼬리(_tail)에 그대로 둔 채였습니다 — 물기인데 꼬리를 기준으로 맞고
-        /// 안 맞고가 갈리는 건 앞뒤가 안 맞아서, 기준점을 머리(_head) 콜라이더 위치로 바꿨습니다.
-        /// _head가 비어있으면(아직 안 연결했으면) 보스 루트 위치로 대체합니다.
-        /// [2026-07-09 재수정 - 선택/실행 기준점 불일치 수정] 거리 계산을 DistanceToPlayerFromHead()로
-        /// 통일해서, 패턴 선택 단계와 실제 명중 판정이 서로 다른 기준점을 쓰던 문제를 없앴습니다.
-        /// </summary>
         private void TryHitTrunkStrike()
         {
             if (_player == null) return;
@@ -1259,9 +978,6 @@ namespace KillRitual.Enemies
             IDamageable target = FindPlayerDamageable(_player);
             if (target == null || target.IsDead) return;
 
-            // [2026-07-09 변경] originPos/toPlayer가 DistanceToPlayerFromHead()로 옮겨가면서
-            // 이 메서드 안에서 다시 필요해져 동일한 방식으로 재계산합니다(거리 재는 기준은
-            // DistanceToPlayerFromHead()와 완전히 동일 — _head 우선, 없으면 보스 루트).
             Vector3 originPos = _head != null ? _head.Position : transform.position;
             Vector3 toPlayer = _player.position - originPos;
             toPlayer.y = 0f;
@@ -1277,15 +993,6 @@ namespace KillRitual.Enemies
         {
             Debug.Log($"[불가살이] {name}: 패턴3 - 돌진 준비 ({_chargeWindup}초 차징)");
 
-            // [2026-07-08 변경] "돌진이 예측 불가능하고 피하기 힘들다"는 피드백 반영 — 예전엔
-            // 윈드업 동안 몸이 어느 쪽을 보고 있든 상관없이, 윈드업이 "끝나는 순간"의 플레이어
-            // 위치로 방향을 다시 계산해서 그대로 돌진했습니다. 즉 몸이 보여주는 방향(전조)과
-            // 실제 돌진 방향이 서로 무관해서, 플레이어 입장에선 아무리 옆으로 피해도 소용없는
-            // "조준 사격"처럼 느껴졌을 겁니다.
-            // 이제는 방향을 윈드업 "시작" 시점에 딱 한 번만 정하고, 그 방향으로 윈드업 내내
-            // 실제로 몸을 돌리는 걸 보여준 다음(WaitForSeconds 대신 회전 코루틴을 그 자리에
-            // 씁니다 — 전체 윈드업 시간은 그대로 유지됩니다) 그 고정된 방향으로만 돌진합니다.
-            // 플레이어는 몸이 돌아가는 걸 보고 미리 옆으로 피할 수 있습니다.
             Vector3 direction = transform.forward;
             if (_player != null)
             {
@@ -1294,9 +1001,6 @@ namespace KillRitual.Enemies
                 if (toPlayer.sqrMagnitude > 0.01f) direction = toPlayer.normalized;
             }
 
-            // [2026-07-08 신규] 윈드업 "시작" 시점에 방향이 고정되므로, 그 즉시 바닥에 돌진 경로를
-            // (길이 = _chargeMaxDistance, 폭 = 실제 ChargeHitbox 폭)만큼 면으로 미리 보여줍니다 —
-            // 몸 회전 전조와 함께 이중으로 방향을 알려줘서 회피 판단을 더 쉽게 해줍니다.
             ShowChargeLineIndicator(transform.position, direction, _chargeMaxDistance,
                 _chargeHitbox != null ? _chargeHitbox.GetWidth() : 3f);
 
@@ -1306,10 +1010,6 @@ namespace KillRitual.Enemies
             OverrideColor = null;
             PlayScalePunch(new Vector3(0.9f, 1.05f, 1.2f), 0.1f, 0.25f);
 
-            // [2026-07-08 변경] "돌진 애니메이션은 뛰는 모션으로 바꾸자" + "뛰기(Run) 상태 자체를
-            // 없애자" 요청 반영 — Run은 이제 이동 Speed 파라미터가 아니라 돌진 전용 트리거로만
-            // 재생됩니다(Attack/PowerfulAttack/Roar와 같은 방식: AnyState→Run 트리거 진입,
-            // 재생이 끝나면 컨트롤러가 자동으로 Idle로 돌아갑니다 — 수동으로 안 꺼도 됩니다).
             PlayActionTrigger(kRunTrigger);
 
             Debug.Log($"[불가살이] {name}: 돌진 개시 (윈드업 시작 시점에 고정한 방향)");
@@ -1337,21 +1037,10 @@ namespace KillRitual.Enemies
                 }
             }
 
-            // [2026-07-07 변경] 이전엔 여기서 머리/앞다리를 잠깐 노출시켰지만, 이제 부위는 항상
-            // 맞을 수 있으므로 노출 창 개념이 사라졌습니다. 대신 벽 충돌 시 앞다리 자해 피해가
-            // DoChargeDash() 안에서 걸립니다(아래 참고) — 돌진 자체가 부위 파괴와 연동됩니다.
-
-            // [2026-07-07 신규] 돌진이 끝나면(벽에 부딪혔든 최대거리까지 갔든) 플레이어 쪽으로
-            // 천천히 다시 돌아봅니다. 패턴 진행 중엔 UpdateChase/UpdateAttack의 FacePlayer가
-            // 멈춰 있으므로, 이 회전은 여기서 직접 코루틴으로 처리해야만 실제로 일어납니다.
             Debug.Log($"[불가살이] {name}: 돌진 후 재조준 시작 ({_chargeTurnBackDuration}초)");
             yield return StartCoroutine(TurnBackTowardsPlayer(_chargeTurnBackDuration));
         }
 
-        /// <summary>
-        /// [2026-07-07 신규] 지정한 시간(duration) 동안 플레이어 쪽으로 부드럽게 회전합니다.
-        /// 실제 회전은 공용 헬퍼(RotateTowardsDirectionOverTime)에 위임합니다.
-        /// </summary>
         private IEnumerator TurnBackTowardsPlayer(float duration)
         {
             if (_player == null) yield break;
@@ -1362,13 +1051,6 @@ namespace KillRitual.Enemies
             yield return StartCoroutine(RotateTowardsDirectionOverTime(toPlayer, duration));
         }
 
-        /// <summary>
-        /// [2026-07-08 신규] 지정한 방향(direction)을 향해 지정한 시간(duration) 동안 부드럽게
-        /// 회전합니다. 회전속도가 아니라 "걸리는 시간"을 고정하는 방식이라(Slerp의 t를 시간으로
-        /// 진행), 남은 각도가 크든 작든 항상 duration초 만에 회전이 끝나 일관된 느낌을 줍니다.
-        /// 돌진 윈드업 방향 고정(Pattern_Charge)과 돌진 후 재조준(TurnBackTowardsPlayer) 둘 다
-        /// 이 헬퍼 하나를 공유합니다.
-        /// </summary>
         private IEnumerator RotateTowardsDirectionOverTime(Vector3 direction, float duration)
         {
             direction.y = 0f;
@@ -1388,13 +1070,6 @@ namespace KillRitual.Enemies
             transform.rotation = targetRot;
         }
 
-        /// <summary>
-        /// NavMeshAgent를 잠시 멈추고 transform을 직접 이동시켜 빠른 직선 돌진을 구현합니다.
-        /// 레이캐스트로 전방 벽을 감지해 부딪히면 즉시 멈추고 _lastChargeHitWall을 true로 남깁니다.
-        /// [2026-07-07 변경] 벽에 부딪히면 그 충격으로 앞다리(_frontLegs)에 자해 피해를 줍니다 —
-        /// "돌진도 부위 파괴와 연동"해 달라는 요청 반영. 반복해서 무리하게 돌진하면 스스로
-        /// 앞다리를 부러뜨릴 수 있습니다(부러지면 IsPatternViableAtDistance()가 돌진 자체를 봉인).
-        /// </summary>
         private IEnumerator DoChargeDash(Vector3 direction)
         {
             _lastChargeHitWall = false;
@@ -1414,12 +1089,6 @@ namespace KillRitual.Enemies
                 int hitCount = Physics.RaycastNonAlloc(
                     transform.position + Vector3.up, direction, hits, step + 0.5f, _chargeWallLayerMask);
 
-                // [2026-07-08 버그 수정] "돌진이 너무 적게 나간다"는 문제의 원인 — _chargeWallLayerMask가
-                // 기본값 Everything(레이어 구분을 별도로 안 해둔 상태)이라, 방금 Activate()로 켠
-                // _chargeHitbox 자신이나 머리/앞다리 등 보스 자신의 부위 콜라이더까지 레이캐스트에
-                // 걸려서 "벽에 부딪혔다"고 착각해 돌진 시작하자마자(0에 가까운 거리에서) 멈춰버렸던
-                // 겁니다. 레이어 세팅에 의존하지 않고, 맞은 콜라이더가 보스 자신의 계층구조 소속이면
-                // (transform.root가 이 보스 루트와 같으면) 무시하도록 코드에서 직접 걸러냅니다.
                 bool blocked = false;
                 for (int i = 0; i < hitCount; i++)
                 {
@@ -1460,8 +1129,6 @@ namespace KillRitual.Enemies
         {
             Debug.Log($"[불가살이] {name}: 신규 패턴 - 철갑 폭우");
 
-            // [2026-07-08 신규] 낙하 범위(_armorRainRadius)를 보스 발밑 중심으로 원으로 미리
-            // 보여줍니다 — 예고 시작부터 실제로 철갑이 다 떨어질 때까지 계속 켜둡니다.
             ShowCircleIndicator(transform.position, _armorRainRadius);
 
             OverrideColor = _telegraphColor;
@@ -1478,8 +1145,6 @@ namespace KillRitual.Enemies
             yield return new WaitForSeconds(_armorRainDuration);
             HideCircleIndicator();
 
-            // [2026-07-07 변경] 이전엔 여기서 등(구 _back)을 잠깐 노출시켰지만, 이제 그 부위 자체가
-            // (뒷다리로 재편) 없어졌고 노출 창 개념도 사라졌습니다.
         }
 
         private void SpawnArmorRainDrop()

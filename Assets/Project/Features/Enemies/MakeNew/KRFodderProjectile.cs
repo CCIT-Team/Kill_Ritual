@@ -12,21 +12,6 @@ namespace KillRitual.Enemies
         Boss = 3
     }
 
-    /// <summary>
-    /// 원거리 몬스터가 쏘는 발사체.
-    ///
-    /// 기본 상태:
-    /// - EnemyProjectile 레이어.
-    /// - 직선으로 날아감.
-    /// - 몬스터는 맞히지 않음.
-    /// - 플레이어만 데미지를 받음.
-    ///
-    /// 무령 반사 상태:
-    /// - Projectile 레이어로 변경.
-    /// - 플레이어가 보고 있는 방향으로 날아감.
-    /// - 플레이어는 맞히지 않음.
-    /// - 적을 맞히면 데미지를 줌.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KREnemyProjectile : MonoBehaviour
     {
@@ -72,10 +57,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>
-        /// 발사체를 초기화하고 날립니다.
-        /// 기존 KRFodderRanged 호출부를 깨지 않기 위해 시그니처 유지.
-        /// </summary>
         public void Launch(Vector3 direction, float speed, float damage, Transform shooter)
         {
             _direction = direction.sqrMagnitude > 0.0001f
@@ -95,11 +76,6 @@ namespace KillRitual.Enemies
                 transform.rotation = Quaternion.LookRotation(_direction, Vector3.up);
         }
 
-        /// <summary>
-        /// 무령 컨트롤러가 투사체 우선순위 계산에 사용.
-        /// 현재 이동 방향 기준으로 worldPoint에 도달하는 예상 시간.
-        /// 플레이어에게 접근 중이 아니면 Infinity를 반환해서 우선순위를 낮춤.
-        /// </summary>
         public float EstimateArrivalTimeTo(Vector3 worldPoint)
         {
             Vector3 toPoint = worldPoint - transform.position;
@@ -119,11 +95,6 @@ namespace KillRitual.Enemies
             return distance / closingSpeed;
         }
 
-        /// <summary>
-        /// 무령으로 투사체를 반사합니다.
-        /// 발사자를 찾지 않고, 넘겨받은 방향으로만 날립니다.
-        /// 보통 reflectDirection은 카메라 forward입니다.
-        /// </summary>
         public void ReflectByMuryeong(Transform playerRoot, Vector3 reflectDirection)
         {
             if (!CanBeReflectedByMuryeong)

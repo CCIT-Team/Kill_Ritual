@@ -3,18 +3,6 @@ using UnityEngine;
  
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 물리 투사체 방식 무기의 공통 구현입니다.
-    /// _explodesOnImpact, _gravityScale, _explosionRadius 등을 인스펙터에서 다르게 설정하면
-    /// 이 클래스 하나로 다음 무기들을 구현할 수 있습니다.
-    ///   수(水) 유형I 플라즈마건     → ExplodesOnImpact=false, GravityScale=0 (등속 직선)
-    ///   금(金) 유형I 그레네이드런처 → ExplodesOnImpact=true, GravityScale&gt;0 (포물선), ExplosionRadius 중간
-    ///
-    /// [BFG/충전구체 전용 기능 안내] 충전 발사나 유도 추적탄처럼 일부 무기에만 필요한 기능은
-    /// 이 공용 부모 클래스를 건드리지 않고 KRChargeProjectileWeapon(자식 클래스)에만 추가합니다.
-    /// 이렇게 해야 플라즈마건/그레네이드런처의 인스펙터에 불필요한 필드가 노출되지 않습니다.
-    /// (가속 연사 기능을 KRHitscanWeapon이 아닌 KRRampingHitscanWeapon에만 추가한 것과 동일한 원칙입니다.)
-    /// </summary>
     public class KRProjectileWeapon : KRWeaponBase
     {
         [Header("투사체")]
@@ -45,18 +33,8 @@ namespace KillRitual.Weapons
                  "ExplodesOnImpact가 true일 때만 사용되며, 비워두면 시각효과 없이 데미지만 적용됩니다.")]
         [SerializeField] private GameObject _explosionVfxPrefab;
 
-        /// <summary>
-        /// 가장 최근에 생성한 투사체 인스턴스. KRChargeProjectileWeapon처럼 발사 직후 추가 설정
-        /// (예: 유도 추적탄)이 필요한 자식 클래스가 DoFire()를 오버라이드해 이 참조를 사용합니다.
-        /// </summary>
         protected KRPhysicsProjectile _lastFiredProjectile;
 
-        /// <summary>
-        /// 이번 발사에 적용할 충전 비율(0~1). 기본값은 1(완전 충전과 동일하게 100% 크기로 발사).
-        /// 데미지·폭발 반경·투사체 시각적 크기에 공통으로 곱연산됩니다.
-        /// KRChargeProjectileWeapon이 이 메서드를 오버라이드해, 버튼을 뗀 시점까지 누적된
-        /// 실제 충전량을 반영합니다(중간에 떼도 그 크기 그대로 발사).
-        /// </summary>
         protected virtual float GetChargeRatio() => 1f;
 
         protected override void DoFire(float damage)

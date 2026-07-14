@@ -7,27 +7,6 @@ using KillRitual.Core.Managers;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// [2026-07-07 전면 재작성 — "부위타격" 중심 설계로 컨셉 교체]
-    ///
-    /// 기존 "불가살이"(평소 거의 무적, 특정 패턴이 끝난 직후에만 해당 부위가 잠깐 노출)
-    /// 컨셉을 버리고, 몬스터헌터류의 "부위별 체력 + 파괴(break)" 시스템으로 바꿨습니다.
-    /// 새 모델(Four Legged Predator.fbx)이 머리/몸통/다리 텍스처가 서로 다르게 나뉘어 있어서,
-    /// 그 구분을 그대로 게임플레이 부위 구분으로 쓰기로 했습니다.
-    ///
-    /// [새 방식 — 기존과 가장 다른 점]
-    /// - 더 이상 "노출된 동안만 맞는다"는 시간 제한이 없습니다. 이 부위는 언제든 맞을 수 있습니다.
-    /// - 맞을 때마다 (a) 보스 본체 체력(KREnemyBase)에 그대로 피해가 들어가고,
-    ///   (b) 이 부위 자신의 체력(_partHealth, 본체 체력과 완전히 별개)도 깎입니다.
-    /// - 부위 체력이 0이 되면 그 부위는 "파괴" 상태가 되고 OnBroken 이벤트가 딱 한 번 발생합니다.
-    ///   보스 컨트롤러(KRBossJakdu01)가 이걸 구독해서 "이동속도 감소", "돌진 패턴 봉인",
-    ///   "강제 다운" 같은 실제 행동 변화를 적용합니다 — 즉 부위 파괴가 그냥 눈요기가 아니라
-    ///   전투 자체를 바꿉니다.
-    /// - [2026-07-08 변경] 파괴된 부위는 몸통 렌더러의 해당 머티리얼 슬롯 색을 바꿔서 표시합니다
-    ///   (모델이 부위별로 머티리얼 슬롯이 나뉘어 있다는 걸 확인해서 반영했습니다 — "메터리얼
-    ///   변경으로 보여주면 안되는거야?" 요청 반영). _bodyRenderer/_materialSlotIndex를 안
-    ///   연결해두면 예전 방식(그 자리에 작게 남는 구체 마커)으로 자동 대체됩니다.
-    /// </summary>
     [RequireComponent(typeof(Collider))]
     public sealed class KRBossBodyPart : MonoBehaviour, IDamageable
     {
@@ -74,17 +53,10 @@ namespace KillRitual.Enemies
         private float _currentPartHealth;
         private bool _isBroken;
 
-        /// <summary>이 부위가 파괴되었는지 여부. 보스 컨트롤러가 패턴 가능 여부 등을 판단할 때 씁니다.</summary>
         public bool IsBroken => _isBroken;
 
-        /// <summary>디버그/로그용 부위 이름.</summary>
         public string PartName => _partName;
 
-        /// <summary>
-        /// 이 부위가 파괴되는 순간 딱 한 번(중복 없이) 호출됩니다.
-        /// 보스 컨트롤러가 Awake()에서 구독해서 이동속도 감소/패턴 봉인/강제 다운 같은
-        /// 실제 행동 변화를 적용하세요.
-        /// </summary>
         public event Action OnBroken;
 
         // ── IDamageable ────────────────────────────────────────────────
@@ -129,11 +101,6 @@ namespace KillRitual.Enemies
 
                 SpawnFlash(context.HitPoint, _hitFlashColor);
 
-                // [2026-07-09 변경 — "무령으로만 부위 파괴 되도록"] 부위 체력 차감(=파괴로 이어지는
-                // 판정)은 무령 반사탄(KRMuryeongProjectile, context.IsMuryeongReflected)에 맞았을
-                // 때만 진행합니다. 일반 무기로 맞아도 보스 본체에는 배율 적용된 피해가 그대로
-                // 들어가지만, 부위 자체 체력은 안 깎이고 절대 파괴되지 않습니다 — 부위파괴를 무령
-                // 패링 성공이라는 스킬 기반 행동에 직접 묶기 위한 의도적 게이트입니다.
                 if (context.IsMuryeongReflected)
                 {
                     Debug.Log($"[KRBossBodyPart] {_partName}: 무령 반사 {adjustedAmount:F1} 데미지 " +
@@ -154,17 +121,6 @@ namespace KillRitual.Enemies
             }
             else
             {
-                // [2026-07-08 수정] "파괴된 부위는 타격되어도 안 보여?" — 맞습니다, 여기선
-                // SpawnFlash()를 안 불러서 부위가 이미 파괴된 뒤엔 맞아도 아무 시각 피드백이
-                // 없었습니다(로그만 남음). 파괴된 부위에 맞아도 그 피해가 그대로 보스 본체
-                // 체력에는 들어가고 있었으니, 맞았다는 걸 보여주도록 플래시를 추가했습니다.
-                //
-                // [2026-07-09 변경 — "부위 파괴 되면 추가딜이 아니고 원래 딜 들어가도록 할까?"]
-                // 예전엔 부위가 파괴된 뒤에도 _damageMultiplier가 계속 적용된 adjustedAmount를
-                // 보스 본체에 그대로 넘기고 있었습니다 — 즉 약점 부위(예: 머리, 배율 > 1)를
-                // 한 번 부수고 나면 그 자리는 파괴됐는데도 배율 보너스만 영구히 남는 상태였습니다.
-                // 이제는 부위가 파괴된 뒤에는 배율을 적용하지 않고 context(원래 데미지) 그대로
-                // 본체에 전달합니다 — "이미 부서진 자리를 계속 때려도 특별 취급 없음"이 됩니다.
                 Debug.Log($"[KRBossBodyPart] {_partName}: {context.DamageAmount:F1} 데미지 (이미 파괴된 부위, 배율 미적용)");
                 SpawnFlash(context.HitPoint, _hitFlashColor);
                 _owner.TakeDamageDirect(context);
@@ -190,8 +146,6 @@ namespace KillRitual.Enemies
         private static readonly int kFlashColorId = Shader.PropertyToID("_Color");
         private static readonly int kFlashBaseColorId = Shader.PropertyToID("_BaseColor");
 
-        /// <summary>기존과 동일한 방식 — 준비물 없이 즉석에서 작은 구체를 만들어 색을 입히고
-        /// 잠깐 후 지웁니다(순수 시각용, 콜라이더 없음).</summary>
         private void SpawnFlash(Vector3 point, Color color)
         {
             GameObject flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -207,12 +161,6 @@ namespace KillRitual.Enemies
             Destroy(flash, 0.15f);
         }
 
-        /// <summary>
-        /// [2026-07-08 신규] 부위 파괴 시각 표시의 진입점입니다. _bodyRenderer/_materialSlotIndex가
-        /// 제대로 연결돼 있으면 그 머티리얼 슬롯만 콕 집어서 색을 바꾸고(SetPropertyBlock의
-        /// materialIndex 오버로드 — 다른 부위/슬롯엔 영향 없음), 안 연결돼 있으면 예전 방식인
-        /// 구체 마커(SpawnPersistentBreakMarker)로 자동 대체합니다.
-        /// </summary>
         private void ApplyBrokenVisual()
         {
             if (_bodyRenderer == null || _materialSlotIndex < 0)
@@ -233,11 +181,6 @@ namespace KillRitual.Enemies
             _bodyRenderer.SetPropertyBlock(block, _materialSlotIndex);
         }
 
-        /// <summary>
-        /// [2026-07-07 신규, 2026-07-08부터 폴백 전용] 부위가 파괴된 자리에 영구적으로 남는 작은
-        /// 표시입니다(자동 소멸 안 함). _bodyRenderer/_materialSlotIndex가 연결 안 됐을 때만
-        /// ApplyBrokenVisual()이 자동으로 이걸 대신 호출합니다.
-        /// </summary>
         private void SpawnPersistentBreakMarker()
         {
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);

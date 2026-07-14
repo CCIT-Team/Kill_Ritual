@@ -19,7 +19,6 @@ namespace KillRitual.Enemies
         private KillRitual.Player.Combat.EnemyGrade _grade
             = KillRitual.Player.Combat.EnemyGrade.Fodder;
 
-        /// <summary>적 등급. KRAbsorptionSystem이 회복량 계산 시 참조합니다.</summary>
         public KillRitual.Player.Combat.EnemyGrade Grade => _grade;
 
         [Header("체력")]
@@ -96,16 +95,8 @@ namespace KillRitual.Enemies
         public bool IsGroggy => _isGroggy;
         public Vector3 Position => transform.position;
 
-        /// <summary>
-        /// 이 적의 그로기 테두리 컴포넌트.
-        /// 외부 스크립트는 가능하면 GetComponent로 직접 찾지 말고 이 프로퍼티를 참조하세요.
-        /// </summary>
         public KRGroggyOutline GroggyOutline => _groggyOutline;
 
-        /// <summary>
-        /// 일반 피해 진입점.
-        /// 하위 클래스가 ModifyIncomingDamage()를 오버라이드하면 몸통 방어, 보스 기본 피해 감소 등을 적용할 수 있습니다.
-        /// </summary>
         public void TakeDamage(KRDamageContext context)
         {
             if (IsDead) return;
@@ -114,11 +105,6 @@ namespace KillRitual.Enemies
             ApplyDamageInternal(finalAmount, context);
         }
 
-        /// <summary>
-        /// 보스의 부위별 약점 전용 직접 피해 진입점.
-        /// KRBossBodyPart가 이미 최종 피해량을 계산해서 넘겼다고 보고,
-        /// ModifyIncomingDamage()를 다시 거치지 않습니다.
-        /// </summary>
         public void TakeDamageDirect(KRDamageContext context)
         {
             if (IsDead) return;
@@ -129,8 +115,6 @@ namespace KillRitual.Enemies
         private void ApplyDamageInternal(float amount, KRDamageContext context)
         {
             amount = Mathf.Max(0f, amount);
-            // [2026-07-08 신규] 페이즈 전환 문턱 등에서 초과피해를 자르기 위한 훅. 기본 구현은
-            // 그대로 반환합니다 — 보스가 필요할 때만 오버라이드합니다.
             amount = ClampFinalDamage(amount);
 
             _health -= amount;
@@ -150,25 +134,10 @@ namespace KillRitual.Enemies
                 EnterGroggy(_groggyDuration);
         }
 
-        /// <summary>
-        /// 들어오는 피해량을 실제로 적용하기 직전에 가공할 수 있는 훅입니다.
-        /// 기본 구현은 가공 없이 그대로 반환합니다.
-        /// 보스처럼 몸통 직접 피격 피해를 줄여야 하는 클래스에서 오버라이드하세요.
-        /// </summary>
         protected virtual float ModifyIncomingDamage(KRDamageContext context) => context.DamageAmount;
 
-        /// <summary>
-        /// [2026-07-08 신규] 체력에 실제로 반영되기 직전, 최종 피해량을 한 번 더 자를 수 있는
-        /// 훅입니다. ModifyIncomingDamage()와 달리 TakeDamage()/TakeDamageDirect() 양쪽 경로를
-        /// 전부 거치므로(부위 피격 포함), 보스 페이즈 전환 문턱에서 초과피해를 자르는 등
-        /// "체력 자체"를 기준으로 한 규칙에 씁니다. 기본 구현은 가공 없이 그대로 반환합니다.
-        /// </summary>
         protected virtual float ClampFinalDamage(float amount) => amount;
 
-        /// <summary>
-        /// 피해 적용 직후 현재 체력 비율을 알려주는 훅입니다.
-        /// 보스 페이즈 전환 등에 사용합니다.
-        /// </summary>
         protected virtual void OnHealthChanged(float ratio) { }
 
         public void Execute(KillRitual.Core.Interfaces.ExecutionSource source
@@ -204,11 +173,6 @@ namespace KillRitual.Enemies
             PerformExecution(source);
         }
 
-        /// <summary>
-        /// [2026-07-08 신규] 처형이 실제로 대상에게 어떤 결과를 남길지 결정하는 훅입니다.
-        /// 기본 구현은 그대로 즉사(EnterDead)시킵니다 — 일반 잡몹은 이 기본 동작 그대로 씁니다.
-        /// 보스처럼 "처형당해도 안 죽고 큰 피해만 입어야" 하는 경우 오버라이드하세요.
-        /// </summary>
         protected virtual void PerformExecution(
             KillRitual.Core.Interfaces.ExecutionSource source)
         {
@@ -403,10 +367,6 @@ namespace KillRitual.Enemies
             _groggyOutline?.SetOutline(true);
         }
 
-        /// <summary>
-        /// 외부에서 강제로 그로기 상태에 진입시킬 때 사용합니다.
-        /// duration을 생략하거나 0 이하로 넘기면 인스펙터의 기본 _groggyDuration을 사용합니다.
-        /// </summary>
         protected void ForceGroggy(float duration = -1f)
         {
             if (IsDead) return;
@@ -452,14 +412,9 @@ namespace KillRitual.Enemies
             GetComponent<ArenaEnemyLink>()?.Die();
             GetComponent<BossSupplyEnemyLink>()?.Die(); // 추가
 
-
             Destroy(gameObject, _despawnDelay);
         }
 
-        /// <summary>
-        /// 적 처치 시 플레이어의 작두 자원을 1 회복시킵니다.
-        /// 단, 작두가 자기 자신의 판정으로 처치한 경우에는 자기환급을 막기 위해 회복하지 않습니다.
-        /// </summary>
         private void RefillJakduResourceOnKill()
         {
             if (_player == null) return;
@@ -537,11 +492,6 @@ namespace KillRitual.Enemies
             _agent.velocity = Vector3.zero;
         }
 
-        /// <summary>
-        /// maxDegreesPerSecond를 생략하면 기존처럼 즉시 플레이어를 바라봅니다.
-        /// 양수로 넘기면 해당 초당 각도만큼 천천히 회전합니다.
-        /// 보스의 등/측면 약점 공략을 허용할 때 사용합니다.
-        /// </summary>
         protected void FacePlayer(float maxDegreesPerSecond = -1f)
         {
             if (_player == null) return;
@@ -564,11 +514,6 @@ namespace KillRitual.Enemies
 
         // ── 색상 시각 피드백 ───────────────────────────────────────────
 
-        /// <summary>
-        /// 하위 클래스가 특정 구간 동안 강제로 몸 색을 바꾸고 싶을 때 사용합니다.
-        /// null이면 기존 피격 플래시 / 기본색 로직을 따릅니다.
-        /// 값이 있으면 히트 플래시보다 우선됩니다.
-        /// </summary>
         protected Color? OverrideColor { get; set; }
 
         private void UpdateColorFeedback()

@@ -3,13 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Weapons.Visual
 {
-    /// <summary>
-    /// ���� �и� �ð� ���� ���� ������Ʈ.
-    /// 
-    /// Idle ��� ���� Parry ��Ǹ� 1ȸ ����ϴ� ����.
-    /// ���ÿ��� ������Ʈ�� ���� �ʰ� Renderer�� ����,
-    /// Animator�� ��Ȱ��ȭ�ؼ� ���� ������ �ڵ� ���ø��� ���´�.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRMuryeongVisual : MonoBehaviour
     {
@@ -36,13 +29,6 @@ namespace KillRitual.Weapons.Visual
         private int _parryStateHash;
         private Coroutine _hideRoutine;
 
-        /// <summary>
-        /// [2026-07-06 추가] 무령(방울)이 실제로 다시 숨겨지는 시점(HideNow() 호출 시점)에 발행됩니다.
-        /// 자동 타이머(HideAfterDelay)와 애니메이션 이벤트(AnimEvent_HideMuryeong) 두 경로 모두
-        /// HideNow()를 거치므로, 이 이벤트 하나로 두 경로를 전부 커버합니다.
-        /// KRMuryeongController가 이 이벤트를 구독해서, 무령 사용 중 숨겨뒀던 원래 무기 손을
-        /// 정확히 무령이 사라지는 순간에 다시 보여줍니다.
-        /// </summary>
         public event System.Action OnHidden;
 
         private void Awake()
@@ -135,7 +121,6 @@ namespace KillRitual.Weapons.Visual
             if (_disableAnimatorWhileHidden && _animator != null)
                 _animator.enabled = false;
 
-            // [2026-07-06 추가] 실제로 숨겨진 시점에 구독자(KRMuryeongController 등)에게 알립니다.
             OnHidden?.Invoke();
         }
 
@@ -168,9 +153,6 @@ namespace KillRitual.Weapons.Visual
             }
         }
 
-        /// <summary>
-        /// �и� �ִϸ��̼� �� ����Ʈ�� ���;� �ϴ� �����ӿ� Animation Event�� ȣ��.
-        /// </summary>
         public void AnimEvent_PlayShockwave()
         {
             if (_particles == null)
@@ -189,10 +171,6 @@ namespace KillRitual.Weapons.Visual
             }
         }
 
-        /// <summary>
-        /// �и� �ִϸ��̼� ������ �����ӿ� Animation Event�� ȣ�� ����.
-        /// Auto Hide Delay�� ���� ��쿡�� �ʼ� �ƴ�.
-        /// </summary>
         public void AnimEvent_HideMuryeong()
         {
             if (_hideRoutine != null)

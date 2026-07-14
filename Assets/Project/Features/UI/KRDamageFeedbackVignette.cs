@@ -4,26 +4,6 @@ using UnityEngine.UI;
 
 namespace KillRitual.UI
 {
-    /// <summary>
-    /// 화면 피격/저체력 비네트 전용 UI 컴포넌트입니다.
-    ///
-    /// 역할:
-    ///   1. 피격 순간에는 강한 빨간 테두리 플래시를 표시합니다.
-    ///   2. 체력이 낮을수록 약한 빨간 테두리를 지속 표시합니다.
-    ///   3. 치명 체력 이하에서는 약한 펄스를 추가합니다.
-    ///   4. Image RectTransform을 현재 화면 전체에 자동으로 맞춥니다.
-    ///
-    /// 사용 방식:
-    ///   - Canvas 아래에 전체 화면 Image를 하나 만듭니다.
-    ///   - 해당 Image에 KR_UI_DamageVignette Material을 연결합니다.
-    ///   - 이 컴포넌트를 같은 오브젝트에 붙입니다.
-    ///   - KRPlayerDamageFeedback의 Screen Damage Vignette 슬롯에 이 컴포넌트를 연결합니다.
-    ///
-    /// 주의:
-    ///   - 스프라이트 테두리 이미지를 쓰지 않습니다.
-    ///   - 전체 화면 Image + UI Shader Material로 처리합니다.
-    ///   - 런타임에 Material 인스턴스를 만들어서 원본 Material 에셋을 오염시키지 않습니다.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Image))]
     public sealed class KRScreenDamageVignette : MonoBehaviour
@@ -216,10 +196,6 @@ namespace KillRitual.UI
             ApplyIntensity();
         }
 
-        /// <summary>
-        /// 체력 비율을 갱신합니다.
-        /// 1 = 풀피, 0 = 사망.
-        /// </summary>
         public void SetHealthRatio(float ratio)
         {
             _currentHealthRatio = Mathf.Clamp01(ratio);
@@ -249,10 +225,6 @@ namespace KillRitual.UI
             ApplyIntensity();
         }
 
-        /// <summary>
-        /// 피격 순간 플래시를 발생시킵니다.
-        /// normalizedDamage는 0~1 기준이며, 클수록 강한 플래시가 나옵니다.
-        /// </summary>
         public void Flash(float normalizedDamage)
         {
             normalizedDamage = Mathf.Clamp01(normalizedDamage);
@@ -267,9 +239,6 @@ namespace KillRitual.UI
             ApplyIntensity();
         }
 
-        /// <summary>
-        /// 화면 효과를 즉시 숨깁니다.
-        /// </summary>
         public void HideInstantly()
         {
             _hitFlashIntensity = 0f;

@@ -3,12 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Data
 {
-    /// <summary>
-    /// [DATA 레이어] 플레이어 캐릭터의 기본 스탯을 정의하는 ScriptableObject입니다.
-    /// 이 파일은 순수 데이터만 담으며, 어떠한 게임 로직(계산/판정)도 포함하지 않습니다.
-    /// 데이터-로직 이원화 원칙에 따라, LOGIC 레이어인 KRCombatSystem이 이 데이터를
-    /// "참조"하여 사용할 뿐, 이 SO는 자기 자신을 어떻게 쓰는지 전혀 알지 못합니다.
-    /// </summary>
     [CreateAssetMenu(fileName = "KRCharacterStats", menuName = "Kill Ritual/Data/Character Stats", order = 0)]
     public sealed class KRCharacterStatsSO : ScriptableObject
     {

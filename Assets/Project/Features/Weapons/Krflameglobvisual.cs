@@ -3,27 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 즉발 레이캐스트 무기(특히 화염방사기 느낌의 토(土) 스컬크러셔)에서, 가는 트레이서 선 대신
-    /// "작은 불덩이가 짧은 시간 동안 실제로 날아가는 것처럼" 보이게 만드는 시각효과입니다.
-    ///
-    /// 데미지는 이미 발사 순간 레이캐스트로 즉시 적용되어 있으므로, 이 컴포넌트는 순수하게
-    /// 눈속임용 비행 애니메이션만 담당합니다(반응성 있는 즉발 판정 + 화염방사기 같은 비주얼을
-    /// 동시에 얻기 위한 트릭입니다).
-    ///
-    /// [동작 방식]
-    ///   시작점(총구)에서 끝점(명중/사거리 끝)까지 _travelDuration(기본 0.12초) 동안 이동하면서
-    ///   크기가 점점 줄어들고(불씨가 흩어지는 느낌) 색이 옅어집니다. 여러 발이 짧은 간격으로
-    ///   연달아 나가면(KRRampingHitscanWeapon의 펠릿 시차와 결합) 화염이 뿜어져 나가는 듯한
-    ///   인상을 줍니다.
-    ///
-    /// [프리팹 구성 요구사항]
-    ///   1. Hierarchy 우클릭 → 3D Object → Sphere 생성
-    ///   2. Sphere Collider 컴포넌트는 제거 (순수 시각효과)
-    ///   3. 이 컴포넌트(KRFlameGlobVisual)를 부착 — 머티리얼은 런타임에 자동 생성되므로
-    ///      별도의 머티리얼/셰이더 설정이 필요 없습니다.
-    ///   4. 프리팹으로 만들어 KRRampingHitscanWeapon의 "Flame Glob Prefab" 슬롯에 연결
-    /// </summary>
     [RequireComponent(typeof(Renderer))]
     public sealed class KRFlameGlobVisual : MonoBehaviour
     {
@@ -60,13 +39,6 @@ namespace KillRitual.Weapons
             _renderer.material = _runtimeMaterial;
         }
 
-        /// <summary>
-        /// 불덩이 비행을 재생합니다. 외부(KRRampingHitscanWeapon)에서 Instantiate 직후 호출합니다.
-        /// </summary>
-        /// <param name="start">총구(FirePoint) 월드 좌표</param>
-        /// <param name="end">명중 지점 또는 사거리 끝 월드 좌표 (이미 데미지가 적용된 지점)</param>
-        /// <param name="color">화염방사기 색상 (보통 주황~빨강 계열)</param>
-        /// <param name="travelDuration">총구에서 끝점까지 날아가는 데 걸리는 시간(초). 0 이하면 인스펙터 기본값을 사용합니다.</param>
         public void Play(Vector3 start, Vector3 end, Color color, float travelDuration = -1f)
         {
             if (travelDuration > 0f)

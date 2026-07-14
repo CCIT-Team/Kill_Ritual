@@ -17,12 +17,4 @@ public static class KRDamageUtility
         damageable.ReceiveDamage(damageInfo);
         return true;
     }
-
-    public static bool ApplyDamageToAITarget(KRAITarget target, float amount, Vector3 hitPoint, Vector3 hitDirection, Transform attacker)
-    {
-        if (target == null || !target.IsValidTarget())
-            return false;
-
-        return ApplyDamage(target.Damageable, amount, hitPoint, hitDirection, attacker);
-    }
 }

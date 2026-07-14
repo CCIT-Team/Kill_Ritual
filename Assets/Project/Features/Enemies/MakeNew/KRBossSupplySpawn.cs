@@ -7,12 +7,6 @@ using KillRitual.Player.Combat;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// 보스 전투 중 플레이어의 체력/탄약이 부족해지면 보급용 몬스터를 소환합니다.
-    /// 아레나 시스템(WaveCombatZone)과 무관하게 독립적으로 동작하며,
-    /// KRBossJakdu01의 전투 시작(RevealBossUiIfNeeded)/종료(OnDeath) 시점에 연동됩니다.
-    /// 보스 오브젝트에 이 컴포넌트를 붙이기만 하면 됩니다 (없으면 아무 영향 없음).
-    /// </summary>
     public class KRBossSupplySpawner : MonoBehaviour
     {
         [Header("플레이어 참조 (비워두면 자동 탐색)")]
@@ -48,7 +42,6 @@ namespace KillRitual.Enemies
         private int _activeSupplyEnemyCount;
         private bool _bossDefeated;
 
-        /// <summary>KRBossJakdu01.RevealBossUiIfNeeded()에서 호출됩니다.</summary>
         public void NotifyBossEngaged()
         {
             if (_playerHealth == null)
@@ -61,7 +54,6 @@ namespace KillRitual.Enemies
                 _monitorRoutine = StartCoroutine(MonitorRoutine());
         }
 
-        /// <summary>KRBossJakdu01.OnDeath()에서 호출됩니다.</summary>
         public void NotifyBossDefeated()
         {
             _bossDefeated = true;
@@ -163,7 +155,6 @@ namespace KillRitual.Enemies
                       $"({_spawnsUsed + 1}/{(_maxSpawns < 0 ? "무제한" : _maxSpawns.ToString())}).");
         }
 
-        /// <summary>BossSupplyEnemyLink.Die()에서 호출됩니다.</summary>
         public void NotifySupplyEnemyDied()
         {
             _activeSupplyEnemyCount = Mathf.Max(0, _activeSupplyEnemyCount - 1);

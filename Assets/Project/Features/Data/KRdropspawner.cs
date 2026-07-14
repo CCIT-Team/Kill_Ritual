@@ -4,21 +4,6 @@ using KillRitual.Player;
 
 namespace KillRitual.Items
 {
-    /// <summary>
-    /// 처형 성공 시 회복 오브를 바닥에 드롭하는 컴포넌트입니다.
-    /// KREnemyBase(또는 적 오브젝트)에 붙입니다.
-    ///
-    /// [동작 방식]
-    /// KREnemyBase.Execute()가 호출될 때 직접 이 컴포넌트의 SpawnDrops()를 호출합니다.
-    ///
-    /// [KREnemyBase 연동 방법]
-    /// KREnemyBase.Execute() 안에 아래 한 줄을 추가하세요:
-    ///   GetComponent&lt;KRDropSpawner&gt;()?.SpawnDrops(transform.position, currentElement);
-    ///
-    /// [프리팹 설정]
-    /// _ammoOrbPrefabs[0~4]에 화수목토금 순서로 탄약 오브 프리팹을 연결하세요.
-    /// 체력은 오브 없이 _healthRestoreOnExecute 값만큼 즉시 직접 회복됩니다.
-    /// </summary>
     public sealed class KRDropSpawner : MonoBehaviour
     {
         [Header("처형 체력 회복 (직접 데이터)")]
@@ -77,11 +62,6 @@ namespace KillRitual.Items
             }
         }
 
-        /// <summary>
-        /// 처형 성공 시 호출합니다. KREnemyBase.Execute()에서 직접 호출하세요.
-        /// </summary>
-        /// <param name="position">드롭 위치 (적 오브젝트의 위치)</param>
-        /// <param name="currentElement">현재 플레이어가 장착한 속성 (탄약 오브 종류 결정)</param>
         public void SpawnDrops(Vector3 position, KRDamageType currentElement)
         {
             // 체력은 오브 없이 즉시 직접 회복합니다.
@@ -98,8 +78,6 @@ namespace KillRitual.Items
             if (_ammoOrbPrefabs != null && idx >= 0 && idx < _ammoOrbPrefabs.Length
                 && _ammoOrbPrefabs[idx] != null && Random.value <= _ammoOrbChance)
             {
-                // [2026-07-08 신규] "둠 이터널 전기톱처럼 여러 파츠가 나오게" 요청 반영 — 오브 하나만
-                // 만들던 걸 _ammoOrbCount만큼 반복해서 여러 조각이 사방으로 흩뿌려지도록 했습니다.
                 for (int i = 0; i < _ammoOrbCount; i++)
                     SpawnOrb(_ammoOrbPrefabs[idx], spawnBase);
             }
@@ -134,9 +112,6 @@ namespace KillRitual.Items
             // 생성 직후 랜덤한 방향으로 힘을 가해 물리적으로 퍼지게 합니다.
             if (instance.TryGetComponent(out Rigidbody rb))
             {
-                // [2026-07-08 신규] 파츠가 여러 개로 늘어나면서, 힘 크기까지 매번 똑같으면 다들
-                // 똑같은 궤적으로 튀어서 부자연스러워 보입니다. 세기에 ±30% 정도 랜덤 편차를 줘서
-                // 조각마다 멀리/짧게, 높게/낮게 제각각 튀도록 했습니다.
                 float forceVariance = Random.Range(0.7f, 1.3f);
                 Vector2 randomDir = Random.insideUnitCircle.normalized;
                 Vector3 force = (new Vector3(randomDir.x, 0f, randomDir.y) * _bounceOutwardForce

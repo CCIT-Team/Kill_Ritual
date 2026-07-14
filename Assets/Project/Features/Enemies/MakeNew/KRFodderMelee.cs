@@ -5,13 +5,6 @@ using KillRitual.Core.Interfaces;
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// Fodder(잡몹) 등급의 근거리 몬스터입니다.
-    /// 플레이어에게 곧장 다가가서, 닿을 만큼 가까워지면 일정 쿨다운마다 접촉 데미지를 줍니다.
-    ///
-    /// KREnemyBase를 상속하므로 체력/피격/그로기/사망/색상은 자동으로 처리됩니다.
-    /// 이 클래스는 "어떻게 다가가고(UpdateChase), 어떻게 때리는가(UpdateAttack)"만 구현합니다.
-    /// </summary>
     public sealed class KRFodderMelee : KREnemyBase
     {
         [Header("근접 공격")]
@@ -30,10 +23,6 @@ namespace KillRitual.Enemies
         // 다음 공격이 가능한 시각. 쿨다운 관리에 사용합니다.
         private float _nextAttackTime;
 
-        /// <summary>
-        /// 추격: 플레이어에게 직접 다가갑니다. 공격 사거리에 들어오면 Attack으로,
-        /// 감지 범위 밖으로 멀어지면 다시 Idle로 전환합니다.
-        /// </summary>
         protected override void UpdateChase()
         {
             if (_player == null)
@@ -65,10 +54,6 @@ namespace KillRitual.Enemies
             FacePlayer();
         }
 
-        /// <summary>
-        /// 공격: 사거리 안에 머무는 동안 쿨다운마다 플레이어에게 접촉 데미지를 줍니다.
-        /// 플레이어가 멀어지면 다시 추격(Chase) 상태로 돌아갑니다.
-        /// </summary>
         protected override void UpdateAttack()
         {
             if (_player == null)
@@ -96,7 +81,6 @@ namespace KillRitual.Enemies
             }
         }
 
-        /// <summary>플레이어의 IDamageable을 찾아 데미지를 적용합니다.</summary>
         private void PerformMeleeHit()
         {
             // 게임오버/체력바를 담당하는 KRPlayerDamageFeedback을 우선 찾습니다.

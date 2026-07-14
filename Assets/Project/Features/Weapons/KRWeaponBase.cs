@@ -6,10 +6,6 @@ using KillRitual.Weapons.Visual;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 모든 원거리 무기 스크립트의 공통 기반 클래스입니다.
-    /// KRCombatSystem은 입력만 전달하고, 실제 발사 판정은 각 무기 클래스가 처리합니다.
-    /// </summary>
     public abstract class KRWeaponBase : MonoBehaviour
     {
         [Header("기본 정보")]
@@ -57,10 +53,6 @@ namespace KillRitual.Weapons
 
         public KRDamageType Element => _element;
 
-        /// <summary>
-        /// 이 무기가 현재 실제로 장착된 속성인지 여부입니다.
-        /// 줌 무기처럼 Update에서 직접 입력을 읽는 특수 무기가 미장착 상태에서도 동작하지 않게 막는 데 사용합니다.
-        /// </summary>
         protected bool IsEquipped => _combatSystem != null && _combatSystem.CurrentElement == _element;
 
         protected virtual void Awake()
@@ -88,10 +80,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>
-        /// KRCombatSystem이 버튼을 누르고 있는 동안 매 프레임 호출합니다.
-        /// Tap 무기는 1회 클릭 1발, HoldAuto 무기는 누르고 있는 동안 쿨다운마다 발사합니다.
-        /// </summary>
         public virtual void NotifyHeld()
         {
             switch (_inputType)
@@ -125,10 +113,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>
-        /// 버튼을 뗐을 때 호출됩니다.
-        /// Tap 무기는 여기서 다시 발사 가능 상태가 됩니다.
-        /// </summary>
         public virtual void NotifyReleased()
         {
             if (_inputType == KRAttackInputType.HoldAuto && _buttonHeld)
@@ -140,18 +124,11 @@ namespace KillRitual.Weapons
             _buttonHeld = false;
         }
 
-        /// <summary>
-        /// 무기 전환 등으로 입력이 강제로 취소될 때 호출됩니다.
-        /// </summary>
         public virtual void NotifyCancelled()
         {
             NotifyReleased();
         }
 
-        /// <summary>
-        /// 쿨다운과 자원 잔량을 확인한 뒤 통과하면 실제 발사를 실행합니다.
-        /// 발사 성공 시 true, 쿨다운/자원 부족이면 false를 반환합니다.
-        /// </summary>
         protected bool TryFireNow()
         {
             if (Time.time < _nextFireReadyTime)
@@ -178,21 +155,10 @@ namespace KillRitual.Weapons
             return true;
         }
 
-        /// <summary>
-        /// 실제 적용할 쿨다운 값을 반환합니다.
-        /// KRRampingHitscanWeapon은 이 메서드를 오버라이드해 연사 속도를 가속합니다.
-        /// </summary>
         protected virtual float GetEffectiveCooldown() => _cooldown;
 
-        /// <summary>
-        /// 실제 충돌 판정 또는 투사체 생성을 수행합니다.
-        /// </summary>
         protected abstract void DoFire(float damage);
 
-        /// <summary>
-        /// 발사 성공 후 시각 피드백을 재생합니다.
-        /// 샷건은 Primary_Tap, 슈퍼샷건은 Secondary_Tap 같은 식으로 연결합니다.
-        /// </summary>
         protected virtual void PlayFireVisual()
         {
             if (!_playVisualOnFire || _visual == null)
@@ -203,9 +169,6 @@ namespace KillRitual.Weapons
             _visual.PlayTap(_visualAttackSlot);
         }
 
-        /// <summary>
-        /// 무기의 발사 기준점(FirePoint)을 가져옵니다.
-        /// </summary>
         protected Transform ResolveFirePoint()
         {
             KRCombatSystem cs = _combatSystem != null ? _combatSystem : GetComponentInParent<KRCombatSystem>();

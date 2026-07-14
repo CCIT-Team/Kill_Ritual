@@ -2,17 +2,6 @@
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// 이 컴포넌트가 붙은 오브젝트(필요 시 자식 포함)에는 그로기 아웃라인이
-    /// 절대 표시되지 않도록 강제로 막습니다.
-    ///
-    /// KRGroggyOutline이 부모에서 Renderer를 긁어모아 아웃라인을 켜더라도,
-    /// 셰이더의 _OutlineEnabled 프로퍼티를 매 프레임 0으로 덮어써서
-    /// 이 Renderer만큼은 항상 꺼진 상태로 유지시킵니다.
-    ///
-    /// 사용법: 아웃라인이 생기면 안 되는 파츠(예: 납작한 마스크/아이콘 메시)에
-    /// 그대로 붙이면 됩니다. 별도 설정 없이 바로 동작합니다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRGroggyOutlineDisabler : MonoBehaviour
     {

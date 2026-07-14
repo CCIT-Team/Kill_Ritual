@@ -6,16 +6,6 @@ using UnityEngine;
 
 namespace KillRitual.Enemies.Projectiles
 {
-    /// <summary>
-    /// �������� �ݻ� ���� �� ���� �����Ǵ� ���� ����ü.
-    ///
-    /// Ư¡:
-    /// - ���� EnemyProjectile�� �������� ����.
-    /// - Rigidbody / Trigger �浹�� �������� �ʰ� SphereCast�� ���� �浹 �˻�.
-    /// - ���� ���� �ٷ� �������� �ʵ��� Arm Delay / Arm Distance�� ��.
-    /// - ������ ��/��/������ ����� ���� ����.
-    /// - �������� �� ��ũ��Ʈ�� �ν����� �� �ϳ��� ���.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRMuryeongProjectile : MonoBehaviour
     {
@@ -228,9 +218,6 @@ namespace KillRitual.Enemies.Projectiles
             if (target.IsDead)
                 return;
 
-            // [2026-07-09 신규] isMuryeongReflected: true — "보스 부위파괴는 무령 반사탄으로만
-            // 가능" 규칙 판정용 표식입니다. KRBossBodyPart.TakeDamage()가 이 플래그를 보고
-            // 부위 체력 차감(파괴 판정) 여부를 결정합니다.
             KRDamageContext context = new KRDamageContext(
                 _damage,
                 _damageType,
@@ -277,7 +264,6 @@ namespace KillRitual.Enemies.Projectiles
 
                 Vector3 hitPoint = hit.ClosestPoint(center);
 
-                // [2026-07-09 신규] 위 ApplyDirectDamage()와 동일한 이유로 isMuryeongReflected: true.
                 KRDamageContext context = new KRDamageContext(
                     _damage,
                     _damageType,

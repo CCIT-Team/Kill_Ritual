@@ -5,12 +5,6 @@ using UnityEngine;
 
 namespace KillRitual.Player.CameraEffects
 {
-    /// <summary>
-    /// FPS 카메라 흔들림 전용 컨트롤러.
-    ///
-    /// Main Camera 자체가 아니라 CameraShakeRoot 같은 전용 자식 오브젝트에 붙이는 것을 권장한다.
-    /// 마우스 회전, 카메라 스웨이, 무기 애니메이션과 Transform 제어가 충돌하지 않게 하기 위함이다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRCameraShakeController : MonoBehaviour
     {
@@ -123,9 +117,6 @@ namespace KillRitual.Player.CameraEffects
             ApplyShake(normalizedTime);
         }
 
-        /// <summary>
-        /// Animation Event 또는 다른 스크립트에서 호출하는 카메라 셰이크 실행 함수.
-        /// </summary>
         public void PlayShake(string id)
         {
             if (string.IsNullOrWhiteSpace(id))

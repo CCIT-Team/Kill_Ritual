@@ -3,17 +3,6 @@ using UnityEngine;
 
 namespace KillRitual.Weapons.Visual
 {
-    /// <summary>
-    /// 무기 손/시각 루트의 Animator에 신호를 보내는 컴포넌트입니다.
-    ///
-    /// 이 컴포넌트는 데미지, 탄약, 투사체, 레이캐스트를 처리하지 않습니다.
-    /// 오직 Animator Trigger / Float / 특정 상태 즉시 재생만 담당합니다.
-    ///
-    /// 주의:
-    /// Animator.Rebind()는 사용하지 않습니다.
-    /// Rebind는 손 위치, 파티클, 바인딩 상태를 같이 건드려서
-    /// Equip 시작 포즈로 가라앉거나 이펙트가 꺼지는 문제가 생길 수 있습니다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KRWeaponVisual : MonoBehaviour
     {
@@ -124,10 +113,6 @@ namespace KillRitual.Weapons.Visual
             ClearAllTriggers();
         }
 
-        /// <summary>
-        /// 현재 Animator에 남아 있을 수 있는 공격/홀드/차지 트리거를 모두 제거합니다.
-        /// 새 무기로 전환했을 때 이전 입력 트리거가 Equip을 덮어쓰는 문제를 막습니다.
-        /// </summary>
         public void ClearAllTriggers()
         {
             if (_animator == null)
@@ -155,10 +140,6 @@ namespace KillRitual.Weapons.Visual
             ResetTriggerIfValid(_secondaryChargeCancelTrigger);
         }
 
-        /// <summary>
-        /// 퀵스왑으로 이전 무기를 끌 때 사용합니다.
-        /// Rebind가 아니라 Animator 상태만 Idle 처음으로 이동시킵니다.
-        /// </summary>
         public void PlayIdleImmediately()
         {
             if (_animator == null)
@@ -170,10 +151,6 @@ namespace KillRitual.Weapons.Visual
             TryPlayStateImmediately(_idleStateName);
         }
 
-        /// <summary>
-        /// 퀵스왑으로 새 무기를 켤 때 사용합니다.
-        /// Rebind가 아니라 Animator 상태만 Equip 처음으로 이동시킵니다.
-        /// </summary>
         public void PlayEquipImmediately()
         {
             if (_animator == null)

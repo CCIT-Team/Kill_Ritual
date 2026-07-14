@@ -4,20 +4,6 @@ using UnityEngine;
 
 namespace KillRitual.Enemies.Visual
 {
-    /// <summary>
-    /// 적 몸 자체가 가루처럼 잘려나가며 사라지는 디스인티그레이션 연출.
-    ///
-    /// 핵심:
-    /// - Particle System이 아니라 Renderer의 Material 값을 조절한다.
-    /// - _DissolveAmount를 0에서 1까지 올린다.
-    /// - 셰이더가 몸 표면을 노이즈 기준으로 잘라내서 가루처럼 붕괴되는 것처럼 보이게 한다.
-    ///
-    /// 사용:
-    /// 1. 적 모델/Animator 오브젝트에 이 컴포넌트를 붙인다.
-    /// 2. _renderRoot에 적 모델 루트를 연결한다.
-    /// 3. 죽음 애니메이션 클립 중간에 Animation Event를 추가한다.
-    /// 4. 함수명으로 AnimEvent_StartBodyDisintegrate를 선택한다.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KREnemyBodyDisintegrate : MonoBehaviour
     {
@@ -129,17 +115,11 @@ namespace KillRitual.Enemies.Visual
             _runtimeMaterials.Clear();
         }
 
-        /// <summary>
-        /// 죽음 애니메이션 클립의 Animation Event에서 호출할 함수.
-        /// </summary>
         public void AnimEvent_StartBodyDisintegrate()
         {
             Play();
         }
 
-        /// <summary>
-        /// 코드에서 직접 호출하고 싶을 때 사용.
-        /// </summary>
         public void Play()
         {
             if (_played)
@@ -157,9 +137,6 @@ namespace KillRitual.Enemies.Visual
             _routine = StartCoroutine(CoDisintegrate());
         }
 
-        /// <summary>
-        /// 풀링으로 적을 재사용할 경우, 리스폰 시 호출하면 원상복구됩니다.
-        /// </summary>
         public void ResetVisual()
         {
             _played = false;

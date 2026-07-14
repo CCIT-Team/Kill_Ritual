@@ -823,16 +823,6 @@ namespace KillRitual.Player.Combat
         {
             if (!_debugSlotState) return;
 
-            // [2026-07-09 삭제] 슬롯 상태 디버그 로그 — 확인 끝나 제거.
-            // Debug.Log(
-            //     $"[KRCombatSystem] {source} | " +
-            //     $"Slot: {_currentSlotIndex + 1}, " +
-            //     $"Unlocked: {IsSlotUnlocked(_currentSlotIndex)}, " +
-            //     $"Element: {_currentElement}, " +
-            //     $"WeaponI: {GetWeaponBySlot(_typeOneWeapons, _currentSlotIndex)?.name}, " +
-            //     $"WeaponII: {GetWeaponBySlot(_typeTwoWeapons, _currentSlotIndex)?.name}, " +
-            //     $"VisualRoot: {(_weaponVisualRoots != null && _currentSlotIndex < _weaponVisualRoots.Length && _weaponVisualRoots[_currentSlotIndex] != null ? _weaponVisualRoots[_currentSlotIndex].name : "None")}",
-            //     this);
         }
 
         private void DebugFireState(int mouseButton, KRWeaponBase weapon)
@@ -842,16 +832,6 @@ namespace KillRitual.Player.Combat
             float amount = _resourceWallet != null ? _resourceWallet.GetBySlot(_currentSlotIndex) : 0f;
             float max = _resourceWallet != null ? _resourceWallet.GetMaxBySlot(_currentSlotIndex) : 0f;
 
-            // [2026-07-09 삭제] 발사 상태 디버그 로그 — 확인 끝나 제거.
-            // Debug.Log(
-            //     $"[KRCombatSystem] Fire | " +
-            //     $"Button: {mouseButton}, " +
-            //     $"Slot: {_currentSlotIndex + 1}, " +
-            //     $"Unlocked: {IsSlotUnlocked(_currentSlotIndex)}, " +
-            //     $"Element: {_currentElement}, " +
-            //     $"Weapon: {weapon.name}, " +
-            //     $"Ammo: {amount:0.##}/{max:0.##}",
-            //     this);
         }
 
 #if UNITY_EDITOR

@@ -1,23 +1,8 @@
 ﻿using UnityEngine;
-using KillRitual.Player.Combat; // [2026-07-06 추가] 작두 사용 중 감속 처리를 위해 KRJakduSystem을 참조합니다.
+using KillRitual.Player.Combat;
 
 namespace KillRitual
 {
-    /// <summary>
-    /// ��� MVP�� �÷��̾� �̵� ��Ʈ�ѷ�.
-    ///
-    /// �ٽ� ����:
-    /// - �⺻ �̵��� �׻� �޸���.
-    /// - Shift �޸��� ����.
-    /// - Ctrl �̻��.
-    /// - �̵��� ����/���� ���.
-    /// - ��ô� ���� ����̸� �ܺο��� Ȯ�� ����.
-    /// - ������ ���� Rigidbody ��Ʈ�ѷ��� jumpForce ����� ������,
-    ///   Y�ӵ� �ʱ�ȭ �� ��� ��� �ӵ��� �ִ� ������� ó��.
-    ///
-    /// ��� ������Ʈ:
-    /// - CharacterController �ʼ�.
-    /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class KRPlayerMotor : MonoBehaviour
     {
@@ -69,7 +54,6 @@ namespace KillRitual
                  "감속시키는 데 사용합니다. 비워두면 같은 오브젝트에서 자동 탐색합니다.")]
         [SerializeField]
         private KRJakduSystem jakduSystem;
-
 
         [Tooltip("���󿡼� ��ǥ �ӵ����� �����ϴ� ���ӵ�.")]
         [SerializeField]
@@ -201,92 +185,36 @@ namespace KillRitual
         // Runtime State
         // ============================================================
 
-        /// <summary>
-        /// WASD �Է� ����.
-        /// </summary>
         private Vector3 moveInput;
 
-        /// <summary>
-        /// ���� ���� �̵� �ӵ�.
-        /// </summary>
         private Vector3 horizontalVelocity;
 
-        /// <summary>
-        /// ���� ���� �ӵ�.
-        /// CharacterController�� Rigidbody�� �ƴϹǷ� ���� �����Ѵ�.
-        /// </summary>
         private float verticalVelocity;
 
-        /// <summary>
-        /// ���� �ٴڿ� ��� �ִ��� ����.
-        /// </summary>
         private bool isGrounded;
 
-        /// <summary>
-        /// ���� �������� �ٴ� ���� ����.
-        /// ���� ������ ����Ѵ�.
-        /// </summary>
         private bool wasGrounded;
 
-        /// <summary>
-        /// ���� �ٴ��� ���.
-        /// ���� �̵� ������ ����Ѵ�.
-        /// </summary>
         private Vector3 groundNormal = Vector3.up;
 
-        /// <summary>
-        /// ���������� �ٴڿ� ��Ҵ� �ð�.
-        /// Coyote Time ��꿡 ����Ѵ�.
-        /// </summary>
         private float lastGroundedTime = -999f;
 
-        /// <summary>
-        /// ���������� ���� �Է��� ���� �ð�.
-        /// Jump Buffer ��꿡 ����Ѵ�.
-        /// </summary>
         private float lastJumpPressedTime = -999f;
 
-        /// <summary>
-        /// ������ ���� ���� �ð�.
-        /// ���� ���� ���� ������ ��� �����ϱ� ���� ����Ѵ�.
-        /// </summary>
         private float lastJumpTime = -999f;
 
-        /// <summary>
-        /// ���� ���� Ƚ��.
-        /// maxJumpCount�� 1�̸� �Ϲ� ������ ����.
-        /// </summary>
         private int remainingJumps;
 
-        /// <summary>
-        /// CharacterController�� ���� Step Offset.
-        /// ���߿����� 0���� ���߰�, ���󿡼��� �����Ѵ�.
-        /// </summary>
         private float defaultStepOffset;
 
-        /// <summary>
-        /// ���� ��� ������ ����.
-        /// </summary>
         private bool isDashing;
 
-        /// <summary>
-        /// ��� ����.
-        /// </summary>
         private Vector3 dashDirection;
 
-        /// <summary>
-        /// ��ð� ������ �ð�.
-        /// </summary>
         private float dashEndTime;
 
-        /// <summary>
-        /// ������ ��� ���� �ð�.
-        /// </summary>
         private float lastDashStartTime = -999f;
 
-        /// <summary>
-        /// ���� ��� ���� �Ϸ� �ð�.
-        /// </summary>
         private float nextDashRechargeTime = -999f;
 
         public int CurrentDashCharges => currentDashCharges;
@@ -368,10 +296,6 @@ namespace KillRitual
         // Input
         // ============================================================
 
-        /// <summary>
-        /// WASD �Է��� �д´�.
-        /// �Է� ������ �÷��̾ �ٶ󺸴� ���� �����̴�.
-        /// </summary>
         private void ReadMoveInput()
         {
             float inputX = Input.GetAxisRaw("Horizontal");
@@ -385,13 +309,6 @@ namespace KillRitual
                 moveInput.Normalize();
         }
 
-        /// <summary>
-        /// ���� �Է��� �����Ѵ�.
-        ///
-        /// ��� �������� �ʰ� �ð��� �����ϴ� ����:
-        /// - ���� ������ Space�� ������ ���� �� �����ǰ� �ϱ� ����.
-        /// - �̸� Jump Buffer��� �Ѵ�.
-        /// </summary>
         private void ReadJumpInput()
         {
             if (Input.GetKeyDown(KeyCode.Space))
@@ -414,17 +331,6 @@ namespace KillRitual
         // Ground
         // ============================================================
 
-        /// <summary>
-        /// �ٴ� ���¸� �����Ѵ�.
-        ///
-        /// ���� ����:
-        /// - groundMask�� ��� ���̾��� ��� Player �ڽ��� �ٴ����� ������ �� ����.
-        /// - ���� ���� CheckSphere�� ���� �ٴڰ� ���ļ� isGrounded�� true�� ���� �� ����.
-        ///
-        /// �ذ�:
-        /// - OverlapSphere�� �ٴ� �ĺ��� ���� �˻��ϵ�, �ڱ� �ڽ��� ����.
-        /// - ���� ���Ŀ��� ���� �ð� ���� ���� ����.
-        /// </summary>
         private void UpdateGroundState()
         {
             wasGrounded = isGrounded;
@@ -467,10 +373,6 @@ namespace KillRitual
             }
         }
 
-        /// <summary>
-        /// ���� �� ó��.
-        /// ���� Ƚ���� ȸ���Ѵ�.
-        /// </summary>
         private void OnLanded()
         {
             remainingJumps = maxJumpCount;
@@ -479,10 +381,6 @@ namespace KillRitual
             //    Debug.Log("Player Landed");
         }
 
-        /// <summary>
-        /// OverlapSphere�� �ٴ��� �˻��Ѵ�.
-        /// �ڱ� �ڽ��� CharacterController�� �ٴ����� �������� �ʵ��� root�� ���� �ݶ��̴��� �����Ѵ�.
-        /// </summary>
         private bool CheckGroundByOverlapSphere()
         {
             Vector3 checkPosition = GetGroundCheckPosition();
@@ -511,14 +409,6 @@ namespace KillRitual
             return false;
         }
 
-        /// <summary>
-        /// �߹� �ٴ� üũ ��ġ�� ����Ѵ�.
-        ///
-        /// CharacterController ����:
-        /// - worldCenter.y - height / 2 �� �߹ٴ� ���̿� ������.
-        /// - CheckSphere�� �߽��� �߹ٴں��� groundCheckRadius��ŭ ���� �д�.
-        /// - groundCheckInset��ŭ �Ʒ��� ���� �ٴڰ� ��¦ ��ġ�� �Ѵ�.
-        /// </summary>
         private Vector3 GetGroundCheckPosition()
         {
             Vector3 worldCenter = transform.TransformPoint(characterController.center);
@@ -534,10 +424,6 @@ namespace KillRitual
             );
         }
 
-        /// <summary>
-        /// �ٴ� ����� ���Ѵ�.
-        /// ���� �̵� ������ ����Ѵ�.
-        /// </summary>
         private Vector3 ProbeGroundNormal()
         {
             Vector3 worldCenter = transform.TransformPoint(characterController.center);
@@ -587,14 +473,6 @@ namespace KillRitual
         // Jump
         // ============================================================
 
-        /// <summary>
-        /// ����� ���� �Է��� ���� ������ �Һ��Ѵ�.
-        ///
-        /// ����:
-        /// - �ֱٿ� ���� �Է��� �־���
-        /// - ���� ���� ���� �����̰ų�
-        /// - ���� ���� ���� Ƚ���� ���� ��.
-        /// </summary>
         private void TryConsumeBufferedJump()
         {
             bool hasBufferedJump =
@@ -617,14 +495,6 @@ namespace KillRitual
             lastJumpPressedTime = -999f;
         }
 
-        /// <summary>
-        /// ���� ���� ����.
-        ///
-        /// ���� Rigidbody �ڵ��� PerformJump ������ CharacterController ������� �ű� ���̴�.
-        /// - ���� ���� �ӵ��� ����.
-        /// - jumpForce�� ��� ���� �ӵ��� ����.
-        /// - ���� ���� ���� ������ ��� ����.
-        /// </summary>
         private void PerformJump()
         {
             verticalVelocity = 0f;
@@ -645,16 +515,6 @@ namespace KillRitual
             //}
         }
 
-        /// <summary>
-        /// ���� �ӵ��� �����Ѵ�.
-        ///
-        /// ����:
-        /// - ���� �ϰ� �ӵ��� �ٴڿ� �ٿ��д�.
-        ///
-        /// ����:
-        /// - ��� �߿��� �⺻ �߷� �Ǵ� ��� ���� ����.
-        /// - ���� �߿��� fallGravityMultiplier�� ������ ������ �������� �Ѵ�.
-        /// </summary>
         private void UpdateVerticalVelocity()
         {
             if (isGrounded && verticalVelocity < 0f)
@@ -679,9 +539,6 @@ namespace KillRitual
         // Horizontal Movement
         // ============================================================
 
-        /// <summary>
-        /// ���� �̵� �ӵ��� �����Ѵ�.
-        /// </summary>
         private void UpdateHorizontalVelocity()
         {
             if (isDashing)
@@ -692,7 +549,6 @@ namespace KillRitual
 
             bool hasMoveInput = moveInput.sqrMagnitude > 0.01f;
 
-            // [2026-07-06 추가] 작두 발동 중에는 이동 속도를 slowRunSpeed 배율로 감속시킵니다.
             float effectiveRunSpeed = (jakduSystem != null && jakduSystem.IsActing)
                 ? maxRunSpeed * slowRunSpeed
                 : maxRunSpeed;
@@ -729,10 +585,6 @@ namespace KillRitual
         // Dash
         // ============================================================
 
-        /// <summary>
-        /// ��� ������ �õ��Ѵ�.
-        /// Ctrl�� ������� �ʴ´�.
-        /// </summary>
         private void TryStartDash()
         {
             if (!Input.GetKeyDown(dashKey))
@@ -750,10 +602,6 @@ namespace KillRitual
             StartDash();
         }
 
-        /// <summary>
-        /// ��� ����.
-        /// �Է� ������ ������ �Է� ��������, ������ �������� ����Ѵ�.
-        /// </summary>
         private void StartDash()
         {
             dashDirection = moveInput.sqrMagnitude > 0.01f
@@ -776,9 +624,6 @@ namespace KillRitual
             //    Debug.Log($"Dash Start. Charges: {currentDashCharges}/{maxDashCharges}");
         }
 
-        /// <summary>
-        /// ��� �� �ӵ� ����.
-        /// </summary>
         private void UpdateDashVelocity()
         {
             if (Time.time >= dashEndTime)
@@ -790,9 +635,6 @@ namespace KillRitual
             horizontalVelocity = dashDirection * dashSpeed;
         }
 
-        /// <summary>
-        /// ��� ���� ó��.
-        /// </summary>
         private void EndDash()
         {
             isDashing = false;
@@ -804,9 +646,6 @@ namespace KillRitual
             //    Debug.Log("Dash End");
         }
 
-        /// <summary>
-        /// ��� ���� ����.
-        /// </summary>
         private void UpdateDashRecharge()
         {
             if (currentDashCharges >= maxDashCharges)
@@ -864,12 +703,6 @@ namespace KillRitual
         // Character Move
         // ============================================================
 
-        /// <summary>
-        /// ���� �̵��� CharacterController�� �����Ѵ�.
-        ///
-        /// CharacterController.Move�� �����Ӵ� �� ���� ȣ���ϴ� ���� �������̴�.
-        /// ���� �̵��� ���� �̵��� ���� �� ���� ó���Ѵ�.
-        /// </summary>
         private void MoveCharacter()
         {
             Vector3 finalHorizontalVelocity = horizontalVelocity;
@@ -910,10 +743,6 @@ namespace KillRitual
         // External Extension Methods
         // ============================================================
 
-        /// <summary>
-        /// �ܺ� �ý��ۿ��� �ִ� ��� ������ ���� ������ �� ����Ѵ�.
-        /// ��: ��ȭ �ý��ۿ��� ��� �ִ� ������ 2�� ����.
-        /// </summary>
         public void SetMaxDashCharges(int newMaxDashCharges, bool refill)
         {
             maxDashCharges = Mathf.Max(0, newMaxDashCharges);
@@ -937,10 +766,6 @@ namespace KillRitual
                 nextDashRechargeTime = Time.time + dashRechargeTime;
         }
 
-        /// <summary>
-        /// �ܺ� �ý��ۿ��� �ִ� ��� ������ ������ų �� ����Ѵ�.
-        /// ��: ��� ��ȭ ������ ȹ��.
-        /// </summary>
         public void AddMaxDashCharges(int amount, bool refillAddedCharge)
         {
             if (amount <= 0)
@@ -958,10 +783,6 @@ namespace KillRitual
             );
         }
 
-        /// <summary>
-        /// ���� ��� ������ ��� ȸ���Ѵ�.
-        /// ��: �Ļ� ���� �� ��� 1�� ȸ��.
-        /// </summary>
         public void AddDashCharges(int amount)
         {
             if (amount <= 0)
@@ -978,9 +799,6 @@ namespace KillRitual
                 nextDashRechargeTime = -999f;
         }
 
-        /// <summary>
-        /// ��� ������ �ִ�ġ���� ȸ���Ѵ�.
-        /// </summary>
         public void RefillDashCharges()
         {
             currentDashCharges = maxDashCharges;

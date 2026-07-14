@@ -7,24 +7,6 @@ using UnityEngine.UI;
 
 namespace KillRitual.Player
 {
-    /// <summary>
-    /// 현재 장착된 오행 속성의 잔탄(자원)량과 속성 UI를 HUD에 표시합니다.
-    ///
-    /// 중요:
-    /// 이 UI는 숫자키 1/2/3/4/5 슬롯 순서를 직접 보지 않습니다.
-    /// KRCombatSystem.CurrentElement가 현재 어떤 속성인지 알려주면,
-    /// 그 속성에 맞는 로고, 밑줄 색, 텍스트 색, 탄약량을 표시합니다.
-    ///
-    /// 따라서 _elementVisualSettings의 리스트 순서는 슬롯 순서가 아닙니다.
-    /// 각 항목의 Element 값과 LogoSprite/ElementColor가 정확히 맞아야 합니다.
-    ///
-    /// 예:
-    /// Element = Fire  → 화 로고 / 화 색
-    /// Element = Water → 수 로고 / 수 색
-    /// Element = Wood  → 목 로고 / 목 색
-    /// Element = Earth → 토 로고 / 토 색
-    /// Element = Metal → 금 로고 / 금 색
-    /// </summary>
     public sealed class KRAmmoUI : MonoBehaviour
     {
         [System.Serializable]
@@ -116,10 +98,6 @@ namespace KillRitual.Player
             _combatSystem = GetComponentInParent<KRCombatSystem>();
         }
 
-        /// <summary>
-        /// 인스펙터의 속성별 UI 설정을 빠르게 찾기 위한 맵으로 변환합니다.
-        /// 같은 Element가 중복 등록되어 있으면 첫 번째 항목만 사용하고 이후 항목은 무시합니다.
-        /// </summary>
         private void RebuildVisualSettingMap()
         {
             _visualSettingMap.Clear();
@@ -144,9 +122,6 @@ namespace KillRitual.Player
             }
         }
 
-        /// <summary>
-        /// 잔탄 막대, 숫자 텍스트, 속성 로고, 밑줄 색을 현재 상태에 맞춰 갱신합니다.
-        /// </summary>
         private void UpdateAmmoUI(bool forceVisualRefresh)
         {
             if (_combatSystem == null)
@@ -194,9 +169,6 @@ namespace KillRitual.Player
             }
         }
 
-        /// <summary>
-        /// 현재 속성에 맞춰 로고, 밑줄 색, 텍스트 기준 색을 갱신합니다.
-        /// </summary>
         private void UpdateElementVisual(KRDamageType element)
         {
             if (TryGetElementVisualSetting(element, out ElementVisualSetting setting))

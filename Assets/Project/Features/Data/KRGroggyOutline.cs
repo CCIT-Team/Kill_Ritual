@@ -2,10 +2,6 @@
 
 namespace KillRitual.Enemies
 {
-    /// <summary>
-    /// 그로기 상태일 때 항상 테두리를 표시하고,
-    /// 처형 가능 거리 안에 들어오면 색상이 주황색으로 바뀝니다.
-    /// </summary>
     public sealed class KRGroggyOutline : MonoBehaviour
     {
         [Tooltip("그로기 상태 기본 테두리 색상.")]
@@ -36,7 +32,6 @@ namespace KillRitual.Enemies
             _outline.enabled = false;
         }
 
-        /// <summary>그로기 상태 변경. KREnemyBase가 호출합니다.</summary>
         public void SetOutline(bool groggy)
         {
             if (_isGroggy == groggy)
@@ -59,7 +54,6 @@ namespace KillRitual.Enemies
             Refresh();
         }
 
-        /// <summary>처형 가능 범위 진입/이탈. KRAbsorptionZone이 호출합니다.</summary>
         public void SetInRange(bool inRange)
         {
             if (_isInRange == inRange)

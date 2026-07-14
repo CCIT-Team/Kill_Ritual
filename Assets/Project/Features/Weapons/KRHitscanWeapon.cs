@@ -6,18 +6,6 @@ using KillRitual.Core.Audio;
 
 namespace KillRitual.Weapons
 {
-    /// <summary>
-    /// 레이캐스트(즉발) 방식 무기의 공통 구현입니다.
-    /// 펠릿 수(_pelletCount)와 탄퍼짐 각도(_spreadAngleDegrees)만 인스펙터에서 다르게 설정하면
-    /// 이 클래스 하나로 다음 무기들을 구현할 수 있습니다.
-    ///   목(木) 정밀소총/스나이퍼, 토(土) 연사총   → PelletCount=1 (단발)
-    ///   화(火) 샷건/슈퍼샷건                      → PelletCount&gt;1, SpreadAngleDegrees&gt;0 (산탄)
-    ///
-    /// [KRRampingHitscanWeapon 확장 포인트]
-    /// GetCurrentPelletCount(), GetCurrentSpreadAngle(), ComputePelletDirection()을 virtual로
-    /// 두어, 자식 클래스가 동적으로 오버라이드할 수 있습니다. 스컬크러셔(KRRampingHitscanWeapon)는
-    /// 이를 이용해 가속 비율에 따라 펠릿 수/탄퍼짐을 늘리고, 부채꼴 형태로 균등 배치합니다.
-    /// </summary>
     public class KRHitscanWeapon : KRWeaponBase
     {
         private enum KRFireAudioSlot
@@ -100,10 +88,6 @@ namespace KillRitual.Weapons
             }
         }
 
-        /// <summary>
-        /// 현재 무기의 공격 유형 I / II 설정에 따라 발사음을 출력합니다.
-        /// KRRampingHitscanWeapon처럼 DoFire를 오버라이드하는 자식 클래스에서도 호출할 수 있도록 protected로 둡니다.
-        /// </summary>
         protected void PlayFireAudio(Vector3 worldPosition)
         {
             AudioClip clip = ResolveFireAudioClip();
@@ -150,16 +134,6 @@ namespace KillRitual.Weapons
             return Random.Range(min, max);
         }
 
-        /// <summary>
-        /// 펠릿 1발을 즉시 발사합니다(레이캐스트 + 데미지 적용 + 트레이서). 기본 구현(DoFire)은
-        /// 이 메서드를 같은 프레임 안에서 N번 호출해 모든 펠릿을 동시에 쏩니다.
-        /// KRRampingHitscanWeapon처럼 펠릿 사이에 시차를 두고 싶은 자식 클래스는, DoFire()를
-        /// 직접 오버라이드하지 않고 이 메서드를 코루틴 안에서 한 번씩 호출하는 방식으로
-        /// "여러 발의 단발"처럼 보이게 만들 수 있습니다 (한 덩어리로 보이는 레이저 느낌 방지).
-        /// </summary>
-        /// <param name="pelletIndex">이번 발사 사이클 안에서 이 펠릿의 순서(0부터 시작). 부채꼴 패턴 등
-        /// 펠릿 순서에 따라 달라지는 방향 계산(ComputePelletDirection)에 사용됩니다.</param>
-        /// <param name="totalPellets">이번 발사 사이클의 전체 펠릿 수.</param>
         protected void FireSinglePellet(Transform fp, float damage, float spreadAngleDegrees,
             int pelletIndex, int totalPellets)
         {
@@ -173,40 +147,19 @@ namespace KillRitual.Weapons
             SpawnPelletVisual(fp.position, endPoint);
         }
 
-        /// <summary>
-        /// 펠릿 1발의 최종 발사 방향을 계산합니다. 기본 구현은 콘(원뿔) 안에서 완전히 무작위인
-        /// 산탄 패턴(ApplySpreadJitter)을 사용합니다. KRRampingHitscanWeapon(스컬크러셔)처럼
-        /// 균등 간격의 부채꼴 패턴이 필요한 자식 클래스는 이 메서드를 오버라이드해
-        /// pelletIndex/totalPellets를 이용한 결정론적 패턴으로 완전히 교체할 수 있습니다.
-        /// </summary>
         protected virtual Vector3 ComputePelletDirection(Vector3 baseDirection, float spreadAngleDegrees,
             int pelletIndex, int totalPellets)
         {
             return ApplySpreadJitter(baseDirection, spreadAngleDegrees);
         }
 
-        /// <summary>
-        /// 펠릿 1발의 시각효과를 생성합니다. 기본 구현은 즉발 트레이서(선)를 그리지만,
-        /// KRRampingHitscanWeapon(스컬크러셔)처럼 "불덩이가 날아가는" 느낌이 필요한 자식 클래스는
-        /// 이 메서드를 오버라이드해 다른 시각효과(예: KRFlameGlobVisual)로 완전히 교체할 수 있습니다.
-        /// 데미지는 이미 ApplyNearestHitDamage에서 즉시 적용되었으므로, 이 메서드는 순수하게
-        /// "어떻게 보여줄 것인가"만 담당하고 판정에는 전혀 영향을 주지 않습니다.
-        /// </summary>
         protected virtual void SpawnPelletVisual(Vector3 origin, Vector3 endPoint)
         {
             SpawnTracer(origin, endPoint);
         }
 
-        /// <summary>
-        /// 이번 발사에 사용할 펠릿(레이) 수를 반환합니다.
-        /// KRRampingHitscanWeapon이 오버라이드해서 가속 비율에 따라 동적으로 늘립니다.
-        /// </summary>
         protected virtual int GetCurrentPelletCount() => _pelletCount;
 
-        /// <summary>
-        /// 이번 발사에 사용할 탄퍼짐 각도를 반환합니다.
-        /// KRRampingHitscanWeapon이 오버라이드해서 가속 비율에 따라 동적으로 늘립니다.
-        /// </summary>
         protected virtual float GetCurrentSpreadAngle() => _spreadAngleDegrees;
 
         private Vector3 ApplyNearestHitDamage(int hitCount, float damage, Vector3 origin, Vector3 direction)
@@ -240,10 +193,6 @@ namespace KillRitual.Weapons
             return hit.point;
         }
 
-        /// <summary>
-        /// 콘(원뿔) 내부의 무작위 산탄 방향을 계산합니다. 자식 클래스가 결정론적 패턴(부채꼴 등)의
-        /// 폴백이나 보조 계산용으로 재사용할 수 있도록 protected로 둡니다.
-        /// </summary>
         protected static Vector3 ApplySpreadJitter(Vector3 forward, float spreadAngleDegrees)
         {
             if (spreadAngleDegrees <= 0f) return forward;
