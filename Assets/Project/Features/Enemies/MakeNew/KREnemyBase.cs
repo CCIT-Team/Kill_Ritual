@@ -1,5 +1,4 @@
-﻿// Assets/Project/Features/Enemies/KREnemyBase.cs
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using KillRitual.Core.Damage;
@@ -69,7 +68,7 @@ namespace KillRitual.Enemies
         [Tooltip("실제 캐릭터 메시가 들어있는 자식 오브젝트입니다. 파티클 등 다른 자식은 여기 안 넣는 것을 권장합니다.")]
         [SerializeField] private Transform _modelRoot;
 
-        // ── 런타임 상태 ────────────────────────────────────────────────
+        //런타임 상태
         protected EnemyState _state = EnemyState.Idle;
         protected float _health;
         protected Transform _player;
@@ -90,7 +89,7 @@ namespace KillRitual.Enemies
         private Collider[] _ownColliders;
         private KRGroggyOutline _groggyOutline;
 
-        // ── IDamageable ────────────────────────────────────────────────
+        //IDamageable
         public bool IsDead => _state == EnemyState.Dead;
         public bool IsGroggy => _isGroggy;
         public Vector3 Position => transform.position;
@@ -148,12 +147,11 @@ namespace KillRitual.Enemies
             switch (source)
             {
                 case KillRitual.Core.Interfaces.ExecutionSource.Absorption:
-                    // 흡혼 — 체력 회복은 KRAbsorptionSystem이 이미 처리합니다.
-                    // 탄약 드롭 없음.
+                    // 흡혼
                     break;
 
                 case KillRitual.Core.Interfaces.ExecutionSource.Jakdu:
-                    // 작두 — 탄약 오브 드롭.
+                    // 작두
                     var combatSystem = GameObject.FindGameObjectWithTag("Player")
                         ?.GetComponentInParent<KillRitual.Player.Combat.KRCombatSystem>();
 
@@ -165,7 +163,7 @@ namespace KillRitual.Enemies
                     break;
 
                 default:
-                    // 기타 — 테스트 또는 일반 처형.
+                    // 테스트 또는 일반 처형
                     break;
             }
 
@@ -179,7 +177,7 @@ namespace KillRitual.Enemies
             EnterDead();
         }
 
-        // ── 유니티 생명주기 ────────────────────────────────────────────
+        //유니티 생명주기 
 
         protected virtual void Awake()
         {
@@ -260,7 +258,7 @@ namespace KillRitual.Enemies
             }
         }
 
-        // ── 초기화 보조 ────────────────────────────────────────────────
+        //초기화 보조
 
         private void CacheRenderersAndOriginalColors()
         {
@@ -298,8 +296,6 @@ namespace KillRitual.Enemies
             {
                 if (col == null) continue;
 
-                // 보스 부위처럼 콜라이더 GameObject 자체에 다른 IDamageable이 붙어 있으면
-                // KREnemyBase가 해당 콜라이더를 가로채지 않도록 제외합니다.
                 IDamageable colDamageable = col.GetComponent<IDamageable>();
 
                 if (colDamageable != null && !ReferenceEquals(colDamageable, this))
@@ -321,7 +317,7 @@ namespace KillRitual.Enemies
                 _groggyOutline = outlineTarget.gameObject.AddComponent<KRGroggyOutline>();
         }
 
-        // ── FSM ────────────────────────────────────────────────────────
+        //FSM
 
         protected virtual void UpdateIdle()
         {
@@ -331,8 +327,6 @@ namespace KillRitual.Enemies
             {
                 _hasSpottedPlayer = true;
                 _state = EnemyState.Chase;
-
-                //Debug.Log($"[KREnemyBase] {name}: 플레이어 감지(거리 {DistanceToPlayer():F1}) — Idle → Chase 전환");
             }
         }
 
@@ -355,7 +349,7 @@ namespace KillRitual.Enemies
                 ExitGroggy();
         }
 
-        // ── 상태 전환 ──────────────────────────────────────────────────
+        //상태 전환
 
         private void EnterGroggy(float duration)
         {
@@ -406,11 +400,8 @@ namespace KillRitual.Enemies
 
             OnDeath();
 
-            // 전투 구역(CombatArena) 시스템에 사망을 즉시 알림.
-            // despawnDelay를 기다리지 않고 죽는 즉시 반영되며,
-            // ArenaEnemyLink가 없는 적(구역 밖 일반 몬스터)이면 아무 동작 안 함.
             GetComponent<ArenaEnemyLink>()?.Die();
-            GetComponent<BossSupplyEnemyLink>()?.Die(); // 추가
+            GetComponent<BossSupplyEnemyLink>()?.Die(); 
 
             Destroy(gameObject, _despawnDelay);
         }
@@ -428,7 +419,7 @@ namespace KillRitual.Enemies
 
         protected virtual void OnDeath() { }
 
-        // ── 피격 파티클 이펙트 ─────────────────────────────────────────
+        //피격 파티클 이펙트
 
         private void SpawnHitEffect(KRDamageContext context)
         {
@@ -449,7 +440,7 @@ namespace KillRitual.Enemies
             Destroy(fx.gameObject, lifetime);
         }
 
-        // ── 공용 유틸리티 ──────────────────────────────────────────────
+        //공용 유틸리티
 
         protected IDamageable FindPlayerDamageable(Transform playerTransform)
         {
@@ -470,15 +461,6 @@ namespace KillRitual.Enemies
         protected void MoveTowards(Vector3 targetPosition)
         {
             if (_agent == null || !_agent.enabled) return;
-
-            if (!_agent.isOnNavMesh)
-            {
-                Debug.LogWarning(
-                    $"[KREnemyBase] {name}: NavMeshAgent가 NavMesh 위에 있지 않아 이동이 무시됩니다. " +
-                    "씬에 NavMesh가 베이크되어 있는지, 스폰 위치가 NavMesh 범위 안인지 확인하세요."
-                );
-                return;
-            }
 
             _agent.isStopped = false;
             _agent.SetDestination(targetPosition);
@@ -512,7 +494,7 @@ namespace KillRitual.Enemies
                 );
         }
 
-        // ── 색상 시각 피드백 ───────────────────────────────────────────
+        //색상 시각 피드백
 
         protected Color? OverrideColor { get; set; }
 

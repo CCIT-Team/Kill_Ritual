@@ -1,5 +1,4 @@
-// Assets/Project/Features/Enemies/MakeNew/KRBossJakdu01.cs
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,28 +16,16 @@ namespace KillRitual.Enemies
         [Range(0.05f, 0.95f)]
         [SerializeField] private float _phase2HealthRatio = 0.5f;
 
-        [Tooltip("[2026-07-08 신규] '그로기 처형시 죽는거 말고 한 500딜정도' 요청 반영 — 보스는 " +
-                 "그로기(다운) 상태에서 처형당해도 즉사하지 않고, 대신 이 값만큼 고정 피해를 " +
-                 "입습니다. 이 피해도 다른 피해와 똑같은 경로(TakeDamageDirect)를 거치므로, " +
-                 "1페이즈 중이면 ClampFinalDamage()의 2페이즈 문턱 보정도 그대로 적용됩니다.")]
+        [Tooltip("그로기 처형 시 즉사 대신 고정 500 피해를 TakeDamageDirect로 적용 ")]
         [Min(0f)][SerializeField] private float _executeDamage = 500f;
 
-        [Tooltip("[2026-07-08 신규] '포효모션이 무조건 우선' 요청 반영 — 2페이즈 전환 포효를 " +
-                 "독점 재생하는 동안 다른 패턴이 못 끼어들게 붙잡아 두는 시간(초)입니다. " +
-                 "[2026-07-08 수정 — '애니메이션이 캔슬되는거 같아서' 버그 수정] 이 클립의 실제 " +
-                 "프레임레이트를 FBX에서 직접 확인해보니 30fps가 아니라 25fps(PAL)였습니다 — 그동안 " +
-                 "30fps로 잘못 가정해서 실제 재생시간을 20% 짧게 계산하고 있었습니다. 200프레임 " +
-                 "/25fps = 8초(1배속), ExitTime 0.9 기준 실제 종료는 약 7.2초라서, 6.1초였던 이 " +
-                 "값으로는 애니메이션이 끝나기 전에 _isPatternActive가 풀려서 다음 패턴이 끼어들어 " +
-                 "포효가 중간에 캔슬됐습니다. 7.5초로 늘려서 실제 종료 시점보다 확실히 뒤로 " +
-                 "맞췄습니다.")]
         [Min(0.1f)][SerializeField] private float _roarDuration = 7.5f;
 
         [Header("보스 UI - 체력 / 페이즈")]
-        [Tooltip("보스 전체 체력 스크롤바입니다. Scrollbar의 size를 HP 비율로 사용합니다. 방향은 UI 오브젝트의 Direction 설정을 따릅니다.")]
+        [Tooltip("보스 전체 체력 스크롤바입니다.")]
         [SerializeField] private Scrollbar _bossHealthScrollbar;
 
-        [Tooltip("위쪽에 미리 배치해둔 페이즈 조각/표식 오브젝트입니다. 순서대로 하나씩 사라집니다. 총 2페이즈면 2개를 넣으면 됩니다.")]
+        [Tooltip("위쪽에 미리 배치해둔 페이즈 조각/표식 오브젝트입니다.")]
         [SerializeField] private GameObject[] _phaseBreakObjects;
 
         [Tooltip("true면 페이즈 조각을 SetActive(false)로 숨깁니다. false면 Destroy()합니다. UI는 보통 true가 안전합니다.")]
@@ -59,33 +46,25 @@ namespace KillRitual.Enemies
         private bool _bossUiRevealed;
 
         [Header("몸통 방어 (부위 판정이 아닌 애매한 곳)")]
-        [Tooltip("[2026-07-07 이름 변경] 예전엔 '철갑 방어'였지만, 이제 몸통 자체도 부위(_body)로 " +
-                 "따로 관리되므로 이건 그 어떤 부위 콜라이더에도 안 걸린 애매한 지점(보스 루트의 " +
-                 "커다란 캡슐 콜라이더)에 맞았을 때만 쓰이는 보정치입니다. 부위를 정확히 노리도록 " +
-                 "유도하기 위해 낮게 유지합니다.")]
         [Range(0f, 1f)]
         [SerializeField] private float _fallbackDamageRatio = 0.15f;
 
-        [Tooltip("애매한 곳에 맞았을 때도 '맞긴 맞았다'는 걸 보여줄 VFX. 비워두면 자동으로 흰색 " +
-                 "구체 오브젝트로 대체됩니다(준비물 없이 바로 동작).")]
         [SerializeField] private GameObject _armorBlockVfxPrefab;
 
-        [Header("부위 (KRBossBodyPart) — [2026-07-07 재설계] 어깨/코/등 → 머리/몸통/앞다리/뒷다리/꼬리")]
+        [Header("부위 (KRBossBodyPart)")]
         [SerializeField] private KRBossBodyPart _head;
         [SerializeField] private KRBossBodyPart _body;
         [SerializeField] private KRBossBodyPart _frontLegs;
         [SerializeField] private KRBossBodyPart _backLegs;
         [SerializeField] private KRBossBodyPart _tail;
 
-        [Header("부위 파괴 - 다리 (2026-07-07 신규)")]
-        [Tooltip("앞다리/뒷다리 중 하나가 파괴될 때마다 이동속도에 곱해지는 배율(누적 곱). " +
-                 "예: 0.65면 다리 하나 파괴 시 65%, 둘 다 파괴되면 65%×65%≈42%로 느려집니다.")]
+        [Header("부위 파괴 - 다리")]
+        [Tooltip("앞다리/뒷다리 중 하나가 파괴될 때마다 이동속도에 곱해지는 배율(누적 곱). ")]
         [Range(0.1f, 1f)]
         [SerializeField] private float _legBreakSpeedMultiplier = 0.65f;
 
         [Header("이동 / 패턴 진행")]
-        [Tooltip("초당 회전 각도(도). 유한하게 두면 거대한 몸집답게 천천히 돌게 되고, 플레이어가 " +
-                 "실제로 등/옆으로 돌아가서 때릴 수 있게 됩니다.")]
+        [Tooltip("초당 회전 각도(도)")]
         [Min(10f)]
         [SerializeField] private float _turnSpeedDegreesPerSecond = 120f;
 
@@ -93,9 +72,7 @@ namespace KillRitual.Enemies
         [Min(1f)]
         [SerializeField] private float _preferredDistance = 9f;
 
-        [Tooltip("[2026-07-07 신규] '너무 멀면 전력 질주' — 플레이어가 (기준거리×이 배율)보다 멀리 " +
-                 "떨어지면 평소 추격 속도보다 더 빠르게 달려서 거리를 좁힙니다. 예: 기준거리 9, " +
-                 "이 값 2면 18m 넘게 벌어졌을 때만 전력 질주합니다.")]
+        [Tooltip("너무 멀면 전력 질주")]
         [Min(1f)]
         [SerializeField] private float _sprintDistanceMultiplier = 2f;
 

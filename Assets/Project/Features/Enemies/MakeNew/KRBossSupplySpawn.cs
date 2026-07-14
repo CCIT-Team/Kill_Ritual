@@ -1,5 +1,4 @@
-﻿// Assets/Project/Features/Enemies/KRBossSupplySpawner.cs
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using KillRitual.Player;
@@ -108,18 +107,6 @@ namespace KillRitual.Enemies
 
         private void SpawnSupplyEnemies()
         {
-            if (_supplyEnemyPrefab == null)
-            {
-                Debug.LogWarning($"[KRBossSupplySpawner] {name}: Supply Enemy Prefab이 비어있습니다.");
-                return;
-            }
-
-            if (_spawnPoints == null || _spawnPoints.Count == 0)
-            {
-                Debug.LogWarning($"[KRBossSupplySpawner] {name}: Spawn Points가 비어있습니다.");
-                return;
-            }
-
             int spawnedCount = 0;
 
             for (int i = 0; i < _enemiesPerSpawn; i++)
@@ -133,12 +120,6 @@ namespace KillRitual.Enemies
                 KREnemyBase enemyBase = newEnemy.GetComponent<KREnemyBase>()
                     ?? newEnemy.GetComponentInChildren<KREnemyBase>(true);
 
-                if (enemyBase == null)
-                {
-                    Debug.LogWarning($"[KRBossSupplySpawner] {name}: '{newEnemy.name}'에서 KREnemyBase를 찾지 못했습니다.");
-                    continue;
-                }
-
                 enemyBase.gameObject.SetActive(true);
 
                 BossSupplyEnemyLink link = enemyBase.GetComponent<BossSupplyEnemyLink>();
@@ -150,9 +131,6 @@ namespace KillRitual.Enemies
                 _activeSupplyEnemyCount++;
                 spawnedCount++;
             }
-
-            Debug.Log($"[KRBossSupplySpawner] {name}: 자원 부족 감지 → 보급 몬스터 {spawnedCount}마리 소환 " +
-                      $"({_spawnsUsed + 1}/{(_maxSpawns < 0 ? "무제한" : _maxSpawns.ToString())}).");
         }
 
         public void NotifySupplyEnemyDied()

@@ -1,5 +1,4 @@
-﻿// Assets/Project/Features/Enemies/BossSupplyEnemyLink.cs
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace KillRitual.Enemies
 {
