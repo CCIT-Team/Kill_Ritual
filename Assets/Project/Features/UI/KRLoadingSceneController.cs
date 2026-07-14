@@ -32,7 +32,7 @@ namespace KillRitual.UI
 
             if (string.IsNullOrWhiteSpace(targetSceneName))
             {
-                Debug.LogError("[KRLoadingSceneController] ·ÎµåÇÒ Target SceneÀÌ ¾ø½À´Ï´Ù.");
+                Debug.LogError("[KRLoadingSceneController] ë¡œë“œí•  Target Sceneì´ ì—†ìŠµë‹ˆë‹¤.");
                 yield break;
             }
 

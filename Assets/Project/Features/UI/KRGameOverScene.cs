@@ -6,11 +6,10 @@ namespace KillRitual.Player
 {
     public sealed class KRGameOverSceneController : MonoBehaviour
     {
-        [Tooltip("\"다시 시작\"을 눌렀을 때 불러올 플레이(게임 진행) 씬의 이름입니다. " +
-                 "Build Settings에 등록된 이름과 정확히 같아야 합니다. 예: \"TestMonster\"")]
+        [Tooltip("\"다시 시작\"을 눌렀을 때 불러올 플레이 씬의 이름으로, Build Settings에 등록된 이름과 정확히 같아야 합니다.")]
         [SerializeField] private string _playSceneName = "TestMonster";
 
-        [Tooltip("\"메뉴로\"를 눌렀을 때 불러올 메뉴 씬의 이름입니다(선택). 메뉴 버튼을 안 쓰면 비워둬도 됩니다.")]
+        [Tooltip("\"메뉴로\"를 눌렀을 때 불러올 메뉴 씬의 이름으로, 메뉴 버튼을 안 쓰면 비워둬도 됩니다.")]
         [SerializeField] private string _menuSceneName = "";
 
         public void RestartGame()

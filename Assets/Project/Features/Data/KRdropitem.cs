@@ -28,30 +28,15 @@ namespace KillRitual.Items
         [SerializeField] private float _restoreAmount = 25f;
 
         [Header("흡수 설정")]
-        [Tooltip("착지 후 이 거리 이하로 플레이어가 직접 걸어와야 회수(회복 적용 후 파괴)됩니다. " +
-                 "[2026-07-06 변경] 자석 추적 기능은 제거되었으므로, 착지 후에는 이 값이 사실상 " +
-                 "유일한 수집 판정 범위입니다. '걸어가서 주워야 하는' 느낌은 유지하되, 너무 좁으면 " +
-                 "오브 바로 위까지 정확히 밟아야만 먹혀서 '안 먹힌다'고 느껴집니다. " +
-                 "[2026-07-09 변경] '오브가 너무 안 먹어진다' 피드백으로 0.35 → 1.0으로 넉넉하게 조정.")]
+        [Tooltip("착지 후 이 거리 이하로 플레이어가 걸어와야 회수(회복 적용 후 파괴)됩니다.")]
         [Min(0.01f)]
         [SerializeField] private float _collectRange = 1.0f;
 
-        [Tooltip("[2026-07-08 신규] '날라가는 중에 플레이어랑 부디치면 바로 먹어지게도 해줘' 요청으로 " +
-                 "추가 — 오브와 플레이어는 물리적으로 충돌하지 않도록 레이어가 꺼져 있어서 실제 " +
-                 "OnCollisionEnter가 발생하지 않습니다. 그래서 착지 전(공중에 날아가는 동안)에는 " +
-                 "이 반경으로 3D 거리를 재서 '부딪힌 것'처럼 즉시 회수시킵니다. 착지 후에는 이 값 " +
-                 "대신 위 _collectRange(좁은 도보 회수 범위)를 씁니다.")]
+        [Tooltip("착지 전 공중에 날아가는 동안 이 반경 안에 들어오면 부딪힌 것처럼 즉시 회수됩니다.")]
         [Min(0.01f)]
         [SerializeField] private float _midairCollectRadius = 0.6f;
 
-        [Tooltip("[2026-07-09 신규] '오브 먹는 판정 흡수도 넣자' 요청으로 추가 — 착지한 오브는 " +
-                 "이전엔 플레이어가 몇 미터 밖에 있든 제자리에 가만히 있었습니다(자석 추적 기능은 " +
-                 "2026-07-06에 '걸어가서 주워야 하는' 컨셉 때문에 의도적으로 제거됨). 이제 착지 후 " +
-                 "이 거리 안에 플레이어가 들어오면 서서히 플레이어 쪽으로 끌려갑니다(자석 흡수). " +
-                 "[2026-07-09 변경 — '흡수 범위는 직접접촉 판정범위보다 좁게'] 일부러 _collectRange(1.0)" +
-                 "보다 작게 잡았습니다. 즉 자석이 당기기 시작하는 순간엔 이미 도보 회수 판정 범위 " +
-                 "안이라 바로 회수되는 경우가 많고, 멀리서부터 끌려오는 느낌은 없습니다 — 장거리 " +
-                 "자석이 아니라 마지막 순간의 작은 스냅 정도로만 작동합니다. 0이면 완전히 끕니다.")]
+        [Tooltip("착지 후 이 거리 안에 플레이어가 들어오면 서서히 끌려가는 자석 흡수 범위이며, 0이면 끕니다.")]
         [Min(0f)]
         [SerializeField] private float _magnetRange = 0.6f;
 
@@ -60,17 +45,11 @@ namespace KillRitual.Items
         [SerializeField] private float _magnetSpeed = 6f;
 
         [Header("낙하 속도")]
-        [Tooltip("[2026-07-08 신규] '떨어지는 속도 빠르게 가능?' → '포물선 후 떨어질때 가속으로' 요청 " +
-                 "반영 — 위로 솟구치는 포물선 구간(정점까지)은 자연스러운 궤적을 위해 그대로 두고, " +
-                 "정점을 지나 아래로 떨어지기 시작한 뒤부터만 기본 중력 위에 이 배율만큼 추가 가속도가 " +
-                 "붙습니다(최종적으로 중력이 이 배율만큼 작용). 전역 Physics.gravity는 건드리지 않고 " +
-                 "이 오브젝트에만 개별 적용됩니다.")]
+        [Tooltip("포물선 정점을 지나 떨어지기 시작한 뒤부터 이 오브젝트에만 개별로 중력 가속을 더합니다.")]
         [Min(1f)]
         [SerializeField] private float _fallGravityMultiplier = 2.5f;
 
-        [Tooltip("떨어지기 시작한 뒤 배율이 1배에서 위 _fallGravityMultiplier까지 점점 커지는 데 " +
-                 "걸리는 시간(초)입니다. 짧을수록 떨어지자마자 훅 가속되는 느낌이고, 길수록 서서히 " +
-                 "가속되는 느낌입니다.")]
+        [Tooltip("떨어지기 시작한 뒤 배율이 1배에서 _fallGravityMultiplier까지 커지는 데 걸리는 시간(초)입니다.")]
         [Min(0.01f)]
         [SerializeField] private float _fallAccelRampTime = 0.3f;
 
@@ -80,8 +59,7 @@ namespace KillRitual.Items
         [SerializeField] private float _lifetime = 12f;
 
         [Header("궤적 효과 (낙하 중 꼬리)")]
-        [Tooltip("[2026-07-08 신규] \"떨어질때 탄약이 포물선으로 떨어지면서 꼬리를 보여주면 좋겠어\" " +
-                 "요청으로 추가했습니다. 낙하(포물선 궤적) 중에만 뒤로 꼬리를 그리고, 착지하면 멈춥니다.")]
+        [Tooltip("낙하(포물선 궤적) 중에만 뒤로 꼬리를 그리고, 착지하면 멈춥니다.")]
         [SerializeField] private bool _showTrail = true;
 
         [Tooltip("꼬리가 사라지기까지 걸리는 시간(초). 값이 작을수록 꼬리가 짧아집니다.")]
@@ -97,9 +75,7 @@ namespace KillRitual.Items
         [SerializeField] private float _trailEndWidth = 0.02f;
 
         [Header("착지 후 부유 효과")]
-        [Tooltip("[2026-07-08 신규] \"바로 고정이 아니고 떨어진후 그위치에서 위로 살짝 뜨게 해주면 " +
-                 "안돼?\" 요청으로 추가 — 착지 즉시 그 자리에 완전히 얼어붙는 대신, 착지 지점을 " +
-                 "기준으로 살짝 떠오른 뒤 그 자리에서 위아래로 은은하게 흔들립니다(호버링).")]
+        [Tooltip("착지 즉시 고정되지 않고, 착지 지점에서 살짝 떠올라 위아래로 은은하게 흔들립니다(호버링).")]
         [SerializeField] private bool _floatAfterLanding = true;
 
         [Tooltip("착지 지점 기준 떠오르는 높이(m).")]
@@ -137,8 +113,7 @@ namespace KillRitual.Items
             _rb = GetComponent<Rigidbody>();
             if (_rb != null)
             {
-                // 낙하하는 동안(그리고 착지 순간까지) 회전이 걸리지 않게 미리 잠급니다.
-                // 구 콜라이더 + 중력 조합이라 잠그지 않으면 착지 직전에 살짝 굴러 보일 수 있습니다.
+                // 구 콜라이더 + 중력 조합에서 착지 직전 굴러 보이지 않도록 낙하 중 회전을 미리 잠급니다.
                 _rb.constraints = RigidbodyConstraints.FreezeRotation;
             }
         }

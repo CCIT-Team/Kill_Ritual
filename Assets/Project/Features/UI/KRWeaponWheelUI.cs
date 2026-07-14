@@ -18,26 +18,26 @@ namespace KillRitual.UI.HUD
         private sealed class WeaponWheelSlot
         {
             [Header("Data")]
-            [Tooltip("Ç¥½Ã¿ë ¼Ó¼ºÀÔ´Ï´Ù. ·±Å¸ÀÓ¿¡´Â CombatSystemÀÇ _elementSlots ±âÁØÀ¸·Î µ¿±âÈ­µË´Ï´Ù.")]
+            [Tooltip("í‘œì‹œìš© ì†ì„±ì…ë‹ˆë‹¤. ëŸ°íƒ€ì„ì—ëŠ” CombatSystemì˜ _elementSlots ê¸°ì¤€ìœ¼ë¡œ ë™ê¸°í™”ë©ë‹ˆë‹¤.")]
             public KRDamageType element;
 
             public string displayName;
             public Sprite icon;
 
             [Header("Existing UI References")]
-            [Tooltip("½½·Ô ·çÆ®. À§Ä¡ º¸Á¤¿ëÀÌ ¾Æ´Ï¶ó ¼±ÅÃ ½Ã ½ºÄÉÀÏ È¿°ú¸¸ Àû¿ëÇÒ ¼ö ÀÖ½À´Ï´Ù.")]
+            [Tooltip("ìŠ¬ë¡¯ ë£¨íŠ¸. ìœ„ì¹˜ ë³´ì •ìš©ì´ ì•„ë‹ˆë¼ ì„ íƒ ì‹œ ìŠ¤ì¼€ì¼ íš¨ê³¼ë§Œ ì ìš©í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.")]
             public RectTransform slotRoot;
 
-            [Tooltip("ÀÌ¹Ì Æ÷Åä¼¥¿¡¼­ ¸¸µç 5ºĞÇÒ ½½¶óÀÌ½º ÀÌ¹ÌÁö. ÀÌ ÄÚµå´Â È¸Àü/FillAmount¸¦ °Çµå¸®Áö ¾Ê½À´Ï´Ù.")]
+            [Tooltip("ì´ë¯¸ í¬í† ìƒµì—ì„œ ë§Œë“  5ë¶„í•  ìŠ¬ë¼ì´ìŠ¤ ì´ë¯¸ì§€. ì´ ì½”ë“œëŠ” íšŒì „/FillAmountë¥¼ ê±´ë“œë¦¬ì§€ ì•ŠìŠµë‹ˆë‹¤.")]
             public Image wedgeImage;
 
             public Image iconImage;
             public TMP_Text ammoText;
 
-            [Tooltip("¼±ÅÃµÆÀ» ¶§ ÄÑÁö´Â ÇÏÀÌ¶óÀÌÆ® ¿ÀºêÁ§Æ®. ¾øÀ¸¸é ºñ¿öµÖµµ µË´Ï´Ù.")]
+            [Tooltip("ì„ íƒëì„ ë•Œ ì¼œì§€ëŠ” í•˜ì´ë¼ì´íŠ¸ ì˜¤ë¸Œì íŠ¸. ì—†ìœ¼ë©´ ë¹„ì›Œë‘¬ë„ ë©ë‹ˆë‹¤.")]
             public GameObject selectedRoot;
 
-            [Tooltip("Àá±ä ½½·ÔÀÏ ¶§ ÄÑÁö´Â ÀÚ¹°¼è/Àá±İ Ç¥½Ã ¿ÀºêÁ§Æ®. ¾øÀ¸¸é ºñ¿öµÖµµ µË´Ï´Ù.")]
+            [Tooltip("ì ê¸´ ìŠ¬ë¡¯ì¼ ë•Œ ì¼œì§€ëŠ” ìë¬¼ì‡ /ì ê¸ˆ í‘œì‹œ ì˜¤ë¸Œì íŠ¸. ì—†ìœ¼ë©´ ë¹„ì›Œë‘¬ë„ ë©ë‹ˆë‹¤.")]
             public GameObject lockedRoot;
 
             [HideInInspector] public Vector3 originalScale;
@@ -55,39 +55,39 @@ namespace KillRitual.UI.HUD
         [Header("References")]
         [SerializeField] private KRCombatSystem _combatSystem;
 
-        [Tooltip("ºñ¿öµÎ¸é ÀÌ ½ºÅ©¸³Æ®°¡ ºÙÀº WeaponWheel RectTransformÀ» »ç¿ëÇÕ´Ï´Ù.")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ ì´ ìŠ¤í¬ë¦½íŠ¸ê°€ ë¶™ì€ WeaponWheel RectTransformì„ ì‚¬ìš©í•©ë‹ˆë‹¤.")]
         [SerializeField] private RectTransform _wheelRoot;
 
-        [Tooltip("ºñ¿öµÎ¸é ÀÌ ½ºÅ©¸³Æ®°¡ ºÙÀº WeaponWheelÀÇ CanvasGroupÀ» »ç¿ëÇÕ´Ï´Ù.")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ ì´ ìŠ¤í¬ë¦½íŠ¸ê°€ ë¶™ì€ WeaponWheelì˜ CanvasGroupì„ ì‚¬ìš©í•©ë‹ˆë‹¤.")]
         [SerializeField] private CanvasGroup _canvasGroup;
 
-        [Tooltip("Áß¾Ó¿¡ ÇöÀç ¼±ÅÃ ¹«±â ÀÌ¸§À» Ç¥½ÃÇÏ´Â ÅØ½ºÆ®. ½ºÅ©¸°¼¦ÀÇ WeaponNameÀ» ¿©±â¿¡ ¿¬°áÇÏ¸é µË´Ï´Ù.")]
+        [Tooltip("ì¤‘ì•™ì— í˜„ì¬ ì„ íƒ ë¬´ê¸° ì´ë¦„ì„ í‘œì‹œí•˜ëŠ” í…ìŠ¤íŠ¸. ìŠ¤í¬ë¦°ìƒ·ì˜ WeaponNameì„ ì—¬ê¸°ì— ì—°ê²°í•˜ë©´ ë©ë‹ˆë‹¤.")]
         [SerializeField] private TMP_Text _selectedWeaponNameText;
 
-        [Header("Slots - CombatSystem ½½·Ô ¼ø¼­")]
-        [Tooltip("±æÀÌ 5. CombatSystemÀÇ _elementSlots¿Í °°Àº ½½·Ô ¼ø¼­ÀÔ´Ï´Ù. [0]=1¹ø, [1]=2¹ø, [2]=3¹ø, [3]=4¹ø, [4]=5¹ø.")]
+        [Header("Slots - CombatSystem ìŠ¬ë¡¯ ìˆœì„œ")]
+        [Tooltip("ê¸¸ì´ 5. CombatSystemì˜ _elementSlotsì™€ ê°™ì€ ìŠ¬ë¡¯ ìˆœì„œì…ë‹ˆë‹¤. [0]=1ë²ˆ, [1]=2ë²ˆ, [2]=3ë²ˆ, [3]=4ë²ˆ, [4]=5ë²ˆ.")]
         [SerializeField]
         private WeaponWheelSlot[] _slots = new WeaponWheelSlot[kSlotCount]
         {
-            new WeaponWheelSlot { element = KRDamageType.Fire,  displayName = "È­" },
-            new WeaponWheelSlot { element = KRDamageType.Wood,  displayName = "¸ñ" },
-            new WeaponWheelSlot { element = KRDamageType.Water, displayName = "¼ö" },
-            new WeaponWheelSlot { element = KRDamageType.Earth, displayName = "Åä" },
-            new WeaponWheelSlot { element = KRDamageType.Metal, displayName = "±İ" }
+            new WeaponWheelSlot { element = KRDamageType.Fire,  displayName = "í™”" },
+            new WeaponWheelSlot { element = KRDamageType.Wood,  displayName = "ëª©" },
+            new WeaponWheelSlot { element = KRDamageType.Water, displayName = "ìˆ˜" },
+            new WeaponWheelSlot { element = KRDamageType.Earth, displayName = "í† " },
+            new WeaponWheelSlot { element = KRDamageType.Metal, displayName = "ê¸ˆ" }
         };
 
         [Header("Selection")]
-        [Tooltip("È­¸é Áß¾Ó ±âÁØ ÀÌ °Å¸® ¾ÈÂÊ¿¡¼­´Â ¼±ÅÃÀ» ¹Ù²ÙÁö ¾Ê½À´Ï´Ù.")]
+        [Tooltip("í™”ë©´ ì¤‘ì•™ ê¸°ì¤€ ì´ ê±°ë¦¬ ì•ˆìª½ì—ì„œëŠ” ì„ íƒì„ ë°”ê¾¸ì§€ ì•ŠìŠµë‹ˆë‹¤.")]
         [Min(0f)]
         [SerializeField] private float _deadZonePixels = 70f;
 
-        [Tooltip("¼±ÅÃµÈ ½½·Ô ·çÆ®¸¦ ¾à°£ Å°¿ïÁö ¿©ºÎ. UI°¡ Èçµé¸®¸é ²¨µµ µË´Ï´Ù.")]
+        [Tooltip("ì„ íƒëœ ìŠ¬ë¡¯ ë£¨íŠ¸ë¥¼ ì•½ê°„ í‚¤ìš¸ì§€ ì—¬ë¶€. UIê°€ í”ë“¤ë¦¬ë©´ êº¼ë„ ë©ë‹ˆë‹¤.")]
         [SerializeField] private bool _scaleSelectedSlot = false;
 
         [Min(1f)]
         [SerializeField] private float _selectedScale = 1.08f;
 
-        [Tooltip("¼±ÅÃµÈ wedgeImage »ö»óÀ» ¹Ù²ÜÁö ¿©ºÎ.")]
+        [Tooltip("ì„ íƒëœ wedgeImage ìƒ‰ìƒì„ ë°”ê¿€ì§€ ì—¬ë¶€.")]
         [SerializeField] private bool _tintSelectedWedge = true;
 
         [SerializeField] private Color _selectedWedgeColor = new Color(1f, 1f, 1f, 0.65f);
@@ -102,7 +102,7 @@ namespace KillRitual.UI.HUD
 
         [SerializeField] private string _lockedAmmoText = "-";
 
-        [SerializeField] private string _lockedCenterText = "Àá±è";
+        [SerializeField] private string _lockedCenterText = "ì ê¹€";
 
         [Header("Time Slow / Stop")]
         [Range(0f, 1f)]
@@ -224,15 +224,15 @@ namespace KillRitual.UI.HUD
             switch (element)
             {
                 case KRDamageType.Fire:
-                    return "È­";
+                    return "í™”";
                 case KRDamageType.Water:
-                    return "¼ö";
+                    return "ìˆ˜";
                 case KRDamageType.Wood:
-                    return "¸ñ";
+                    return "ëª©";
                 case KRDamageType.Earth:
-                    return "Åä";
+                    return "í† ";
                 case KRDamageType.Metal:
-                    return "±İ";
+                    return "ê¸ˆ";
                 default:
                     return element.ToString();
             }
@@ -361,8 +361,7 @@ namespace KillRitual.UI.HUD
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             float sectorAngle = 360f / kSlotCount;
 
-            // À§ÂÊÀ» 0¹ø ½½·ÔÀ¸·Î º¸°í ½Ã°è ¹æÇâÀ¸·Î 5ºĞÇÒ.
-            // ½½·Ô ÀÇ¹Ì´Â CombatSystemÀÇ _elementSlots ¼ø¼­¸¦ µû¸¨´Ï´Ù.
+            // ìœ„ìª½ì„ 0ë²ˆ ìŠ¬ë¡¯ìœ¼ë¡œ ë³´ê³  ì‹œê³„ ë°©í–¥ 5ë¶„í• í•˜ë©°, ìŠ¬ë¡¯ ìˆœì„œëŠ” CombatSystemì˜ _elementSlotsë¥¼ ë”°ë¦…ë‹ˆë‹¤.
             float normalized = 90f - angle + sectorAngle * 0.5f;
             normalized = NormalizeAngle360(normalized);
 

@@ -24,12 +24,8 @@ namespace KillRitual.Enemies
 
         private bool _stuck;
 
-        [Header("폭발 예고 (2026-07-08 신규)")]
-        [Tooltip("'맞지 않아도 죽는다' 버그 원인 — 2페이즈에서는 철갑이 바닥/벽에 꽂힌 뒤 " +
-                 "explodeDelay초 후 폭발했는데, 그동안 아무 시각 신호가 없어서 플레이어는 " +
-                 "투사체가 빗나간 줄 알고 그 자리에 서 있다가 아무 예고 없이 폭발 피해를 받았습니다. " +
-                 "이제 꽂히는 즉시 폭발 반경만큼 바닥에 원을 그리고, 터지기 직전까지 점점 빠르게 " +
-                 "깜빡이며 커져서 도망칠 시간을 눈으로 알 수 있게 합니다.")]
+        [Header("폭발 예고")]
+        [Tooltip("꽂히는 즉시 폭발 반경만큼 바닥에 원을 그리고, 터지기 직전까지 점점 빠르게 깜빡이며 커져서 도망칠 시간을 알려줍니다.")]
         [SerializeField] private Color _explosionRingColor = new Color(1f, 0.2f, 0f, 1f);
         [Min(3)] [SerializeField] private int _explosionRingSegments = 32;
 

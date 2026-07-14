@@ -11,20 +11,16 @@ namespace KillRitual.Weapons
         [Min(0.01f)]
         [SerializeField] private float _chargeDuration = 1f;
 
-        [Tooltip("아주 짧게 탭 했다 떼어도 보장되는 최소 충전 비율(0~1). " +
-                 "0으로 두면 탭만 해도 거의 0 크기의 무의미한 샷이 나갈 수 있어, 기본값은 약간의 하한을 둡니다.")]
+        [Tooltip("아주 짧게 탭 했다 떼어도 보장되는 최소 충전 비율(0~1)로, 탭만 해도 나가는 샷이 무의미하게 작아지지 않도록 하한을 둡니다.")]
         [Range(0f, 1f)]
         [SerializeField] private float _minChargeRatio = 0.15f;
 
-        [Tooltip("최소 차징 시간(초). 누르고 있던 시간이 이 값보다 짧으면 발사 자체가 일어나지 않고 " +
-                 "조용히 취소됩니다(자원/쿨다운 낭비 방지). _minChargeRatio와 다른 개념입니다 — " +
-                 "_minChargeRatio는 '발사는 되지만 크기가 작게라도 보장됨'이고, 이 값은 '아예 발사 안 됨'입니다.")]
+        [Tooltip("누르고 있던 시간이 이 값(초)보다 짧으면 발사 자체가 조용히 취소되는 최소 차징 시간으로, 발사는 되지만 크기가 작게라도 보장되는 _minChargeRatio와는 다른 개념입니다.")]
         [Min(0f)]
         [SerializeField] private float _minHoldTimeBeforeFire = 0.2f;
 
         [Header("유도 추적탄 (BFG 전용 옵션)")]
-        [Tooltip("true면 비행 중 주기적으로 주변 적을 자동 탐지해 작은 잔탄을 발사합니다. " +
-                 "벽 뒤에 있는 적은 레이캐스트 시야 확인을 통해 자동으로 제외됩니다.")]
+        [Tooltip("true면 비행 중 주기적으로 주변 적을 자동 탐지해 작은 잔탄을 발사하며, 벽 뒤의 적은 레이캐스트 시야 확인으로 자동 제외됩니다.")]
         [SerializeField] private bool _hasHomingTracers = false;
 
         [Tooltip("유도 추적탄이 적을 탐지하는 반경")]

@@ -5,30 +5,29 @@ namespace KillRitual
     public class KRPlayerLook : MonoBehaviour
     {
         [Header("References")]
-        [Tooltip("»óÇÏ È¸ÀüÀ» ´ã´çÇÒ Ä«¸Ş¶ó ºÎ¸ğ ¿ÀºêÁ§Æ®")]
+        [Tooltip("ìƒí•˜ íšŒì „ì„ ë‹´ë‹¹í•  ì¹´ë©”ë¼ ë¶€ëª¨ ì˜¤ë¸Œì íŠ¸")]
         [SerializeField]
         private Transform cameraRoot;
 
         [Header("Look Settings")]
-        [Tooltip("¸¶¿ì½º °¨µµ")]
+        [Tooltip("ë§ˆìš°ìŠ¤ ê°ë„")]
         [SerializeField]
         private float mouseSensitivity = 2.5f;
 
-        [Tooltip("¾Æ·¡·Î º¼ ¼ö ÀÖ´Â ÃÖ´ë °¢µµ")]
+        [Tooltip("ì•„ë˜ë¡œ ë³¼ ìˆ˜ ìˆëŠ” ìµœëŒ€ ê°ë„")]
         [SerializeField]
         private float minPitch = -80f;
 
-        [Tooltip("À§·Î º¼ ¼ö ÀÖ´Â ÃÖ´ë °¢µµ")]
+        [Tooltip("ìœ„ë¡œ ë³¼ ìˆ˜ ìˆëŠ” ìµœëŒ€ ê°ë„")]
         [SerializeField]
         private float maxPitch = 80f;
 
         [Header("Cursor")]
-        [Tooltip("ÇÃ·¹ÀÌ ½ÃÀÛ ½Ã ¸¶¿ì½º Ä¿¼­¸¦ Àá±ÛÁö ¿©ºÎ")]
+        [Tooltip("í”Œë ˆì´ ì‹œì‘ ì‹œ ë§ˆìš°ìŠ¤ ì»¤ì„œë¥¼ ì ê¸€ì§€ ì—¬ë¶€")]
         [SerializeField]
         private bool lockCursorOnStart = true;
 
-        [Tooltip("ESC Å°·Î Ä¿¼­ Àá±İ/ÇØÁ¦¸¦ Åä±ÛÇÒÁö ¿©ºÎ. " +
-                 "ESC¸¦ Ã³À½ ´©¸£¸é Ä¿¼­°¡ Ç®¸®°í(ÀÏ½ÃÁ¤Áö), ´Ù½Ã ´©¸£¸é Ä¿¼­°¡ Àá±â¸ç °ÔÀÓÀ¸·Î º¹±ÍÇÕ´Ï´Ù.")]
+        [Tooltip("ESC í‚¤ë¡œ ì»¤ì„œ ì ê¸ˆ/í•´ì œë¥¼ í† ê¸€í• ì§€ ì—¬ë¶€ì…ë‹ˆë‹¤(ì²˜ìŒ ëˆ„ë¥´ë©´ í’€ë¦¬ê³ , ë‹¤ì‹œ ëˆ„ë¥´ë©´ ì ê¹ë‹ˆë‹¤).")]
         [SerializeField]
         private bool allowEscapeToggle = true;
 
@@ -58,10 +57,10 @@ namespace KillRitual
             float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
             float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-            // ÁÂ¿ì È¸ÀüÀº ÇÃ·¹ÀÌ¾î ¸öÃ¼¸¦ µ¹¸°´Ù.
+            // ì¢Œìš° íšŒì „ì€ í”Œë ˆì´ì–´ ëª¸ì²´ë¥¼ ëŒë¦°ë‹¤.
             transform.Rotate(Vector3.up * mouseX);
 
-            // »óÇÏ È¸ÀüÀº Ä«¸Ş¶ó ·çÆ®¸¸ µ¹¸°´Ù.
+            // ìƒí•˜ íšŒì „ì€ ì¹´ë©”ë¼ ë£¨íŠ¸ë§Œ ëŒë¦°ë‹¤.
             pitch -= mouseY;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
             cameraRoot.localRotation = Quaternion.Euler(pitch, 0f, 0f);

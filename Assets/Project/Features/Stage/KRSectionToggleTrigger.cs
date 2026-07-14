@@ -24,8 +24,7 @@ namespace KillRitual.Stage
         [SerializeField] private GameObject[] _objectsToDisable;
 
         [Header("전투 연동 (선택)")]
-        [Tooltip("켜면 이 섹션 진입/이탈을 전투 시작/종료 기준으로 사용합니다. " +
-                 "끄면(기본값) 이 트리거는 예전처럼 섹션 오브젝트 on/off만 담당합니다.")]
+        [Tooltip("켜면 이 섹션 진입/이탈을 전투 시작/종료 기준으로 쓰고, 끄면(기본값) 섹션 오브젝트 on/off만 담당합니다.")]
         [SerializeField] private bool _linkCombat = false;
 
         [Tooltip("전투 참가자로 스캔할 적의 레이어. 비워두면(everything) 전부 스캔합니다.")]

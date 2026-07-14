@@ -5,8 +5,7 @@ namespace KillRitual.Core.Events
 {
     public sealed class KREventBus
     {
-        // 이벤트 타입(Type)을 키로, 해당 타입을 구독하는 콜백 리스트를 값으로 가지는 딕셔너리입니다.
-        // 콜백은 object로 박싱되어 저장되며, Publish 시점에 제네릭으로 안전하게 캐스팅됩니다.
+        // 이벤트 타입을 키로, 구독 콜백 리스트를 값으로 가지며 Publish 시점에 제네릭으로 캐스팅합니다.
         private readonly Dictionary<Type, List<object>> _subscribers = new Dictionary<Type, List<object>>();
 
         public void Subscribe<T>(Action<T> callback) where T : struct

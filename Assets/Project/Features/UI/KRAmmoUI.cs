@@ -12,51 +12,51 @@ namespace KillRitual.Player
         [System.Serializable]
         private struct ElementVisualSetting
         {
-            [Tooltip("ÀÌ ¼³Á¤ÀÌ Àû¿ëµÉ ¿ÀÇà ¼Ó¼ºÀÔ´Ï´Ù. ¼ıÀÚÅ° ½½·Ô ¹øÈ£°¡ ¾Æ´Ï¶ó ½ÇÁ¦ ¼Ó¼º°ªÀÔ´Ï´Ù.")]
+            [Tooltip("ì´ ì„¤ì •ì´ ì ìš©ë  ì˜¤í–‰ ì†ì„±ì…ë‹ˆë‹¤. ìˆ«ìí‚¤ ìŠ¬ë¡¯ ë²ˆí˜¸ê°€ ì•„ë‹ˆë¼ ì‹¤ì œ ì†ì„±ê°’ì…ë‹ˆë‹¤.")]
             public KRDamageType Element;
 
-            [Tooltip("ÇöÀç ¼Ó¼ºÀÌ ÀÌ °ªÀÏ ¶§ Ç¥½ÃÇÒ ·Î°í SpriteÀÔ´Ï´Ù.")]
+            [Tooltip("í˜„ì¬ ì†ì„±ì´ ì´ ê°’ì¼ ë•Œ í‘œì‹œí•  ë¡œê³  Spriteì…ë‹ˆë‹¤.")]
             public Sprite LogoSprite;
 
-            [Tooltip("ÇöÀç ¼Ó¼ºÀÌ ÀÌ °ªÀÏ ¶§ »ç¿ëÇÒ UI »öÀÔ´Ï´Ù. ¹ØÁÙ°ú Åº¾à ÅØ½ºÆ®¿¡ Àû¿ëµË´Ï´Ù.")]
+            [Tooltip("í˜„ì¬ ì†ì„±ì´ ì´ ê°’ì¼ ë•Œ ì‚¬ìš©í•  UI ìƒ‰ì…ë‹ˆë‹¤. ë°‘ì¤„ê³¼ íƒ„ì•½ í…ìŠ¤íŠ¸ì— ì ìš©ë©ë‹ˆë‹¤.")]
             public Color ElementColor;
         }
 
-        [Header("Combat System ¿¬°á")]
-        [Tooltip("ÇÃ·¹ÀÌ¾îÀÇ KRCombatSystem ÄÄÆ÷³ÍÆ®¸¦ ¿©±â¿¡ ³ÖÀ¸¼¼¿ä. ºñ¿öµÎ¸é ºÎ¸ğ °èÃş¿¡¼­ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [Header("Combat System ì—°ê²°")]
+        [Tooltip("í”Œë ˆì´ì–´ì˜ KRCombatSystem ì»´í¬ë„ŒíŠ¸ë¥¼ ì—¬ê¸°ì— ë„£ìœ¼ì„¸ìš”. ë¹„ì›Œë‘ë©´ ë¶€ëª¨ ê³„ì¸µì—ì„œ ìë™ìœ¼ë¡œ ì°¾ìŠµë‹ˆë‹¤.")]
         [SerializeField] private KRCombatSystem _combatSystem;
 
-        [Header("ÀÜÅº ¸·´ë UI ¿¬°á")]
-        [Tooltip("ÀÜÅº¿¡ µû¶ó Ã¤¿öÁú ¸·´ë ImageÀÔ´Ï´Ù. Image TypeÀº 'Filled'¿©¾ß fillAmount·Î Á¶ÀıµË´Ï´Ù.")]
+        [Header("ì”íƒ„ ë§‰ëŒ€ UI ì—°ê²°")]
+        [Tooltip("ì”íƒ„ì— ë”°ë¼ ì±„ì›Œì§ˆ ë§‰ëŒ€ Imageì…ë‹ˆë‹¤. Image Typeì€ 'Filled'ì—¬ì•¼ fillAmountë¡œ ì¡°ì ˆë©ë‹ˆë‹¤.")]
         [SerializeField] private Image _ammoBarFill;
 
-        [Tooltip("ÇöÀç ÀÜÅº ¼ıÀÚ¸¦ Ç¥½ÃÇÒ TextÀÔ´Ï´Ù. ¿¹: '73'")]
+        [Tooltip("í˜„ì¬ ì”íƒ„ ìˆ«ìë¥¼ í‘œì‹œí•  Textì…ë‹ˆë‹¤. ì˜ˆ: '73'")]
         [SerializeField] private TextMeshProUGUI _ammoText;
 
-        [Header("¼Ó¼º UI ¿¬°á")]
-        [Tooltip("ÇöÀç ¼Ó¼º¿¡ µû¶ó ¹Ù²ğ ·Î°í ImageÀÔ´Ï´Ù.")]
+        [Header("ì†ì„± UI ì—°ê²°")]
+        [Tooltip("í˜„ì¬ ì†ì„±ì— ë”°ë¼ ë°”ë€” ë¡œê³  Imageì…ë‹ˆë‹¤.")]
         [SerializeField] private Image _elementLogoImage;
 
-        [Tooltip("ÇöÀç ¼Ó¼º¿¡ µû¶ó »öÀÌ ¹Ù²ğ ¹ØÁÙ ImageÀÔ´Ï´Ù.")]
+        [Tooltip("í˜„ì¬ ì†ì„±ì— ë”°ë¼ ìƒ‰ì´ ë°”ë€” ë°‘ì¤„ Imageì…ë‹ˆë‹¤.")]
         [SerializeField] private Image _elementUnderlineImage;
 
-        [Header("¼Ó¼ºº° ½Ã°¢ ¼³Á¤")]
-        [Tooltip("¼Ó¼ºº° ·Î°í¿Í UI »öÀ» µî·ÏÇÕ´Ï´Ù. ¸®½ºÆ® ¼ø¼­´Â ½½·Ô ¼ø¼­°¡ ¾Æ´Õ´Ï´Ù. Element °ªÀÌ ±âÁØÀÔ´Ï´Ù.")]
+        [Header("ì†ì„±ë³„ ì‹œê° ì„¤ì •")]
+        [Tooltip("ì†ì„±ë³„ ë¡œê³ ì™€ UI ìƒ‰ì„ ë“±ë¡í•©ë‹ˆë‹¤. ë¦¬ìŠ¤íŠ¸ ìˆœì„œëŠ” ìŠ¬ë¡¯ ìˆœì„œê°€ ì•„ë‹™ë‹ˆë‹¤. Element ê°’ì´ ê¸°ì¤€ì…ë‹ˆë‹¤.")]
         [SerializeField] private List<ElementVisualSetting> _elementVisualSettings = new List<ElementVisualSetting>();
 
-        [Header("°æ°í ¼³Á¤")]
-        [Tooltip("ÀÜÅº ºñÀ²ÀÌ ÀÌ °ª ÀÌÇÏ·Î ¶³¾îÁö¸é ÀÜÅº ¸·´ë°¡ °æ°í»öÀ¸·Î ¹Ù²ò´Ï´Ù.")]
+        [Header("ê²½ê³  ì„¤ì •")]
+        [Tooltip("ì”íƒ„ ë¹„ìœ¨ì´ ì´ ê°’ ì´í•˜ë¡œ ë–¨ì–´ì§€ë©´ ì”íƒ„ ë§‰ëŒ€ê°€ ê²½ê³ ìƒ‰ìœ¼ë¡œ ë°”ë€ë‹ˆë‹¤.")]
         [Range(0f, 1f)]
         [SerializeField] private float _lowAmmoWarningRatio = 0.25f;
 
-        [Tooltip("ÀÜÅºÀÌ ÃæºĞÇÒ ¶§ ÀÜÅº ¸·´ë¿¡ Àû¿ëÇÒ ±âº» »öÀÔ´Ï´Ù. ¼Ó¼º »öÀÌ ¾Æ´Ï¶ó ¸·´ë ±âº»»öÀÔ´Ï´Ù.")]
+        [Tooltip("ì”íƒ„ì´ ì¶©ë¶„í•  ë•Œ ì”íƒ„ ë§‰ëŒ€ì— ì ìš©í•  ê¸°ë³¸ ìƒ‰ì…ë‹ˆë‹¤. ì†ì„± ìƒ‰ì´ ì•„ë‹ˆë¼ ë§‰ëŒ€ ê¸°ë³¸ìƒ‰ì…ë‹ˆë‹¤.")]
         [SerializeField] private Color _normalAmmoBarColor = Color.white;
 
-        [Tooltip("ÀÜÅºÀÌ ºÎÁ·ÇÒ ¶§ ÀÜÅº ¸·´ë¿¡ Àû¿ëÇÒ °æ°í »öÀÔ´Ï´Ù.")]
+        [Tooltip("ì”íƒ„ì´ ë¶€ì¡±í•  ë•Œ ì”íƒ„ ë§‰ëŒ€ì— ì ìš©í•  ê²½ê³  ìƒ‰ì…ë‹ˆë‹¤.")]
         [SerializeField] private Color _lowAmmoColor = new Color(1f, 0.3f, 0.3f);
 
-        [Header("µğ¹ö±×")]
-        [Tooltip("ÄÑ¸é ÇöÀç UI°¡ ÀĞ°í ÀÖ´Â CurrentElement¿Í Åº¾à·®À» ÄÜ¼Ö¿¡ Ãâ·ÂÇÕ´Ï´Ù.")]
+        [Header("ë””ë²„ê·¸")]
+        [Tooltip("ì¼œë©´ í˜„ì¬ UIê°€ ì½ê³  ìˆëŠ” CurrentElementì™€ íƒ„ì•½ëŸ‰ì„ ì½˜ì†”ì— ì¶œë ¥í•©ë‹ˆë‹¤.")]
         [SerializeField] private bool _debugCurrentElement;
 
         private readonly Dictionary<KRDamageType, ElementVisualSetting> _visualSettingMap
@@ -111,8 +111,8 @@ namespace KillRitual.Player
                 if (_visualSettingMap.ContainsKey(setting.Element))
                 {
                     Debug.LogWarning(
-                        $"[KRAmmoUI] ElementVisualSettings¿¡ Áßº¹ ¼Ó¼ºÀÌ ÀÖ½À´Ï´Ù. " +
-                        $"Element: {setting.Element}, Index: {i}. Ã¹ ¹øÂ° ¼³Á¤¸¸ »ç¿ëÇÕ´Ï´Ù.",
+                        $"[KRAmmoUI] ElementVisualSettingsì— ì¤‘ë³µ ì†ì„±ì´ ìˆìŠµë‹ˆë‹¤. " +
+                        $"Element: {setting.Element}, Index: {i}. ì²« ë²ˆì§¸ ì„¤ì •ë§Œ ì‚¬ìš©í•©ë‹ˆë‹¤.",
                         this);
 
                     continue;
@@ -218,8 +218,8 @@ namespace KillRitual.Player
             }
 
             Debug.LogWarning(
-                $"[KRAmmoUI] ÇöÀç ¼Ó¼º¿¡ ÇØ´çÇÏ´Â UI ¼³Á¤À» Ã£Áö ¸øÇß½À´Ï´Ù. Element: {element}. " +
-                $"_elementVisualSettings¿¡ ÇØ´ç ¼Ó¼ºÀÇ ·Î°í¿Í »öÀ» µî·ÏÇÏ¼¼¿ä.",
+                $"[KRAmmoUI] í˜„ì¬ ì†ì„±ì— í•´ë‹¹í•˜ëŠ” UI ì„¤ì •ì„ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. Element: {element}. " +
+                $"_elementVisualSettingsì— í•´ë‹¹ ì†ì„±ì˜ ë¡œê³ ì™€ ìƒ‰ì„ ë“±ë¡í•˜ì„¸ìš”.",
                 this);
         }
 

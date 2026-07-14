@@ -13,13 +13,11 @@ namespace KillRitual.Enemies
         [Tooltip("디버그 로그/표시용 부위 이름(예: 머리, 몸통, 앞다리, 뒷다리, 꼬리).")]
         [SerializeField] private string _partName = "Part";
 
-        [Tooltip("이 부위가 받는 피해에 곱해지는 배율. 1이면 보정 없음. " +
-                 "약점(예: 머리)이면 1보다 크게, 덜 아픈 부위면 1보다 작게 설정하세요.")]
+        [Tooltip("이 부위가 받는 피해에 곱해지는 배율로, 약점이면 1보다 크게 설정하세요.")]
         [Min(0f)]
         [SerializeField] private float _damageMultiplier = 1f;
 
-        [Tooltip("이 부위 자체의 체력입니다(보스 본체 체력과 별개로 관리됩니다). " +
-                 "이 체력이 0이 되면 이 부위가 '파괴' 상태가 되어 OnBroken이 발생합니다.")]
+        [Tooltip("보스 본체 체력과 별개로 관리되는 이 부위 자체의 체력으로, 0이 되면 파괴되어 OnBroken이 발생합니다.")]
         [Min(1f)]
         [SerializeField] private float _partHealth = 150f;
 
@@ -29,21 +27,14 @@ namespace KillRitual.Enemies
         [Tooltip("파괴된 부위를 표시할 색(머티리얼 틴트에도, 구체 마커 폴백에도 둘 다 씁니다).")]
         [SerializeField] private Color _breakMarkerColor = new Color(0.12f, 0.12f, 0.12f, 1f);
 
-        [Header("파괴 표시 - 머티리얼 틴트 (2026-07-08 신규)")]
-        [Tooltip("이 부위에 해당하는 몸통 렌더러(모델의 SkinnedMeshRenderer). 보통 모든 부위가 " +
-                 "같은 렌더러 하나를 공유합니다(하나의 스킨 메시라서) — 그 렌더러를 여기 끌어다 " +
-                 "놓으세요. 비워두면 예전 방식(구체 마커)으로 자동 대체됩니다.")]
+        [Header("파괴 표시 - 머티리얼 틴트")]
+        [Tooltip("이 부위에 해당하는 몸통 SkinnedMeshRenderer로, 비워두면 구체 마커로 자동 대체됩니다.")]
         [SerializeField] private Renderer _bodyRenderer;
 
-        [Tooltip("_bodyRenderer의 Materials 리스트에서 이 부위에 해당하는 슬롯 번호(Element 0, 1, 2...). " +
-                 "에디터에서 _bodyRenderer를 선택하면 Materials 항목에 머리/몸통/다리 등 부위별로 " +
-                 "나뉜 슬롯이 보일 겁니다 — 거기 순서(0부터 시작)를 그대로 적으세요. -1이면 " +
-                 "머티리얼 틴트를 안 쓰고 예전 방식(구체 마커)을 씁니다.")]
+        [Tooltip("_bodyRenderer의 Materials 리스트에서 이 부위에 해당하는 슬롯 번호이며, -1이면 구체 마커를 씁니다.")]
         [SerializeField] private int _materialSlotIndex = -1;
 
-        [Tooltip("[2026-07-08 더 이상 기본으로 안 씀] _bodyRenderer/_materialSlotIndex가 제대로 " +
-                 "연결되면 머티리얼 틴트가 우선이고, 이 구체 마커는 안 씁니다. 연결이 안 됐을 " +
-                 "때만(폴백) 자동으로 이 구체 마커가 대신 나옵니다.")]
+        [Tooltip("_bodyRenderer/_materialSlotIndex 연결이 안 됐을 때만 폴백으로 쓰이는 구체 마커의 크기입니다.")]
         [Min(0.05f)]
         [SerializeField] private float _breakMarkerScale = 0.4f;
 

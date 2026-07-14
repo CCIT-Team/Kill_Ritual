@@ -10,10 +10,10 @@ namespace KillRitual.Weapons.Visual
         [SerializeField] private Animator _animator;
 
         [Header("State Names")]
-        [Tooltip("ÀüÈ¯ Ãë¼Ò/Äü½º¿Ò ½Ã ÀÌÀü ¹«±â¸¦ Á¤¸®ÇÒ ¶§ Àç»ıÇÒ ±âº» ´ë±â »óÅÂ ÀÌ¸§ÀÔ´Ï´Ù.")]
+        [Tooltip("ì „í™˜ ì·¨ì†Œ/í€µìŠ¤ì™‘ ì‹œ ì´ì „ ë¬´ê¸°ë¥¼ ì •ë¦¬í•  ë•Œ ì¬ìƒí•  ê¸°ë³¸ ëŒ€ê¸° ìƒíƒœ ì´ë¦„ì…ë‹ˆë‹¤.")]
         [SerializeField] private string _idleStateName = "Idle";
 
-        [Tooltip("»õ ¹«±â¸¦ ²¨³¾ ¶§ Áï½Ã Àç»ıÇÒ ÀåÂø »óÅÂ ÀÌ¸§ÀÔ´Ï´Ù.")]
+        [Tooltip("ìƒˆ ë¬´ê¸°ë¥¼ êº¼ë‚¼ ë•Œ ì¦‰ì‹œ ì¬ìƒí•  ì¥ì°© ìƒíƒœ ì´ë¦„ì…ë‹ˆë‹¤.")]
         [SerializeField] private string _equipStateName = "Equip";
 
         [Header("Trigger Names")]
@@ -162,7 +162,7 @@ namespace KillRitual.Weapons.Visual
 
             bool played = TryPlayStateImmediately(_equipStateName);
 
-            // Equip »óÅÂ ÀÌ¸§ÀÌ ¾ø°Å³ª Animator ±¸Á¶°¡ Trigger ±â¹İÀÏ ¶§¸¦ À§ÇÑ Æú¹é.
+            // Equip ìƒíƒœ ì´ë¦„ì´ ì—†ê±°ë‚˜ Animator êµ¬ì¡°ê°€ Trigger ê¸°ë°˜ì¼ ë•Œë¥¼ ìœ„í•œ í´ë°±.
             if (!played)
             {
                 PlayEquip();
@@ -239,8 +239,7 @@ namespace KillRitual.Weapons.Visual
                 return true;
             }
 
-            // Unity ÇÁ·ÎÁ§Æ®¸¶´Ù HasState°¡ shortName/fullPathNameÀ» ´Ù¸£°Ô Àâ´Â °æ¿ì°¡ ÀÖ¾î¼­
-            // ¸¶Áö¸·À¸·Î ¹®ÀÚ¿­ Play¸¦ ½ÃµµÇÕ´Ï´Ù. ½ÇÆĞÇØµµ ¿¹¿Ü´Â ³ªÁö ¾Ê°í »óÅÂ¸¸ À¯ÁöµË´Ï´Ù.
+            // Unity í”„ë¡œì íŠ¸ë§ˆë‹¤ HasState íŒì •ì´ ë‹¬ë¼ ë§ˆì§€ë§‰ìœ¼ë¡œ ë¬¸ìì—´ Playë¥¼ ì‹œë„í•˜ë©°, ì‹¤íŒ¨í•´ë„ ì˜ˆì™¸ ì—†ì´ ìƒíƒœë§Œ ìœ ì§€ë©ë‹ˆë‹¤.
             _animator.Play(stateName, 0, 0f);
             _animator.Update(0f);
 

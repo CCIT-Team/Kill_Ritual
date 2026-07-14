@@ -19,10 +19,7 @@ namespace KillRitual.Items
         [Range(0f, 1f)]
         [SerializeField] private float _ammoOrbChance = 1f;
 
-        [Tooltip("[2026-07-08 신규] '둠 이터널 전기톱처럼 여러 파츠가 나오게' 요청 반영 — 드롭이 " +
-                 "결정되면(위 확률 통과 시) 오브를 하나만 만드는 대신 이 개수만큼 만들어서 " +
-                 "사방으로 흩뿌립니다. 각 조각은 SpawnOrb()에서 위치/발사 방향을 따로 랜덤하게 " +
-                 "잡으므로 자연스럽게 여러 파츠가 튀는 것처럼 보입니다.")]
+        [Tooltip("드롭이 결정되면 오브 하나 대신 이 개수만큼 만들어 사방으로 흩뿌립니다.")]
         [Min(1)] [SerializeField] private int _ammoOrbCount = 4;
 
         [Tooltip("드롭된 오브가 퍼지는 반경. 여러 오브가 한곳에 겹치지 않도록 랜덤하게 흩뿌립니다.")]
@@ -42,9 +39,7 @@ namespace KillRitual.Items
         [Min(0f)]
         [SerializeField] private float _bounceOutwardForce = 3f;
 
-        // Awake에서 한 번만 찾아 캐싱합니다.
-        // SpawnDrops()가 처형마다 호출될 때마다 FindGameObjectWithTag를 반복하는
-        // 비용을 없애기 위해 미리 참조를 저장해 둡니다.
+        // SpawnDrops()가 처형마다 FindGameObjectWithTag를 반복하지 않도록 Awake에서 한 번만 찾아 캐싱합니다.
         private KRPlayerDamageFeedback _playerFeedback;
 
         private void Awake()
@@ -64,14 +59,13 @@ namespace KillRitual.Items
 
         public void SpawnDrops(Vector3 position, KRDamageType currentElement)
         {
-            // 체력은 오브 없이 즉시 직접 회복합니다.
-            // KRPlayerDamageFeedback.Heal()을 호출해 HP바까지 함께 갱신됩니다.
+            // 체력은 오브 없이 KRPlayerDamageFeedback.Heal()로 즉시 직접 회복하며 HP바도 함께 갱신됩니다.
             if (_healthRestoreOnExecute > 0f)
             {
                 _playerFeedback?.Heal(_healthRestoreOnExecute);
             }
 
-            // 탄약 오브 — currentElement 하나만 드롭합니다. (이전에는 5속성 전부 드롭하는 버그가 있었습니다.)
+            // 탄약 오브는 currentElement 하나만 드롭합니다.
             Vector3 spawnBase = GetSpawnPosition();
 
             int idx = (int)currentElement;
@@ -85,8 +79,7 @@ namespace KillRitual.Items
 
         private Vector3 GetSpawnPosition()
         {
-            // 적에 붙은 Collider의 최상단(bounds.max.y)을 머리 위 기준으로 사용합니다.
-            // 여러 Collider가 있을 경우 가장 높은 지점을 찾습니다.
+            // 적에 붙은 Collider들 중 가장 높은 최상단(bounds.max.y)을 머리 위 기준으로 사용합니다.
             Collider[] colliders = GetComponentsInChildren<Collider>();
             float highestY = transform.position.y;
 

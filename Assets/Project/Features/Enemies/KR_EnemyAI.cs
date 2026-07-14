@@ -3,24 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI; // NavMeshAgent를 쓰기 위해 반드시 필요
 
-// ─────────────────────────────────────────────────────────────
-// KR_EnemyAI.cs
-// 역할: 적 한 마리의 "두뇌". 보내주신 행동 트리를 그대로 코드로 옮긴 것.
-//   매 프레임 위에서부터 조건을 검사해서 상태(State)를 정하고,
-//   그 상태에 맞는 행동을 한다.
-//
-//   ┌ 경직(Stagger) : 체력이 일정 이하로 떨어지면 잠깐 멈춤  (최우선)
-//   ├ 공격(Attack)  : 사거리 안 + 시야 확보 → 플레이어 타격
-//   └ 추격(Chase)   : 그 외 → NavMesh로 플레이어에게 접근
-//
-//   "어떻게 거기까지 걸어가는가"는 NavMeshAgent에게 전부 맡긴다.
-//   (벽 피하기 · 경로 계산 · 다른 적과 안 겹치기 = 전부 자동)
-//
-// 부착 위치: Enemy (부모 빈 오브젝트. NavMeshAgent가 붙어 있는 곳)
-// ─────────────────────────────────────────────────────────────
+// 적 한 마리의 두뇌로, 매 프레임 경직→공격→추격 순으로 조건을 검사해 상태를 정하고 NavMeshAgent로 행동한다.
 
-// 이 스크립트가 붙은 오브젝트에는 NavMeshAgent가 반드시 있어야 한다.
-// 깜빡하고 안 붙였으면 유니티가 자동으로 붙여준다(실수 방지).
+// NavMeshAgent가 없으면 유니티가 자동으로 붙여준다(실수 방지).
 [RequireComponent(typeof(NavMeshAgent))]
 public class KR_EnemyAI : MonoBehaviour
 {
@@ -56,8 +41,7 @@ public class KR_EnemyAI : MonoBehaviour
     private float attackTimer = 0f; // 다음 공격까지 남은 시간
     private float staggerTimer = 0f;// 경직이 풀릴 때까지 남은 시간
 
-    // 경로를 매 프레임 다시 계산하면 무겁다.
-    // 이 간격(초)마다 한 번씩만 목적지를 갱신한다(최적화 핵심).
+    // 매 프레임 경로를 다시 계산하지 않도록 이 간격(초)마다 한 번씩만 목적지를 갱신한다.
     private const float REPATH_INTERVAL = 0.15f;
     private float repathTimer = 0f;
 
@@ -161,8 +145,7 @@ public class KR_EnemyAI : MonoBehaviour
         }
     }
 
-    // 실제 피해를 주는 부분.
-    // 플레이어 체력 스크립트가 생기면 여기서 호출하면 된다(아래 주석 참고).
+    // 실제 피해를 주는 부분으로, 플레이어 체력 스크립트가 생기면 여기서 호출하면 된다.
     void DealDamage()
     {
         // 예시) 플레이어에 KR_PlayerHealth 같은 스크립트가 있다면:
@@ -194,8 +177,7 @@ public class KR_EnemyAI : MonoBehaviour
         if (agent != null) agent.isStopped = true;
     }
 
-    // ── 시야 판정: 적과 플레이어 사이에 벽이 있는지 확인 ──
-    // 벽에 막히면 false(못 봄), 뻥 뚫려 있으면 true(봄).
+    // 적과 플레이어 사이에 벽이 있는지 확인해 막히면 false, 뚫려 있으면 true를 반환한다.
     bool HasLineOfSight()
     {
         Vector3 origin = transform.position + Vector3.up * 1f; // 눈높이쯤

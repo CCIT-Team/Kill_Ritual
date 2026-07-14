@@ -80,7 +80,7 @@ namespace KillRitual.Weapons.Visual
         {
             if (_animator == null)
             {
-                Debug.LogWarning("[KRMuryeongVisual] Animator�� �����ϴ�.", this);
+                Debug.LogWarning("[KRMuryeongVisual] Animator가 없습니다.", this);
                 return;
             }
 
@@ -96,8 +96,7 @@ namespace KillRitual.Weapons.Visual
             if (_disableAnimatorWhileHidden)
                 _animator.enabled = true;
 
-            // Trigger�� ���� �ʰ� Parry ���¸� 0�����Ӻ��� ���� ����Ѵ�.
-            // �� ����� Idle ���� 1ȸ�� �������� ���⿡�� �� �������̴�.
+            // Trigger 대신 Parry 상태를 0프레임부터 강제 재생해, Idle 상태가 한 프레임이라도 먼저 보이는 것을 막습니다.
             _animator.Play(_parryStateHash, 0, 0f);
             _animator.Update(0f);
 

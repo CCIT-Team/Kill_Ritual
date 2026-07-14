@@ -26,12 +26,12 @@ namespace KillRitual.UI
 
             if (canvasGroup == null)
             {
-                Debug.LogError("[KRScreenFader] CanvasGroupÀÌ ¾ø½À´Ï´Ù.");
+                Debug.LogError("[KRScreenFader] CanvasGroupì´ ì—†ìŠµë‹ˆë‹¤.");
                 enabled = false;
                 return;
             }
 
-            // ¸ŞÀÎ ¸Ş´º´Â ½ÃÀÛÇÒ ¶§ °ËÀº È­¸éÀ¸·Î µ¤Áö ¾Ê´Â´Ù.
+            // ë©”ì¸ ë©”ë‰´ëŠ” ì‹œì‘í•  ë•Œ ê²€ì€ í™”ë©´ìœ¼ë¡œ ë®ì§€ ì•ŠëŠ”ë‹¤.
             if (IsMainMenuScene())
             {
                 SetClear();
@@ -46,8 +46,7 @@ namespace KillRitual.UI
 
         private void Start()
         {
-            // ¸ŞÀÎ ¸Ş´º´Â ÀÚµ¿ Fade Inµµ ÇÏÁö ¾Ê´Â´Ù.
-            // ´Ü, ¹öÆ° Å¬¸¯ ½Ã FadeOutRoutine()Àº Á¤»ó ÀÛµ¿ÇÑ´Ù.
+            // ë©”ì¸ ë©”ë‰´ëŠ” ìë™ Fade Inì„ í•˜ì§€ ì•Šì§€ë§Œ, ë²„íŠ¼ í´ë¦­ ì‹œ FadeOutRoutine()ì€ ì •ìƒ ì‘ë™í•œë‹¤.
             if (IsMainMenuScene())
                 return;
 

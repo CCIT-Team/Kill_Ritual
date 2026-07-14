@@ -6,9 +6,8 @@ namespace KillRitual.Player.Combat
 {
     public sealed class KRPlayerStats : MonoBehaviour
     {
-        [Header("Data ·¹ÀÌ¾î ÂüÁ¶ (ScriptableObject)")]
-        [Tooltip("MaxHealth, AttackMultiplier, AttackSpeedMultiplierÀÇ ±âº»°ªÀ» Á¦°øÇÏ´Â µ¥ÀÌÅÍ ¿¡¼Â. " +
-                 "ºñ¿öµÎ¸é ¸ğµÎ ¾ÈÀüÇÑ ±âº»°ª(Ã¼·Â 100, ¹èÀ² 1)À¸·Î µ¿ÀÛÇÕ´Ï´Ù.")]
+        [Header("Data ë ˆì´ì–´ ì°¸ì¡° (ScriptableObject)")]
+        [Tooltip("ì²´ë ¥/ê³µê²© ë°°ìœ¨ì˜ ê¸°ë³¸ê°’ì„ ì œê³µí•˜ëŠ” ë°ì´í„° ì—ì…‹ìœ¼ë¡œ, ë¹„ì›Œë‘ë©´ ì•ˆì „í•œ ê¸°ë³¸ê°’(ì²´ë ¥ 100, ë°°ìœ¨ 1)ìœ¼ë¡œ ë™ì‘í•©ë‹ˆë‹¤.")]
         [SerializeField] private KRCharacterStatsSO _characterStats;
 
         private float _currentHealth;

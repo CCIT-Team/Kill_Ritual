@@ -14,13 +14,7 @@ namespace KillRitual.Weapons
 
         private void Awake()
         {
-            // [방어 로직] 충돌 판정은 이 스크립트가 직접 레이캐스트로 계산하므로, 투사체 자신에게는
-            // 원래 Collider/Rigidbody가 전혀 필요하지 않습니다. 그런데 프리팹 작업 중 실수로
-            // Collider가 남아있으면, 그 콜라이더는 PhysX의 일반 충돌로 처리되어 플레이어의
-            // Rigidbody와 물리적으로 겹침-밀어내기(depenetration)를 일으킵니다. 투사체가 느릴수록
-            // 플레이어 몸 근처에 오래 머물러 이 밀어내기가 누적되어 "넉백"처럼 느껴지게 됩니다.
-            // 이는 _owner 제외 로직(게임 로직)과 전혀 다른 채널(물리 엔진)에서 발생하므로 스크립트로
-            // 막을 수 없고, Collider 자체를 Trigger로 강제 전환해야 물리적 충돌이 원천 차단됩니다.
+            // 충돌 판정은 레이캐스트로 직접 처리하므로, 프리팹에 실수로 남은 Collider가 PhysX 물리 충돌로 플레이어를 밀어내지 않도록 Trigger로 강제 전환합니다.
             if (TryGetComponent(out Collider ownCollider))
             {
                 ownCollider.isTrigger = true;
@@ -35,14 +29,10 @@ namespace KillRitual.Weapons
         private static readonly RaycastHit[] _raycastBuffer = new RaycastHit[8];
         private static readonly Collider[] _overlapBuffer = new Collider[32];
 
-        // [최적화] 중복 제거용 인스턴스 ID 마킹 배열. O(n²) 이중 루프를 O(n) 단일 패스로 대체합니다.
-        // _overlapBuffer와 동일한 크기로 선언해 인덱스 초과를 원천 차단합니다.
+        // 중복 제거용 인스턴스 ID 마킹 배열로, O(n²) 이중 루프를 O(n) 단일 패스로 대체하며 _overlapBuffer와 동일한 크기로 인덱스 초과를 막습니다.
         private static readonly int[] _handledInstanceIds = new int[32];
 
-        // 유도 추적탄 전용 NonAlloc 버퍼. 폭발용 버퍼와 분리해 동시에 사용해도 안전합니다.
-        // 호밍 추적탄 전용 버퍼는 인스턴스 필드로 선언합니다.
-        // BFG 투사체가 비행 중 매 틱마다 OverlapSphere를 수행하는데, static이면
-        // 다른 투사체나 폭발 판정과 버퍼를 공유하여 탐색 결과가 오염됩니다.
+        // 유도 추적탄 전용 NonAlloc 버퍼로, static이면 다른 투사체와 결과가 오염되므로 인스턴스 필드로 선언해 폭발용 버퍼와 분리합니다.
         private readonly Collider[] _tracerOverlapBuffer = new Collider[8];
 
         private KRDamageType _elementType;
@@ -53,9 +43,7 @@ namespace KillRitual.Weapons
         private float _explosionRadius;
         private IDamageable _owner;
 
-        // [최적화] 사격 판정(벽 포함)과 폭발 판정(피격 가능 개체만)을 분리합니다.
-        // Hitscan은 벽을 감지해야 하므로 Environment 레이어를 포함하고,
-        // 폭발 판정은 Damageable 레이어만 사용해 브로드페이즈 후보 수 자체를 줄입니다.
+        // 사격 판정(벽 포함, Environment 레이어)과 폭발 판정(Damageable 레이어만)을 분리해 브로드페이즈 후보 수를 줄입니다.
         private LayerMask _hitscanLayerMask;
         private LayerMask _explosionLayerMask;
 
@@ -65,10 +53,7 @@ namespace KillRitual.Weapons
         private float _elapsedLifetime;
         private bool _initialized;
 
-        // ------------------------------------------------------------------
-        // [유도 추적탄] BFG 전용 옵션 상태. ConfigureHomingTracers()가 호출되지 않으면
-        // _hasHomingTracers가 false로 유지되어 일반 투사체와 동일하게 동작합니다.
-        // ------------------------------------------------------------------
+        // BFG 전용 유도 추적탄 옵션 상태로, ConfigureHomingTracers()가 호출되지 않으면 일반 투사체와 동일하게 동작합니다.
         private bool _hasHomingTracers;
         private float _tracerRadius;
         private float _tracerInterval;
@@ -77,14 +62,10 @@ namespace KillRitual.Weapons
         private GameObject _tracerVisualPrefab;
         private Color _tracerVisualColor;
 
-        // [폭발 시각효과] 실제 인게임에서 보이는 폭발 VFX 프리팹. ConfigureExplosionVisual()로
-        // 설정하지 않으면 시각효과 없이 데미지 판정만 동작합니다(기존과 동일하게 안전).
+        // 실제 인게임에 보이는 폭발 VFX 프리팹으로, ConfigureExplosionVisual()로 설정하지 않으면 시각효과 없이 데미지 판정만 동작합니다.
         private GameObject _explosionVfxPrefab;
 
-        // -----------------------------------------------------------------------
-        // [DEBUG] 폭발 통계 구조체.
-        // 릴리즈 빌드에서는 컴파일 자체가 되지 않으므로 런타임 비용 0.
-        // -----------------------------------------------------------------------
+        // 폭발 통계 디버그 구조체로, 릴리즈 빌드에서는 컴파일되지 않아 런타임 비용이 0입니다.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public struct KRExplosionStats
         {
@@ -175,8 +156,7 @@ namespace KillRitual.Weapons
             Vector3 direction = displacement / travelDistance;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // 비행 경로를 씬 뷰와 게임 뷰 모두에서 확인할 수 있도록 매 프레임 궤적 선을 그립니다.
-            // 색상: 수(水)=파랑, 금(金)=노랑, 나머지=흰색
+            // 비행 경로를 씬/게임 뷰에서 확인할 수 있도록 매 프레임 궤적 선을 그리며, 색상은 수(水)=파랑, 금(金)=노랑, 나머지=흰색입니다.
             Color trailColor = _elementType == KRDamageType.Water ? Color.cyan :
                                _elementType == KRDamageType.Metal ? Color.yellow : Color.white;
             Debug.DrawLine(_previousPosition, _previousPosition + displacement, trailColor, 0.5f);
@@ -216,7 +196,7 @@ namespace KillRitual.Weapons
 
             Vector3 origin = transform.position;
 
-            // 1단계 — 브로드페이즈: Damageable 전용 마스크로 주변 후보를 탐지합니다(벽 제외).
+            // 1단계 — 브로드페이즈: Damageable 전용 마스크로 벽을 제외한 주변 후보를 탐지합니다.
             int count = Physics.OverlapSphereNonAlloc(origin, _tracerRadius, _tracerOverlapBuffer, _explosionLayerMask);
 
             for (int i = 0; i < count; i++)
@@ -233,8 +213,7 @@ namespace KillRitual.Weapons
 
                 Vector3 direction = toTarget / distance;
 
-                // 2단계 — 시야 확인: Hitscan 마스크(벽 포함)로 실제로 막혀있지 않은지 레이캐스트로 검증합니다.
-                // 벽 뒤에 있는 적은 추적탄에 맞지 않아야 하므로, 가장 먼저 맞는 대상이 정확히 target인지 확인합니다.
+                // 2단계 — 시야 확인: 벽 뒤 적은 맞지 않아야 하므로, Hitscan 마스크로 가장 먼저 맞는 대상이 target인지 검증합니다.
                 int hitCount = Physics.RaycastNonAlloc(origin, direction, _raycastBuffer, distance, _hitscanLayerMask);
                 int closestIndex = FindClosestHitIndex(hitCount);
                 if (closestIndex < 0) continue;
@@ -262,9 +241,7 @@ namespace KillRitual.Weapons
 
             if (instance.TryGetComponent(out KRHitscanTracer tracer))
             {
-                // [시그니처 갱신] KRHitscanTracer.Play()가 고정 duration 방식에서 거리 비례
-                // 탄속(visualSpeed) 방식으로 바뀌었습니다. 유도 추적탄은 짧은 거리에서 빠르게
-                // 번뜩이는 느낌이 맞으므로 빠른 탄속(400m/s)과 짧은 최대 길이(3m)를 직접 지정합니다.
+                // KRHitscanTracer.Play()가 거리 비례 탄속 방식으로 바뀌어, 유도 추적탄은 빠른 탄속(400m/s)과 짧은 최대 길이(3m)를 직접 지정합니다.
                 tracer.Play(origin, targetPosition, _tracerVisualColor, visualSpeedOverride: 400f, maxLengthOverride: 3f);
             }
             else
@@ -348,8 +325,7 @@ namespace KillRitual.Weapons
             };
 #endif
 
-            // 중복 제거용 인스턴스 ID 마킹 배열. O(n) 단일 패스로 중복을 식별합니다.
-            // static 배열이므로 힙 할당 없이 재사용됩니다(GC 0).
+            // 중복 제거용 인스턴스 ID 마킹 배열로, static이라 힙 할당 없이 재사용되며 O(n) 단일 패스로 중복을 식별합니다.
             int handledCount = 0;
 
             for (int i = 0; i < count; i++)
@@ -411,10 +387,7 @@ namespace KillRitual.Weapons
 #endif
         }
 
-        // -----------------------------------------------------------------------
-        // Debug.DrawLine 8선으로 구(球)를 근사하는 유틸리티.
-        // Physics.DrawWireSphere는 존재하지 않으므로 직접 구현합니다.
-        // -----------------------------------------------------------------------
+        // Physics.DrawWireSphere가 없어 Debug.DrawLine 8선으로 구(球)를 근사하는 유틸리티입니다.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void DrawDebugSphere(Vector3 center, float radius, Color color, float duration)
         {

@@ -126,9 +126,7 @@ namespace KillRitual.Weapons
             _line.startColor = _baseColor;
             _line.endColor = _baseColor;
 
-            // 시작 프레임에서는 선이 총구 지점에서 시작하도록 둡니다.
-            // 이후 Update에서 총알 머리(head)가 앞으로 나가고,
-            // 꼬리(tail)는 visibleLength만큼 뒤따라갑니다.
+            // 시작 프레임에서는 선이 총구 지점에서 시작하며, 이후 Update에서 머리(head)가 앞으로 나가고 꼬리(tail)는 visibleLength만큼 뒤따라갑니다.
             _line.SetPosition(0, _startPos);
             _line.SetPosition(1, _startPos);
 
@@ -184,8 +182,7 @@ namespace KillRitual.Weapons
             // head는 실제 총알 머리처럼 start → actualEnd로 이동합니다.
             float headDistance = _totalDistance * t;
 
-            // tail은 head보다 visibleLength만큼 뒤에 있습니다.
-            // 초반에는 tail이 총구보다 뒤로 갈 수 없으므로 0으로 클램프합니다.
+            // tail은 head보다 visibleLength만큼 뒤에 있으며, 초반에는 총구보다 뒤로 갈 수 없으므로 0으로 클램프합니다.
             float tailDistance = Mathf.Max(0f, headDistance - _visibleLength);
 
             Vector3 tailPos = _startPos + (_direction * tailDistance);

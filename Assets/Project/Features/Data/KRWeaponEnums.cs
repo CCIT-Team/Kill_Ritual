@@ -2,15 +2,15 @@ namespace KillRitual.Weapons
 {
     public enum KRAttackSlot
     {
-        Primary,   // ÁÂÅ¬¸¯, ¾à°ø
-        Secondary  // ¿ìÅ¬¸¯, °­°ø
+        Primary,   // ì¢Œí´ë¦­, ì•½ê³µ
+        Secondary  // ìš°í´ë¦­, ê°•ê³µ
     }
 
     public enum KRAttackInputType
     {
-        Tap,            // ´©¸£´Â ¼ø°£ 1È¸ ¹ß»ç
-        HoldAuto,       // ´©¸£°í ÀÖ´Â µ¿¾È ¹İº¹ ¹ß»ç
-        ChargeRelease   // ´©¸£°í Â÷Áö, ¶¼¸é ¹ß»ç
+        Tap,            // ëˆ„ë¥´ëŠ” ìˆœê°„ 1íšŒ ë°œì‚¬
+        HoldAuto,       // ëˆ„ë¥´ê³  ìˆëŠ” ë™ì•ˆ ë°˜ë³µ ë°œì‚¬
+        ChargeRelease   // ëˆ„ë¥´ê³  ì°¨ì§€, ë–¼ë©´ ë°œì‚¬
     }
 
     public enum KRWeaponActionState

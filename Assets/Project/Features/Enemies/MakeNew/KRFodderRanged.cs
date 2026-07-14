@@ -14,8 +14,7 @@ namespace KillRitual.Enemies
         [Min(0.1f)]
         [SerializeField] private float _fireCooldown = 1.5f;
 
-        [Tooltip("Attack 애니메이션 이벤트가 누락됐을 때 공격 대기 상태를 강제로 해제하는 시간입니다. " +
-                 "이 값이 없으면 Animation Event를 빼먹었을 때 몬스터가 공격 대기 상태에 갇힐 수 있습니다.")]
+        [Tooltip("Animation Event가 누락됐을 때 몬스터가 공격 대기 상태에 갇히지 않도록 강제로 해제하는 시간입니다.")]
         [Min(0.1f)]
         [SerializeField] private float _attackEventTimeout = 1.5f;
 
@@ -28,24 +27,20 @@ namespace KillRitual.Enemies
         [SerializeField] private float _projectileSpeed = 12f;
 
         [Header("발사체 프리팹 (선택)")]
-        [Tooltip("비워두면 코드가 자동으로 작은 구를 만들어 발사합니다. " +
-                 "직접 만든 발사체 프리팹이 있으면 여기에 연결하세요.")]
+        [Tooltip("비워두면 코드가 자동으로 작은 구를 만들어 발사하며, 직접 만든 발사체 프리팹이 있으면 여기에 연결하세요.")]
         [SerializeField] private GameObject _projectilePrefab;
 
         [Tooltip("발사체가 나가는 높이 보정. 큐브 중심보다 살짝 위에서 쏘면 자연스럽습니다.")]
         [SerializeField] private float _muzzleHeightOffset = 0.5f;
 
         [Header("발사 위치/각도 보정")]
-        [Tooltip("지정하면 이 Transform의 위치를 발사 기준점(총구)으로 사용합니다. " +
-                 "비워두면 몬스터 위치 + _muzzleHeightOffset을 사용합니다. " +
-                 "(예: 손이나 무기 끝에 만들어둔 VFXPoint를 연결)")]
+        [Tooltip("지정하면 이 Transform 위치를 발사 기준점(총구)으로 쓰고, 비워두면 몬스터 위치 + _muzzleHeightOffset을 사용합니다.")]
         [SerializeField] private Transform _muzzlePoint;
 
         [Tooltip("발사체 프리팹 자체의 축이 진행 방향과 안 맞을 때 보정하는 추가 회전(오일러 각, degree).")]
         [SerializeField] private Vector3 _projectileRotationOffset = Vector3.zero;
 
-        [Tooltip("발사체 스폰 위치를 미세 조정하는 추가 오프셋. " +
-                 "발사 방향 기준 로컬 좌표입니다 (X=좌우, Y=상하, Z=전후).")]
+        [Tooltip("발사체 스폰 위치를 미세 조정하는 추가 오프셋으로, 발사 방향 기준 로컬 좌표입니다(X=좌우, Y=상하, Z=전후).")]
         [SerializeField] private Vector3 _projectilePositionOffset = Vector3.zero;
 
         [Tooltip("커스텀 프리팹에 Collider가 없을 때 자동으로 붙여줄 SphereCollider의 반지름.")]

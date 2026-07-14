@@ -9,6 +9,6 @@ public enum KREnemyState
 
 public enum KRAggroPolicy
 {
-    LockOnFirstDetection, // 한 번 감지하면 끝까지 추적한다. 살굿 기본값.
+    LockOnFirstDetection, // 한 번 감지하면 끝까지 추적하는 살굿 기본값.
     ForgetAfterLostSight  // 추후 은신/잠입/순찰형 적을 위한 확장값.
 }

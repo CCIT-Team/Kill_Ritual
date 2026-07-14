@@ -8,11 +8,11 @@ namespace KillRitual.Weapons.Visual
     public sealed class KRAttackAnimationSignal : MonoBehaviour
     {
         [Header("Camera Shake")]
-        [Tooltip("ºñ¿öµÎ¸é Awake¿¡¼­ ¾À ¾ÈÀÇ KRCameraShakeController¸¦ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ Awakeì—ì„œ ì”¬ ì•ˆì˜ KRCameraShakeControllerë¥¼ ìë™ìœ¼ë¡œ ì°¾ìŠµë‹ˆë‹¤.")]
         [SerializeField] private KRCameraShakeController _cameraShake;
 
         [Header("Fallback")]
-        [Tooltip("Animation Event¿¡¼­ ¹®ÀÚ¿­ ÆÄ¶ó¹ÌÅÍ ¾øÀÌ È£ÃâÇÒ ¶§ »ç¿ëÇÒ ±âº» ¼ÎÀÌÅ© IDÀÔ´Ï´Ù.")]
+        [Tooltip("Animation Eventì—ì„œ ë¬¸ìì—´ íŒŒë¼ë¯¸í„° ì—†ì´ í˜¸ì¶œí•  ë•Œ ì‚¬ìš©í•  ê¸°ë³¸ ì…°ì´í¬ IDì…ë‹ˆë‹¤.")]
         [SerializeField] private string _defaultShakeId = "Default";
 
         private void Awake()

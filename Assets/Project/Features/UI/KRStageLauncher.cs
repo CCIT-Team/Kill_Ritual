@@ -22,13 +22,13 @@ namespace KillRitual.StagePortal
         {
             if (stageData == null)
             {
-                Debug.LogWarning($"{nameof(KRStageLauncher)}: StageData°¡ ¾ø½À´Ï´Ù.", this);
+                Debug.LogWarning($"{nameof(KRStageLauncher)}: StageDataê°€ ì—†ìŠµë‹ˆë‹¤.", this);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(stageData.SceneName))
             {
-                Debug.LogWarning($"{nameof(KRStageLauncher)}: SceneNameÀÌ ºñ¾î ÀÖ½À´Ï´Ù.", stageData);
+                Debug.LogWarning($"{nameof(KRStageLauncher)}: SceneNameì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤.", stageData);
                 return;
             }
 
@@ -39,7 +39,7 @@ namespace KillRitual.StagePortal
                     break;
 
                 case LoadMode.LoadingScene:
-                    // ±âÁ¸ ¾À ÀüÈ¯ µ¥ÀÌÅÍ ±¸Á¶ Àç»ç¿ë.
+                    // ê¸°ì¡´ ì”¬ ì „í™˜ ë°ì´í„° êµ¬ì¡° ì¬ì‚¬ìš©.
                     KRSceneTransitionData.SetGameStart(
                         targetSceneName: stageData.SceneName,
                         startMode: KRGameStartMode.NewGame,

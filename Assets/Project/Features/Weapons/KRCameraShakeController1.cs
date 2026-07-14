@@ -12,36 +12,36 @@ namespace KillRitual.Player.CameraEffects
         public sealed class ShakeProfile
         {
             [Header("ID")]
-            [Tooltip("Animation Event¿¡¼­ È£ÃâÇÒ ¼ÎÀÌÅ© IDÀÔ´Ï´Ù. ¿¹: Shotgun_Light, Shotgun_Heavy")]
+            [Tooltip("Animation Eventì—ì„œ í˜¸ì¶œí•  ì…°ì´í¬ IDì…ë‹ˆë‹¤. ì˜ˆ: Shotgun_Light, Shotgun_Heavy")]
             public string id = "Default";
 
             [Header("Time")]
-            [Tooltip("¼ÎÀÌÅ© Áö¼Ó ½Ã°£ÀÔ´Ï´Ù. ÀÏ¹İ °ø°İÀº Âª°Ô, °­°ø°İÀº ¾à°£ ±æ°Ô Àâ½À´Ï´Ù.")]
+            [Tooltip("ì…°ì´í¬ ì§€ì† ì‹œê°„ì…ë‹ˆë‹¤. ì¼ë°˜ ê³µê²©ì€ ì§§ê²Œ, ê°•ê³µê²©ì€ ì•½ê°„ ê¸¸ê²Œ ì¡ìŠµë‹ˆë‹¤.")]
             [Min(0.01f)]
             public float duration = 0.12f;
 
-            [Tooltip("°ªÀÌ Å¬¼ö·Ï ºü¸£°Ô Áøµ¿ÇÕ´Ï´Ù.")]
+            [Tooltip("ê°’ì´ í´ìˆ˜ë¡ ë¹ ë¥´ê²Œ ì§„ë™í•©ë‹ˆë‹¤.")]
             [Min(0.1f)]
             public float frequency = 28f;
 
             [Header("Rotation Shake")]
-            [Tooltip("»óÇÏ È¸Àü Èçµé¸²ÀÔ´Ï´Ù. FPS¿¡¼­´Â ³Ê¹« Å©¸é Á¶ÁØÀÌ ºÒÄèÇØÁı´Ï´Ù.")]
+            [Tooltip("ìƒí•˜ íšŒì „ í”ë“¤ë¦¼ì…ë‹ˆë‹¤. FPSì—ì„œëŠ” ë„ˆë¬´ í¬ë©´ ì¡°ì¤€ì´ ë¶ˆì¾Œí•´ì§‘ë‹ˆë‹¤.")]
             public float pitchAmount = 1.2f;
 
-            [Tooltip("ÁÂ¿ì È¸Àü Èçµé¸²ÀÔ´Ï´Ù.")]
+            [Tooltip("ì¢Œìš° íšŒì „ í”ë“¤ë¦¼ì…ë‹ˆë‹¤.")]
             public float yawAmount = 0.5f;
 
-            [Tooltip("Ä«¸Ş¶ó ±â¿ï¾îÁü Èçµé¸²ÀÔ´Ï´Ù.")]
+            [Tooltip("ì¹´ë©”ë¼ ê¸°ìš¸ì–´ì§ í”ë“¤ë¦¼ì…ë‹ˆë‹¤.")]
             public float rollAmount = 0.8f;
 
             [Header("Position Shake")]
-            [Tooltip("ÁÂ¿ì À§Ä¡ Èçµé¸²ÀÔ´Ï´Ù.")]
+            [Tooltip("ì¢Œìš° ìœ„ì¹˜ í”ë“¤ë¦¼ì…ë‹ˆë‹¤.")]
             public float horizontalAmount = 0.025f;
 
-            [Tooltip("»óÇÏ À§Ä¡ Èçµé¸²ÀÔ´Ï´Ù.")]
+            [Tooltip("ìƒí•˜ ìœ„ì¹˜ í”ë“¤ë¦¼ì…ë‹ˆë‹¤.")]
             public float verticalAmount = 0.018f;
 
-            [Tooltip("¾ÕµÚ À§Ä¡ Èçµé¸²ÀÔ´Ï´Ù.")]
+            [Tooltip("ì•ë’¤ ìœ„ì¹˜ í”ë“¤ë¦¼ì…ë‹ˆë‹¤.")]
             public float forwardAmount = 0.015f;
         }
 
@@ -64,10 +64,10 @@ namespace KillRitual.Player.CameraEffects
         };
 
         [Header("Global Scale")]
-        [Tooltip("ÀüÃ¼ È¸Àü ¼ÎÀÌÅ© ¹èÀ²ÀÔ´Ï´Ù. ¸Ö¹Ì°¡ ½ÉÇÏ¸é ³·Ãß¸é µË´Ï´Ù.")]
+        [Tooltip("ì „ì²´ íšŒì „ ì…°ì´í¬ ë°°ìœ¨ì…ë‹ˆë‹¤. ë©€ë¯¸ê°€ ì‹¬í•˜ë©´ ë‚®ì¶”ë©´ ë©ë‹ˆë‹¤.")]
         [SerializeField, Min(0f)] private float _globalRotationScale = 1f;
 
-        [Tooltip("ÀüÃ¼ À§Ä¡ ¼ÎÀÌÅ© ¹èÀ²ÀÔ´Ï´Ù. FPS¿¡¼­´Â º¸Åë È¸Àüº¸´Ù ÀÛ°Ô ¾²´Â ÆíÀÌ ¾ÈÀüÇÕ´Ï´Ù.")]
+        [Tooltip("ì „ì²´ ìœ„ì¹˜ ì…°ì´í¬ ë°°ìœ¨ì…ë‹ˆë‹¤. FPSì—ì„œëŠ” ë³´í†µ íšŒì „ë³´ë‹¤ ì‘ê²Œ ì“°ëŠ” í¸ì´ ì•ˆì „í•©ë‹ˆë‹¤.")]
         [SerializeField, Min(0f)] private float _globalPositionScale = 1f;
 
         private readonly Dictionary<string, ShakeProfile> _profileMap = new Dictionary<string, ShakeProfile>();
@@ -183,8 +183,7 @@ namespace KillRitual.Player.CameraEffects
                 return;
             }
 
-            // ÃÊ¹İ¿¡ °­ÇÏ°í ºü¸£°Ô ÁÙ¾îµå´Â °¨¼è °î¼±.
-            // °ø°İ ÇÏÀÌ¶óÀÌÆ®¿ë ¼ÎÀÌÅ©´Â ¿À·¡ ³²±âº¸´Ù Âª°Ô ÅÍÁö°í »ç¶óÁö´Â ÆíÀÌ ³´´Ù.
+            // ê³µê²© í•˜ì´ë¼ì´íŠ¸ìš© ì…°ì´í¬ëŠ” ì§§ê²Œ í„°ì§€ê³  ì‚¬ë¼ì§€ëŠ” í¸ì´ ë‚˜ì•„ ì´ˆë°˜ì— ê°•í•˜ê³  ë¹ ë¥´ê²Œ ì¤„ì–´ë“œëŠ” ê°ì‡  ê³¡ì„ ì„ ì‚¬ìš©í•œë‹¤.
             float envelope = 1f - normalizedTime;
             envelope *= envelope;
 

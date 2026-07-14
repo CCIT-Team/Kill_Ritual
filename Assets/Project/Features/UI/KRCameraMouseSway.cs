@@ -5,7 +5,7 @@ namespace KillRitual.UI
     public class KRCameraMouseSway : MonoBehaviour
     {
         [Header("Target Camera")]
-        [Tooltip("È­¸é ±âÁØ ¹æÇâÀ» °è»êÇÒ Ä«¸Ş¶ó. ºñ¿öµÎ¸é ÀÚ½Ä Ä«¸Ş¶ó¸¦ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.")]
+        [Tooltip("í™”ë©´ ê¸°ì¤€ ë°©í–¥ì„ ê³„ì‚°í•  ì¹´ë©”ë¼. ë¹„ì›Œë‘ë©´ ìì‹ ì¹´ë©”ë¼ë¥¼ ìë™ìœ¼ë¡œ ì°¾ìŠµë‹ˆë‹¤.")]
         [SerializeField] private Transform targetCamera;
 
         [Header("Input")]
@@ -13,32 +13,32 @@ namespace KillRitual.UI
         [SerializeField] private string mouseYInput = "Mouse Y";
 
         [Header("Direction")]
-        [Tooltip("¸¶¿ì½º ÀÌµ¿ ¹æÇâ°ú °°Àº ¹æÇâÀ¸·Î Ä«¸Ş¶ó°¡ ÀÌµ¿ÇÕ´Ï´Ù.")]
+        [Tooltip("ë§ˆìš°ìŠ¤ ì´ë™ ë°©í–¥ê³¼ ê°™ì€ ë°©í–¥ìœ¼ë¡œ ì¹´ë©”ë¼ê°€ ì´ë™í•©ë‹ˆë‹¤.")]
         [SerializeField] private bool moveSameDirectionAsMouse = true;
 
         [Header("Move Amount")]
-        [Tooltip("¸¶¿ì½º X ÀÌµ¿¿¡ µû¸¥ Ä«¸Ş¶ó ÀÌµ¿ ´©Àû·®")]
+        [Tooltip("ë§ˆìš°ìŠ¤ X ì´ë™ì— ë”°ë¥¸ ì¹´ë©”ë¼ ì´ë™ ëˆ„ì ëŸ‰")]
         [SerializeField] private float horizontalAmount = 0.015f;
 
-        [Tooltip("¸¶¿ì½º Y ÀÌµ¿¿¡ µû¸¥ Ä«¸Ş¶ó ÀÌµ¿ ´©Àû·®")]
+        [Tooltip("ë§ˆìš°ìŠ¤ Y ì´ë™ì— ë”°ë¥¸ ì¹´ë©”ë¼ ì´ë™ ëˆ„ì ëŸ‰")]
         [SerializeField] private float verticalAmount = 0.015f;
 
         [Header("Move Limit")]
-        [Tooltip("ÁÂ¿ì ÃÖ´ë ÀÌµ¿ °Å¸®")]
+        [Tooltip("ì¢Œìš° ìµœëŒ€ ì´ë™ ê±°ë¦¬")]
         [SerializeField] private float maxHorizontalOffset = 0.25f;
 
-        [Tooltip("»óÇÏ ÃÖ´ë ÀÌµ¿ °Å¸®")]
+        [Tooltip("ìƒí•˜ ìµœëŒ€ ì´ë™ ê±°ë¦¬")]
         [SerializeField] private float maxVerticalOffset = 0.15f;
 
         [Header("Smoothing")]
-        [Tooltip("¸ñÇ¥ À§Ä¡±îÁö µû¶ó°¡´Â ¼Óµµ")]
+        [Tooltip("ëª©í‘œ ìœ„ì¹˜ê¹Œì§€ ë”°ë¼ê°€ëŠ” ì†ë„")]
         [SerializeField] private float followSmooth = 8f;
 
         [Header("Return")]
-        [Tooltip("ÄÑ¸é ¸¶¿ì½º¸¦ ¸ØÃèÀ» ¶§ ¿ø·¡ À§Ä¡·Î µ¹¾Æ°©´Ï´Ù. ¸Ş´º Ä«¸Ş¶ó¶ó¸é º¸Åë ²¨µÎ´Â °ÍÀÌ ÁÁ½À´Ï´Ù.")]
+        [Tooltip("ì¼œë©´ ë§ˆìš°ìŠ¤ë¥¼ ë©ˆì·„ì„ ë•Œ ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ê°‘ë‹ˆë‹¤. ë©”ë‰´ ì¹´ë©”ë¼ë¼ë©´ ë³´í†µ êº¼ë‘ëŠ” ê²ƒì´ ì¢‹ìŠµë‹ˆë‹¤.")]
         [SerializeField] private bool returnToBaseWhenIdle = false;
 
-        [Tooltip("¿ø·¡ À§Ä¡·Î µ¹¾Æ°¡´Â ¼Óµµ")]
+        [Tooltip("ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ê°€ëŠ” ì†ë„")]
         [SerializeField] private float returnSmooth = 4f;
 
         [Header("Advanced")]

@@ -8,44 +8,44 @@ namespace KillRitual.Enemies
     [DisallowMultipleComponent]
     public sealed class KREnemyWeakPoint : MonoBehaviour, IDamageable
     {
-        [Header("°øÀ¯ ´ë»ó")]
-        [Tooltip("¾àÁ¡ÀÌ ºÙ¾î ÀÖ´Â Àû º»Ã¼ÀÔ´Ï´Ù. ºñ¿öµÎ¸é ºÎ¸ğ¿¡¼­ KREnemyBase¸¦ ÀÚµ¿ Å½»öÇÕ´Ï´Ù.")]
+        [Header("ê³µìœ  ëŒ€ìƒ")]
+        [Tooltip("ì•½ì ì´ ë¶™ì–´ ìˆëŠ” ì  ë³¸ì²´ì…ë‹ˆë‹¤. ë¹„ì›Œë‘ë©´ ë¶€ëª¨ì—ì„œ KREnemyBaseë¥¼ ìë™ íƒìƒ‰í•©ë‹ˆë‹¤.")]
         [SerializeField] private KREnemyBase _ownerEnemy;
 
-        [Tooltip("½ÇÁ¦ ÇÇÇØ¸¦ Àü´ŞÇÒ ´ë»óÀÔ´Ï´Ù. ºñ¿öµÎ¸é Owner Enemy¸¦ IDamageable·Î »ç¿ëÇÕ´Ï´Ù.")]
+        [Tooltip("ì‹¤ì œ í”¼í•´ë¥¼ ì „ë‹¬í•  ëŒ€ìƒì…ë‹ˆë‹¤. ë¹„ì›Œë‘ë©´ Owner Enemyë¥¼ IDamageableë¡œ ì‚¬ìš©í•©ë‹ˆë‹¤.")]
         [SerializeField] private MonoBehaviour _sharedDamageTargetBehaviour;
 
-        [Header("¾àÁ¡ Ã¼·Â")]
+        [Header("ì•½ì  ì²´ë ¥")]
         [Min(1f)]
         [SerializeField] private float _maxWeakPointHealth = 60f;
 
-        [Tooltip("¾àÁ¡¿¡ µé¾î¿Â ÇÇÇØ¸¦ º»Ã¼¿¡ Àü´ŞÇÒ ¶§ °öÇÏ´Â ¹èÀ²ÀÔ´Ï´Ù.")]
+        [Tooltip("ì•½ì ì— ë“¤ì–´ì˜¨ í”¼í•´ë¥¼ ë³¸ì²´ì— ì „ë‹¬í•  ë•Œ ê³±í•˜ëŠ” ë°°ìœ¨ì…ë‹ˆë‹¤.")]
         [Min(0f)]
         [SerializeField] private float _ownerDamageMultiplier = 1.5f;
 
-        [Tooltip("º»Ã¼·Î Àü´ŞÇÒ ¶§ »ç¿ëÇÒ ÇÇÇØ ¼Ó¼ºÀÔ´Ï´Ù.")]
+        [Tooltip("ë³¸ì²´ë¡œ ì „ë‹¬í•  ë•Œ ì‚¬ìš©í•  í”¼í•´ ì†ì„±ì…ë‹ˆë‹¤.")]
         [SerializeField] private KRDamageType _forwardedDamageType = KRDamageType.Fire;
 
-        [Header("º»Ã¼ Àü´Ş ÇÇÇØ Á¦ÇÑ")]
-        [Tooltip("¼¦°Ç/Æø¹ß Áßº¹ ÆÇÁ¤À¸·Î º»Ã¼°¡ ÇÑ ÇÁ·¹ÀÓ¿¡ »èÁ¦µÇ´Â °ÍÀ» ¸·½À´Ï´Ù.")]
+        [Header("ë³¸ì²´ ì „ë‹¬ í”¼í•´ ì œí•œ")]
+        [Tooltip("ìƒ·ê±´/í­ë°œ ì¤‘ë³µ íŒì •ìœ¼ë¡œ ë³¸ì²´ê°€ í•œ í”„ë ˆì„ì— ì‚­ì œë˜ëŠ” ê²ƒì„ ë§‰ìŠµë‹ˆë‹¤.")]
         [SerializeField] private bool _limitOwnerDamagePerFrame = true;
 
-        [Tooltip("¾àÁ¡ÀÌ º»Ã¼¿¡ ÇÑ ÇÁ·¹ÀÓ µ¿¾È Àü´ŞÇÒ ¼ö ÀÖ´Â ÃÖ´ë ÇÇÇØ·®ÀÔ´Ï´Ù.")]
+        [Tooltip("ì•½ì ì´ ë³¸ì²´ì— í•œ í”„ë ˆì„ ë™ì•ˆ ì „ë‹¬í•  ìˆ˜ ìˆëŠ” ìµœëŒ€ í”¼í•´ëŸ‰ì…ë‹ˆë‹¤.")]
         [Min(1f)]
         [SerializeField] private float _maxOwnerDamagePerFrame = 300f;
 
-        [Header("ÆÄ±«/±×·Î±â")]
-        [Tooltip("¾àÁ¡ Ã¼·ÂÀÌ 0ÀÌ µÆÀ» ¶§ ÀûÀÌ ±×·Î±â¿¡ ºüÁö´Â ½Ã°£ÀÔ´Ï´Ù.")]
+        [Header("íŒŒê´´/ê·¸ë¡œê¸°")]
+        [Tooltip("ì•½ì  ì²´ë ¥ì´ 0ì´ ëì„ ë•Œ ì ì´ ê·¸ë¡œê¸°ì— ë¹ ì§€ëŠ” ì‹œê°„ì…ë‹ˆë‹¤.")]
         [Min(0.1f)]
         [SerializeField] private float _groggyDurationOnBreak = 2.5f;
 
-        [Tooltip("¾àÁ¡ ÆÄ±« ½Ã ÀÌ ¿ÀºêÁ§Æ®ÀÇ RendererµéÀ» ²ü´Ï´Ù.")]
+        [Tooltip("ì•½ì  íŒŒê´´ ì‹œ ì´ ì˜¤ë¸Œì íŠ¸ì˜ Rendererë“¤ì„ ë•ë‹ˆë‹¤.")]
         [SerializeField] private bool _disableRenderersOnBreak = true;
 
-        [Tooltip("¾àÁ¡ ÆÄ±« ½Ã ÀÌ ¿ÀºêÁ§Æ®ÀÇ ColliderµéÀ» ²ü´Ï´Ù.")]
+        [Tooltip("ì•½ì  íŒŒê´´ ì‹œ ì´ ì˜¤ë¸Œì íŠ¸ì˜ Colliderë“¤ì„ ë•ë‹ˆë‹¤.")]
         [SerializeField] private bool _disableCollidersOnBreak = true;
 
-        [Tooltip("true¸é ¾àÁ¡ ÆÄ±« ÈÄ ÀÌ GameObject¸¦ DestroyÇÕ´Ï´Ù.")]
+        [Tooltip("trueë©´ ì•½ì  íŒŒê´´ í›„ ì´ GameObjectë¥¼ Destroyí•©ë‹ˆë‹¤.")]
         [SerializeField] private bool _destroyGameObjectOnBreak = false;
 
         [Min(0f)]
@@ -53,7 +53,7 @@ namespace KillRitual.Enemies
 
         [SerializeField] private GameObject _breakVfxPrefab;
 
-        [Header("ÀÚµ¿ ¼öÁı")]
+        [Header("ìë™ ìˆ˜ì§‘")]
         [SerializeField] private Renderer[] _renderers;
         [SerializeField] private Collider[] _colliders;
 

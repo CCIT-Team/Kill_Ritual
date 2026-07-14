@@ -14,44 +14,44 @@ namespace KillRitual.Enemies.Projectiles
         [SerializeField] private float _lifeTime = 3f;
 
         [Header("Arming")]
-        [Tooltip("���� ���� �� �ð� ������ �浹/���� ������ ���� �ʽ��ϴ�. ���� ��ġ �ֺ� �ݶ��̴��� �ٷ� ������ ���� ������.")]
+        [Tooltip("발사 직후 이 시간 동안은 충돌/폭발 판정을 하지 않아, 발사 위치 주변 콜라이더에 바로 맞아버리는 것을 방지합니다.")]
         [Min(0f)]
         [SerializeField] private float _armDelay = 0.05f;
 
-        [Tooltip("���� ��ġ���� �� �Ÿ���ŭ �̵��ϱ� �������� �浹/���� ������ ���� �ʽ��ϴ�.")]
+        [Tooltip("발사 위치에서 이 거리만큼 이동하기 전까지는 충돌/폭발 판정을 하지 않습니다.")]
         [Min(0f)]
         [SerializeField] private float _armDistance = 0.6f;
 
         [Header("Hit Check")]
-        [Tooltip("����ź�� �浹�� �� �ִ� ���̾�. Enemy, Boss, Ground ���� �����ϼ���. Player, Projectile, EnemyProjectile�� ���� �� �����մϴ�.")]
+        [Tooltip("무령탄이 충돌할 수 있는 레이어로, Enemy/Boss/Ground 등을 포함하고 Player/Projectile/EnemyProjectile은 제외해야 합니다.")]
         [SerializeField] private LayerMask _hitMask = ~0;
 
-        [Tooltip("���� ����ü�� ���� �հ� �������� �ʵ��� �ϴ� SphereCast �ݰ�.")]
+        [Tooltip("얇은 투사체가 작은 틈을 그냥 통과해버리지 않도록 하는 SphereCast 반경입니다.")]
         [Min(0.01f)]
         [SerializeField] private float _hitRadius = 0.35f;
 
         [Header("Damage")]
-        [Tooltip("����ź�� ������. ���� Ÿ�ݰ� ���� ��� �� ���� ����մϴ�.")]
+        [Tooltip("무령탄의 데미지로, 직격 타격과 폭발 피해 모두 이 값을 그대로 사용합니다.")]
         [Min(0f)]
         [SerializeField] private float _damage = 30f;
 
         [SerializeField] private KRDamageType _damageType = KRDamageType.Fire;
 
         [Header("Explosion")]
-        [Tooltip("���� ������ ��/��/������ ����� �� �����մϴ�.")]
+        [Tooltip("켜면 명중 시 직격 대신 범위 폭발 피해를 입힙니다.")]
         [SerializeField] private bool _explodeOnHit = true;
 
-        [Tooltip("���� �ݰ�. Explode On Hit�� ���� ���� ���� ���˴ϴ�.")]
+        [Tooltip("폭발 반경으로, Explode On Hit가 켜져 있을 때만 적용됩니다.")]
         [Min(0f)]
         [SerializeField] private float _explosionRadius = 2.5f;
 
-        [Tooltip("���� �������� ���� ���̾�. ���� Enemy, Boss�� �ְ� Ground�� ������.")]
+        [Tooltip("폭발 피해를 받는 대상 레이어로, 보통 Enemy/Boss를 넣고 Ground는 제외합니다.")]
         [SerializeField] private LayerMask _explosionDamageMask = ~0;
 
-        [Tooltip("���� �ð�ȿ�� ������. ����θ� �������� ����˴ϴ�.")]
+        [Tooltip("폭발 시각효과 프리팹으로, 비워두면 생성되지 않습니다.")]
         [SerializeField] private GameObject _explosionVfxPrefab;
 
-        [Tooltip("���� VFX �ڵ� ���� �ð�. ��ƼŬ�� ��ü ���ŵǸ� 0���� �ֵ� �˴ϴ�.")]
+        [Tooltip("폭발 VFX 자동 파괴 시간으로, 파티클이 스스로 사라지면 0으로 두어도 됩니다.")]
         [Min(0f)]
         [SerializeField] private float _explosionVfxLifeTime = 2f;
 
@@ -96,8 +96,7 @@ namespace KillRitual.Enemies.Projectiles
             Vector3 startPosition = transform.position;
             Vector3 nextPosition = startPosition + _direction * moveDistance;
 
-            // ���� ���Ŀ��� ���� �̵��� ��Ŵ.
-            // �� �������� SphereCast�� ���� �����Ƿ� �ݻ� ���� �ٷ� �������� ����.
+            // 착탄 판정이 아직 활성화되지 않은 동안에는 SphereCast 없이 이동만 시킵니다.
             if (!IsArmed())
             {
                 transform.position = nextPosition;
@@ -186,8 +185,7 @@ namespace KillRitual.Enemies.Projectiles
             if (impactPoint == Vector3.zero)
                 impactPoint = transform.position;
 
-            // ������ ������ "���� Ÿ�� ������"�� �ƴ϶� ���� �������� ó��.
-            // ��, ������ ��� ���� �����ϰ�, ���� ���� �� ����� ���ظ� ����.
+            // 폭발은 직접 타격 데미지가 아닌 별도 범위 처리로, 명중 대상 하나만 보지 않고 범위 안 모든 대상에게 피해를 줍니다.
             if (_explodeOnHit && _explosionRadius > 0f)
             {
                 SpawnExplosionVfx(impactPoint, hit.normal);

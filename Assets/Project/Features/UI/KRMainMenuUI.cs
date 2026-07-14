@@ -92,7 +92,7 @@ namespace KillRitual.UI
 
             if (string.IsNullOrWhiteSpace(targetSceneName))
             {
-                Debug.LogError("[KRMainMenuUI] Target Scene NameÀÌ ºñ¾î ÀÖ½À´Ï´Ù.");
+                Debug.LogError("[KRMainMenuUI] Target Scene Nameì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤.");
                 isTransitioning = false;
                 SetMainButtonsInteractable(true);
                 yield break;
@@ -111,18 +111,7 @@ namespace KillRitual.UI
 
         private string ResolveStartTargetScene()
         {
-            /*
-             * Áö±İÀº »õ °ÔÀÓ ½ÃÀÛ¸¸ Ã³¸®.
-             *
-             * ³ªÁß¿¡ ¼¼ÀÌºê¸¦ ºÙÀÌ¸é ¿©±â¸¸ ¹Ù²Ù¸é µÊ.
-             *
-             * ¿¹½Ã:
-             * if (KRSaveManager.HasSave())
-             *     return KRSaveManager.GetLastSavedSceneName();
-             *
-             * return firstPlayableSceneName;
-             */
-
+            // ì§€ê¸ˆì€ ìƒˆ ê²Œì„ ì‹œì‘ë§Œ ì²˜ë¦¬í•˜ë©°, ë‚˜ì¤‘ì— ì„¸ì´ë¸Œ ê¸°ëŠ¥ì„ ë¶™ì´ë©´ ì´ ë©”ì„œë“œë§Œ ìˆ˜ì •í•˜ë©´ ëœë‹¤.
             return firstPlayableSceneName;
         }
 

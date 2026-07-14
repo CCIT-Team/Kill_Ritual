@@ -8,42 +8,42 @@ namespace KillRitual.Enemies
 {
     public sealed class KRHybridMeleeRangedEnemy : KREnemyBase
     {
-        [Header("°ø°İ °Å¸®")]
-        [Tooltip("ÀÌ °Å¸® ¾È¿¡ ÇÃ·¹ÀÌ¾î°¡ ÀÖÀ¸¸é ¿ø°Å¸® °ø°İ »óÅÂ·Î µé¾î°©´Ï´Ù.")]
+        [Header("ê³µê²© ê±°ë¦¬")]
+        [Tooltip("ì´ ê±°ë¦¬ ì•ˆì— í”Œë ˆì´ì–´ê°€ ìˆìœ¼ë©´ ì›ê±°ë¦¬ ê³µê²© ìƒíƒœë¡œ ë“¤ì–´ê°‘ë‹ˆë‹¤.")]
         [Min(1f)]
         [SerializeField] private float _rangedAttackRange = 15f;
 
-        [Tooltip("ÀÌ °Å¸® ¾È¿¡ ÇÃ·¹ÀÌ¾î°¡ ÀÖÀ¸¸é ¿ø°Å¸® ´ë½Å ±ÙÁ¢ °ø°İÀ» »ç¿ëÇÕ´Ï´Ù.")]
+        [Tooltip("ì´ ê±°ë¦¬ ì•ˆì— í”Œë ˆì´ì–´ê°€ ìˆìœ¼ë©´ ì›ê±°ë¦¬ ëŒ€ì‹  ê·¼ì ‘ ê³µê²©ì„ ì‚¬ìš©í•©ë‹ˆë‹¤.")]
         [Min(0.1f)]
         [SerializeField] private float _meleeAttackRange = 2.2f;
 
-        [Tooltip("±ÙÁ¢ »ç°Å¸® ÆÇÁ¤ ¿©À¯°ªÀÔ´Ï´Ù.")]
+        [Tooltip("ê·¼ì ‘ ì‚¬ê±°ë¦¬ íŒì • ì—¬ìœ ê°’ì…ë‹ˆë‹¤.")]
         [Min(0f)]
         [SerializeField] private float _meleeAttackRangeBuffer = 0.2f;
 
-        [Tooltip("¿ø°Å¸® »ç°Å¸® ÆÇÁ¤ ¿©À¯°ªÀÔ´Ï´Ù.")]
+        [Tooltip("ì›ê±°ë¦¬ ì‚¬ê±°ë¦¬ íŒì • ì—¬ìœ ê°’ì…ë‹ˆë‹¤.")]
         [Min(0f)]
         [SerializeField] private float _rangedAttackRangeBuffer = 0.75f;
 
-        [Header("±ÙÁ¢ °ø°İ - KRFodderMelee2 ¹æ½Ä")]
-        [Tooltip("°ø°İ °£°İ(ÃÊ). ÀÌ ½Ã°£¸¶´Ù ÇÑ ¹ø¾¿ ±ÙÁ¢ °ø°İ ¾Ö´Ï¸ŞÀÌ¼ÇÀ» ½ÃÀÛÇÕ´Ï´Ù.")]
+        [Header("ê·¼ì ‘ ê³µê²© - KRFodderMelee2 ë°©ì‹")]
+        [Tooltip("ê³µê²© ê°„ê²©(ì´ˆ). ì´ ì‹œê°„ë§ˆë‹¤ í•œ ë²ˆì”© ê·¼ì ‘ ê³µê²© ì• ë‹ˆë©”ì´ì…˜ì„ ì‹œì‘í•©ë‹ˆë‹¤.")]
         [Min(0.1f)]
         [SerializeField] private float _meleeAttackCooldown = 1.2f;
 
-        [Tooltip("ÇÑ ¹ø ¶§¸± ¶§ ÁÖ´Â µ¥¹ÌÁö.")]
+        [Tooltip("í•œ ë²ˆ ë•Œë¦´ ë•Œ ì£¼ëŠ” ë°ë¯¸ì§€.")]
         [Min(0f)]
         [SerializeField] private float _meleeAttackDamage = 10f;
 
-        [Tooltip("°ø°İ ¾Ö´Ï¸ŞÀÌ¼Ç ÀÌº¥Æ®°¡ ´©¶ôµÆÀ» ¶§ °ø°İ ´ë±â »óÅÂ¸¦ °­Á¦·Î ÇØÁ¦ÇÏ´Â ½Ã°£ÀÔ´Ï´Ù. µ¥¹ÌÁö´Â ³ÖÁö ¾Ê½À´Ï´Ù.")]
+        [Tooltip("ê³µê²© ì• ë‹ˆë©”ì´ì…˜ ì´ë²¤íŠ¸ê°€ ëˆ„ë½ëì„ ë•Œ ê³µê²© ëŒ€ê¸° ìƒíƒœë¥¼ ê°•ì œë¡œ í•´ì œí•˜ëŠ” ì‹œê°„ì…ë‹ˆë‹¤. ë°ë¯¸ì§€ëŠ” ë„£ì§€ ì•ŠìŠµë‹ˆë‹¤.")]
         [Min(0.1f)]
         [SerializeField] private float _meleeAttackEventTimeout = 1.5f;
 
-        [Tooltip("°ø°İ ÆÇÁ¤ ±¸(Gizmo)¿Í µ¥¹ÌÁö°¡ ¹ß»ıÇÏ´Â ÁöÁ¡ÀÇ ³ôÀÌ¸¦ À§·Î ¿Ã¸®´Â º¸Á¤°ªÀÔ´Ï´Ù.")]
+        [Tooltip("ê³µê²© íŒì • êµ¬(Gizmo)ì™€ ë°ë¯¸ì§€ê°€ ë°œìƒí•˜ëŠ” ì§€ì ì˜ ë†’ì´ë¥¼ ìœ„ë¡œ ì˜¬ë¦¬ëŠ” ë³´ì •ê°’ì…ë‹ˆë‹¤.")]
         [SerializeField] private float _meleeAttackHeightOffset = 1f;
 
         private Vector3 MeleeAttackOrigin => transform.position + Vector3.up * _meleeAttackHeightOffset;
 
-        [Header("¿ø°Å¸® °ø°İ")]
+        [Header("ì›ê±°ë¦¬ ê³µê²©")]
         [Min(0.1f)]
         [SerializeField] private float _rangedCooldown = 1.6f;
 
@@ -53,74 +53,74 @@ namespace KillRitual.Enemies
         [Min(1f)]
         [SerializeField] private float _projectileSpeed = 12f;
 
-        [Tooltip("¿ø°Å¸® °ø°İ ½ÃÀÛ ÈÄ Ã¹ Åõ»çÃ¼°¡ ³ª°¡´Â ½Ã°£ÀÔ´Ï´Ù. ÀÌº¥Æ®°¡ ¾øÀ» ¶§¸¸ fallbackÀ¸·Î »ç¿ëµË´Ï´Ù.")]
+        [Tooltip("ì›ê±°ë¦¬ ê³µê²© ì‹œì‘ í›„ ì²« íˆ¬ì‚¬ì²´ê°€ ë‚˜ê°€ëŠ” ì‹œê°„ì…ë‹ˆë‹¤. ì´ë²¤íŠ¸ê°€ ì—†ì„ ë•Œë§Œ fallbackìœ¼ë¡œ ì‚¬ìš©ë©ë‹ˆë‹¤.")]
         [Min(0f)]
         [SerializeField] private float _rangedFireDelay = 0.35f;
 
-        [Tooltip("¿ø°Å¸® °ø°İ Áß »õ °ø°İ/ÀÌµ¿ ÀüÈ¯À» ¸·´Â ½Ã°£ÀÔ´Ï´Ù. ¿¬»ç ÀüÃ¼ ½Ã°£º¸´Ù ±æ¾î¾ß ÇÕ´Ï´Ù.")]
+        [Tooltip("ì›ê±°ë¦¬ ê³µê²© ì¤‘ ìƒˆ ê³µê²©/ì´ë™ ì „í™˜ì„ ë§‰ëŠ” ì‹œê°„ì…ë‹ˆë‹¤. ì—°ì‚¬ ì „ì²´ ì‹œê°„ë³´ë‹¤ ê¸¸ì–´ì•¼ í•©ë‹ˆë‹¤.")]
         [Min(0.05f)]
         [SerializeField] private float _rangedAttackLockDuration = 1.0f;
 
-        [Tooltip("ÇÑ ¹ø ¿ø°Å¸® °ø°İÇÒ ¶§ ¿¬»çÇÒ Åõ»çÃ¼ ¼öÀÔ´Ï´Ù.")]
+        [Tooltip("í•œ ë²ˆ ì›ê±°ë¦¬ ê³µê²©í•  ë•Œ ì—°ì‚¬í•  íˆ¬ì‚¬ì²´ ìˆ˜ì…ë‹ˆë‹¤.")]
         [Min(1)]
         [SerializeField] private int _projectileCount = 5;
 
-        [Tooltip("¿¬»çÇÒ ¶§ ¹ß»ç °£°İÀÔ´Ï´Ù.")]
+        [Tooltip("ì—°ì‚¬í•  ë•Œ ë°œì‚¬ ê°„ê²©ì…ë‹ˆë‹¤.")]
         [Min(0.01f)]
         [SerializeField] private float _projectileBurstInterval = 0.08f;
 
-        [Tooltip("Åõ»çÃ¼µéÀÌ ÁÂ¿ì·Î ÆÛÁö´Â ÀüÃ¼ °¢µµÀÔ´Ï´Ù.")]
+        [Tooltip("íˆ¬ì‚¬ì²´ë“¤ì´ ì¢Œìš°ë¡œ í¼ì§€ëŠ” ì „ì²´ ê°ë„ì…ë‹ˆë‹¤.")]
         [Range(0f, 90f)]
         [SerializeField] private float _projectileSpreadAngle = 18f;
 
-        [Header("¹ß»çÃ¼ ÇÁ¸®ÆÕ")]
-        [Tooltip("ºñ¿öµÎ¸é ÄÚµå°¡ ÀÚµ¿À¸·Î ÀÛÀº ±¸¸¦ ¸¸µé¾î ¹ß»çÇÕ´Ï´Ù.")]
+        [Header("ë°œì‚¬ì²´ í”„ë¦¬íŒ¹")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ ì½”ë“œê°€ ìë™ìœ¼ë¡œ ì‘ì€ êµ¬ë¥¼ ë§Œë“¤ì–´ ë°œì‚¬í•©ë‹ˆë‹¤.")]
         [SerializeField] private GameObject _projectilePrefab;
 
-        [Tooltip("¸ÓÁñ Æ÷ÀÎÆ®°¡ ¾øÀ» ¶§ transform.position ±âÁØÀ¸·Î ¹ß»ç À§Ä¡¸¦ À§·Î ¿Ã¸®´Â °ªÀÔ´Ï´Ù.")]
+        [Tooltip("ë¨¸ì¦ í¬ì¸íŠ¸ê°€ ì—†ì„ ë•Œ transform.position ê¸°ì¤€ìœ¼ë¡œ ë°œì‚¬ ìœ„ì¹˜ë¥¼ ìœ„ë¡œ ì˜¬ë¦¬ëŠ” ê°’ì…ë‹ˆë‹¤.")]
         [SerializeField] private float _muzzleHeightOffset = 1.1f;
 
-        [Tooltip("ÁöÁ¤ÇÏ¸é ÀÌ TransformÀÇ À§Ä¡¸¦ ¹ß»ç ±âÁØÁ¡À¸·Î »ç¿ëÇÕ´Ï´Ù.")]
+        [Tooltip("ì§€ì •í•˜ë©´ ì´ Transformì˜ ìœ„ì¹˜ë¥¼ ë°œì‚¬ ê¸°ì¤€ì ìœ¼ë¡œ ì‚¬ìš©í•©ë‹ˆë‹¤.")]
         [SerializeField] private Transform _muzzlePoint;
 
-        [Tooltip("¹ß»çÃ¼°¡ ¸ó½ºÅÍ/¸ÓÁñ Collider ¾È¿¡¼­ »ı¼ºµÇÁö ¾Êµµ·Ï ¹ß»ç ¹æÇâÀ¸·Î ¹Ğ¾î³»´Â °Å¸®ÀÔ´Ï´Ù.")]
+        [Tooltip("ë°œì‚¬ì²´ê°€ ëª¬ìŠ¤í„°/ë¨¸ì¦ Collider ì•ˆì—ì„œ ìƒì„±ë˜ì§€ ì•Šë„ë¡ ë°œì‚¬ ë°©í–¥ìœ¼ë¡œ ë°€ì–´ë‚´ëŠ” ê±°ë¦¬ì…ë‹ˆë‹¤.")]
         [Min(0f)]
         [SerializeField] private float _projectileSpawnForwardOffset = 0.65f;
 
-        [Tooltip("¹ß»çÃ¼ ÇÁ¸®ÆÕÀÇ ÃàÀÌ ÁøÇà ¹æÇâ°ú ¸ÂÁö ¾ÊÀ» ¶§ º¸Á¤ÇÏ´Â Ãß°¡ È¸Àü°ªÀÔ´Ï´Ù.")]
+        [Tooltip("ë°œì‚¬ì²´ í”„ë¦¬íŒ¹ì˜ ì¶•ì´ ì§„í–‰ ë°©í–¥ê³¼ ë§ì§€ ì•Šì„ ë•Œ ë³´ì •í•˜ëŠ” ì¶”ê°€ íšŒì „ê°’ì…ë‹ˆë‹¤.")]
         [SerializeField] private Vector3 _projectileRotationOffset = Vector3.zero;
 
-        [Tooltip("¹ß»çÃ¼ ½ºÆù À§Ä¡¸¦ ¹Ì¼¼ Á¶Á¤ÇÏ´Â Ãß°¡ ¿ÀÇÁ¼ÂÀÔ´Ï´Ù. ¹ß»ç ¹æÇâ ±âÁØ ·ÎÄÃ ÁÂÇ¥ÀÔ´Ï´Ù.")]
+        [Tooltip("ë°œì‚¬ì²´ ìŠ¤í° ìœ„ì¹˜ë¥¼ ë¯¸ì„¸ ì¡°ì •í•˜ëŠ” ì¶”ê°€ ì˜¤í”„ì…‹ì…ë‹ˆë‹¤. ë°œì‚¬ ë°©í–¥ ê¸°ì¤€ ë¡œì»¬ ì¢Œí‘œì…ë‹ˆë‹¤.")]
         [SerializeField] private Vector3 _projectilePositionOffset = Vector3.zero;
 
-        [Tooltip("Ä¿½ºÅÒ ÇÁ¸®ÆÕ¿¡ Collider°¡ ¾øÀ» ¶§ ÀÚµ¿À¸·Î ºÙÀÏ SphereCollider ¹İÁö¸§ÀÔ´Ï´Ù.")]
+        [Tooltip("ì»¤ìŠ¤í…€ í”„ë¦¬íŒ¹ì— Colliderê°€ ì—†ì„ ë•Œ ìë™ìœ¼ë¡œ ë¶™ì¼ SphereCollider ë°˜ì§€ë¦„ì…ë‹ˆë‹¤.")]
         [Min(0.01f)]
         [SerializeField] private float _projectileColliderRadius = 0.3f;
 
-        [Header("¾Ö´Ï¸ŞÀÌ¼Ç")]
-        [Tooltip("ºñ¿öµÎ¸é ÀÚ½Ä ¿ÀºêÁ§Æ®¿¡¼­ ÀÚµ¿À¸·Î Animator¸¦ Ã£½À´Ï´Ù.")]
+        [Header("ì• ë‹ˆë©”ì´ì…˜")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ ìì‹ ì˜¤ë¸Œì íŠ¸ì—ì„œ ìë™ìœ¼ë¡œ Animatorë¥¼ ì°¾ìŠµë‹ˆë‹¤.")]
         [SerializeField] private Animator _animator;
 
-        [Tooltip("°È±â Bool ÆÄ¶ó¹ÌÅÍÀÔ´Ï´Ù.")]
+        [Tooltip("ê±·ê¸° Bool íŒŒë¼ë¯¸í„°ì…ë‹ˆë‹¤.")]
         [SerializeField] private string _isWalkingBoolName = "IsWalking";
 
-        [Tooltip("±ÙÁ¢ °ø°İ TriggerÀÔ´Ï´Ù. ±âÁ¸ FodderÃ³·³ ¾²·Á¸é AttackÀ¸·Î ¹Ù²Ù¼¼¿ä.")]
+        [Tooltip("ê·¼ì ‘ ê³µê²© Triggerì…ë‹ˆë‹¤. ê¸°ì¡´ Fodderì²˜ëŸ¼ ì“°ë ¤ë©´ Attackìœ¼ë¡œ ë°”ê¾¸ì„¸ìš”.")]
         [SerializeField] private string _meleeAttackTriggerName = "MeleeAttack";
 
-        [Tooltip("¿ø°Å¸® °ø°İ TriggerÀÔ´Ï´Ù. ±âÁ¸ µµ±úºñºÒ ±¸Á¶¿Í ¸ÂÃß±â À§ÇØ ±âº»°ªÀº AttackÀÔ´Ï´Ù.")]
+        [Tooltip("ì›ê±°ë¦¬ ê³µê²© Triggerì…ë‹ˆë‹¤. ê¸°ì¡´ ë„ê¹¨ë¹„ë¶ˆ êµ¬ì¡°ì™€ ë§ì¶”ê¸° ìœ„í•´ ê¸°ë³¸ê°’ì€ Attackì…ë‹ˆë‹¤.")]
         [SerializeField] private string _rangedAttackTriggerName = "Attack";
 
         [SerializeField] private string _groggyTriggerName = "Groggy";
         [SerializeField] private string _deadTriggerName = "IsDead";
 
-        [Header("¾àÁ¡ ÆÄ±« ±×·Î±â")]
+        [Header("ì•½ì  íŒŒê´´ ê·¸ë¡œê¸°")]
         [Min(0.1f)]
         [SerializeField] private float _defaultWeakPointGroggyDuration = 2.5f;
 
-        [Header("¼Ò¸ê/µğÁ¹ºê Animation Event Àü´Ş")]
+        [Header("ì†Œë©¸/ë””ì¡¸ë¸Œ Animation Event ì „ë‹¬")]
         [SerializeField] private bool _forwardDisintegrateAnimationEvents = true;
 
-        [Tooltip("ºñ¿öµÎ¸é ÀÚ±â ÀÚ½Å°ú Animator ¿ÀºêÁ§Æ®¿¡ ¸Ş½ÃÁö¸¦ º¸³À´Ï´Ù.")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ ìê¸° ìì‹ ê³¼ Animator ì˜¤ë¸Œì íŠ¸ì— ë©”ì‹œì§€ë¥¼ ë³´ëƒ…ë‹ˆë‹¤.")]
         [SerializeField] private GameObject[] _disintegrateMessageTargets;
 
         [SerializeField]
@@ -136,7 +136,7 @@ namespace KillRitual.Enemies
             "BeginDeathDissolve"
         };
 
-        [Header("µğ¹ö±×")]
+        [Header("ë””ë²„ê·¸")]
         [SerializeField] private bool _debugLog = false;
 
         private int _isWalkingBoolHash;
@@ -151,21 +151,21 @@ namespace KillRitual.Enemies
 
         private float _weakPointGroggyEndTime;
 
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-        // Melee: KRFodderMelee2¿Í °°Àº ´ë±â/ÀÌº¥Æ® ±¸Á¶
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Melee: KRFodderMelee2ì™€ ê°™ì€ ëŒ€ê¸°/ì´ë²¤íŠ¸ êµ¬ì¡°
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private float _nextMeleeAttackTime;
 
-        // °ø°İ ¾Ö´Ï¸ŞÀÌ¼ÇÀº ½ÃÀÛµÆÁö¸¸, ¾ÆÁ÷ µ¥¹ÌÁö ÀÌº¥Æ®°¡ µé¾î¿ÀÁö ¾ÊÀº »óÅÂ.
+        // ê³µê²© ì• ë‹ˆë©”ì´ì…˜ì€ ì‹œì‘ëì§€ë§Œ, ì•„ì§ ë°ë¯¸ì§€ ì´ë²¤íŠ¸ê°€ ë“¤ì–´ì˜¤ì§€ ì•Šì€ ìƒíƒœ.
         private bool _isWaitingForMeleeAttackEvent;
 
-        // Animation Event ´©¶ô ¹æÁö¿ë.
+        // Animation Event ëˆ„ë½ ë°©ì§€ìš©.
         private float _meleeAttackEventExpireTime;
 
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Ranged
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private bool _isRangedAttackActive;
         private bool _rangedProjectilesFired;
@@ -209,9 +209,9 @@ namespace KillRitual.Enemies
 
             if (_isWaitingForMeleeAttackEvent && Time.time >= _meleeAttackEventExpireTime)
             {
-                // KRFodderMelee2¿Í µ¿ÀÏ:
-                // ÀÌº¥Æ®°¡ ´©¶ôµÈ °æ¿ì, ´ÙÀ½ °ø°İÀÌ ´Ù½Ã °¡´ÉÇÏµµ·Ï ´ë±â »óÅÂ¸¸ ÇØÁ¦ÇÕ´Ï´Ù.
-                // ¿©±â¼­ µ¥¹ÌÁö¸¦ ³ÖÁö ¾Ê½À´Ï´Ù.
+                // KRFodderMelee2ì™€ ë™ì¼:
+                // ì´ë²¤íŠ¸ê°€ ëˆ„ë½ëœ ê²½ìš°, ë‹¤ìŒ ê³µê²©ì´ ë‹¤ì‹œ ê°€ëŠ¥í•˜ë„ë¡ ëŒ€ê¸° ìƒíƒœë§Œ í•´ì œí•©ë‹ˆë‹¤.
+                // ì—¬ê¸°ì„œ ë°ë¯¸ì§€ë¥¼ ë„£ì§€ ì•ŠìŠµë‹ˆë‹¤.
                 _isWaitingForMeleeAttackEvent = false;
             }
 
@@ -332,13 +332,13 @@ namespace KillRitual.Enemies
             StopMoving();
             SetWalking(false);
 
-            // ±ÙÁ¢ °ø°İ ÀÌº¥Æ® ´ë±â ÁßÀÌ¸é KRFodderMelee2¿Í µ¿ÀÏÇÏ°Ô »õ °ø°İÀ» ½ÃÀÛÇÏÁö ¾Ê½À´Ï´Ù.
+            // ê·¼ì ‘ ê³µê²© ì´ë²¤íŠ¸ ëŒ€ê¸° ì¤‘ì´ë©´ KRFodderMelee2ì™€ ë™ì¼í•˜ê²Œ ìƒˆ ê³µê²©ì„ ì‹œì‘í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.
             if (_isWaitingForMeleeAttackEvent)
             {
                 return;
             }
 
-            // ¿ø°Å¸® ¿¬»ç ÁßÀÌ¸é »õ °ø°İÀ» ½ÃÀÛÇÏÁö ¾Ê½À´Ï´Ù.
+            // ì›ê±°ë¦¬ ì—°ì‚¬ ì¤‘ì´ë©´ ìƒˆ ê³µê²©ì„ ì‹œì‘í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.
             if (_isRangedAttackActive || _rangedBurstRoutine != null)
             {
                 return;
@@ -381,9 +381,9 @@ namespace KillRitual.Enemies
             PlayTriggerIfExists(_groggyTriggerHash);
         }
 
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-        // Melee: KRFodderMelee2¿Í °°Àº ±¸Á¶
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Melee: KRFodderMelee2ì™€ ê°™ì€ êµ¬ì¡°
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void BeginMeleeAttack()
         {
@@ -401,7 +401,7 @@ namespace KillRitual.Enemies
             _meleeAttackEventExpireTime = Time.time + _meleeAttackEventTimeout;
             _nextMeleeAttackTime = Time.time + _meleeAttackCooldown;
 
-            // ±ÙÁ¢À¸·Î ÀüÈ¯µÇ´Â ¼ø°£ ¿ø°Å¸® ´ë±â/¿¬»ç¸¦ ²÷½À´Ï´Ù.
+            // ê·¼ì ‘ìœ¼ë¡œ ì „í™˜ë˜ëŠ” ìˆœê°„ ì›ê±°ë¦¬ ëŒ€ê¸°/ì—°ì‚¬ë¥¼ ëŠìŠµë‹ˆë‹¤.
             CancelRangedAttackOnly();
 
             SetAnimatorMeleeAttackTrigger();
@@ -477,9 +477,9 @@ namespace KillRitual.Enemies
             target.TakeDamage(context);
         }
 
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Ranged
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void BeginRangedAttack()
         {
@@ -739,9 +739,9 @@ namespace KillRitual.Enemies
             }
         }
 
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Animator
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void EnsureHashes()
         {
@@ -927,9 +927,9 @@ namespace KillRitual.Enemies
             PlayTriggerIfExists(_deadTriggerHash);
         }
 
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Death / Disintegrate Animation Event
-        // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public void AnimEvent_StartDisintegrate()
         {

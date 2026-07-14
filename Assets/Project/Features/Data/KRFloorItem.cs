@@ -17,19 +17,16 @@ namespace KillRitual.Items
         [SerializeField] private float _restoreAmount = 25f;
 
         [Header("흡수 설정")]
-        [Tooltip("이 거리 이하로 플레이어가 다가와야 회수(회복 적용 후 파괴/비활성화)됩니다. " +
-                 "높이(Y) 차이는 무시하고 수평(XZ) 거리만 기준으로 판정합니다.")]
+        [Tooltip("이 거리 이하로 플레이어가 다가오면(수평 거리 기준) 회수되어 회복이 적용됩니다.")]
         [Min(0.01f)]
         [SerializeField] private float _collectRange = 0.6f;
 
         [Header("전투 연동 (선택)")]
-        [Tooltip("켜면 KRCombatEndEvent(전투 종료) 발생 시 이 아이템도 함께 사라집니다. " +
-                 "레벨에 고정 배치된 아이템은 보통 전투와 무관하므로 기본값은 꺼짐입니다.")]
+        [Tooltip("켜면 전투 종료(KRCombatEndEvent) 시 이 아이템도 함께 사라집니다(기본값 꺼짐).")]
         [SerializeField] private bool _despawnOnCombatEnd = false;
 
         [Header("회수 후 처리")]
-        [Tooltip("체크하면 회수 시 오브젝트를 완전히 파괴합니다. 끄면 비활성화(SetActive(false))만 " +
-                 "하므로, 필요하다면 직접 다시 활성화해 재사용할 수 있습니다.")]
+        [Tooltip("체크하면 회수 시 오브젝트를 파괴하고, 끄면 비활성화만 해서 재사용할 수 있습니다.")]
         [SerializeField] private bool _destroyOnCollect = true;
 
         private Transform _player;

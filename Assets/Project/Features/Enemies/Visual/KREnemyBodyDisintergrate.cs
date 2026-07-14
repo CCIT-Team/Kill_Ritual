@@ -8,29 +8,29 @@ namespace KillRitual.Enemies.Visual
     public sealed class KREnemyBodyDisintegrate : MonoBehaviour
     {
         [Header("Target")]
-        [Tooltip("µğÁ¹ºê¸¦ Àû¿ëÇÒ ·»´õ·¯µéÀÇ ·çÆ®ÀÔ´Ï´Ù. ºñ¿öµÎ¸é ÀÌ ¿ÀºêÁ§Æ® ¾Æ·¡¿¡¼­ ÀÚµ¿ °Ë»öÇÕ´Ï´Ù.")]
+        [Tooltip("ë””ì¡¸ë¸Œë¥¼ ì ìš©í•  ë Œë”ëŸ¬ë“¤ì˜ ë£¨íŠ¸ì…ë‹ˆë‹¤. ë¹„ì›Œë‘ë©´ ì´ ì˜¤ë¸Œì íŠ¸ ì•„ë˜ì—ì„œ ìë™ ê²€ìƒ‰í•©ë‹ˆë‹¤.")]
         [SerializeField] private Transform _renderRoot;
 
-        [Tooltip("ParticleSystemRenderer´Â Á¦¿ÜÇÕ´Ï´Ù. º¸Åë ÄÑµÎ´Â °Ô ¸Â½À´Ï´Ù.")]
+        [Tooltip("ParticleSystemRendererëŠ” ì œì™¸í•©ë‹ˆë‹¤. ë³´í†µ ì¼œë‘ëŠ” ê²Œ ë§ìŠµë‹ˆë‹¤.")]
         [SerializeField] private bool _ignoreParticleRenderers = true;
 
         [Header("Shader")]
-        [Tooltip("KillRitual/BuiltIn/BodyDisintegrate ¼ÎÀÌ´õ¸¦ ¿¬°áÇÏ¼¼¿ä.")]
+        [Tooltip("KillRitual/BuiltIn/BodyDisintegrate ì…°ì´ë”ë¥¼ ì—°ê²°í•˜ì„¸ìš”.")]
         [SerializeField] private Shader _disintegrateShader;
 
-        [Tooltip("½ÃÀÛÇÒ ¶§ ´ë»ó RendererÀÇ Material Shader¸¦ µğ½ºÀÎÆ¼±×·¹ÀÌ¼Ç ¼ÎÀÌ´õ·Î ±³Ã¼ÇÕ´Ï´Ù.")]
+        [Tooltip("ì‹œì‘í•  ë•Œ ëŒ€ìƒ Rendererì˜ Material Shaderë¥¼ ë””ìŠ¤ì¸í‹°ê·¸ë ˆì´ì…˜ ì…°ì´ë”ë¡œ êµì²´í•©ë‹ˆë‹¤.")]
         [SerializeField] private bool _replaceShaderOnAwake = true;
 
         [Header("Timing")]
-        [Tooltip("¸öÀÌ ¿ÏÀüÈ÷ °¡·çÃ³·³ »ç¶óÁö´Â µ¥ °É¸®´Â ½Ã°£.")]
+        [Tooltip("ëª¸ì´ ì™„ì „íˆ ê°€ë£¨ì²˜ëŸ¼ ì‚¬ë¼ì§€ëŠ” ë° ê±¸ë¦¬ëŠ” ì‹œê°„.")]
         [Min(0.05f)]
         [SerializeField] private float _duration = 0.65f;
 
-        [Tooltip("µğÁ¹ºê ½ÃÀÛ Àü ´ë±â ½Ã°£. Animation Event·Î Á¤È®È÷ Á¦¾îÇÒ °Å¸é 0À¸·Î µÎ¼¼¿ä.")]
+        [Tooltip("ë””ì¡¸ë¸Œ ì‹œì‘ ì „ ëŒ€ê¸° ì‹œê°„. Animation Eventë¡œ ì •í™•íˆ ì œì–´í•  ê±°ë©´ 0ìœ¼ë¡œ ë‘ì„¸ìš”.")]
         [Min(0f)]
         [SerializeField] private float _startDelay = 0f;
 
-        [Tooltip("¿ÏÀüÈ÷ »ç¶óÁø µÚ Renderer¸¦ ²¨¼­ ³²Àº ÀÜ»óÀ» Á¦°ÅÇÕ´Ï´Ù.")]
+        [Tooltip("ì™„ì „íˆ ì‚¬ë¼ì§„ ë’¤ Rendererë¥¼ êº¼ì„œ ë‚¨ì€ ì”ìƒì„ ì œê±°í•©ë‹ˆë‹¤.")]
         [SerializeField] private bool _disableRenderersAfterFinish = true;
 
         [Header("Look")]
@@ -44,7 +44,7 @@ namespace KillRitual.Enemies.Visual
         private AnimationCurve _dissolveCurve =
             AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
-        [Tooltip("°¡·ç °æ°è¼± »ö. ÀÏ¹İ ÀûÀº È¸»ö/±İ»ö, ¿µÈ¥ °è¿­Àº º¸¶ó/Ã»»ö ÃßÃµ.")]
+        [Tooltip("ê°€ë£¨ ê²½ê³„ì„  ìƒ‰. ì¼ë°˜ ì ì€ íšŒìƒ‰/ê¸ˆìƒ‰, ì˜í˜¼ ê³„ì—´ì€ ë³´ë¼/ì²­ìƒ‰ ì¶”ì²œ.")]
         [SerializeField] private Color _edgeColor = new Color(1f, 0.65f, 0.25f, 1f);
 
         [Min(0f)]
@@ -56,11 +56,11 @@ namespace KillRitual.Enemies.Visual
         [Min(0.01f)]
         [SerializeField] private float _noiseScale = 18f;
 
-        [Tooltip("µğÁ¹ºê °æ°è°¡ »ìÂ¦ ¸ö ¹Ù±ùÀ¸·Î ¹Ğ·Á³ª°¡´Â Á¤µµ.")]
+        [Tooltip("ë””ì¡¸ë¸Œ ê²½ê³„ê°€ ì‚´ì§ ëª¸ ë°”ê¹¥ìœ¼ë¡œ ë°€ë ¤ë‚˜ê°€ëŠ” ì •ë„.")]
         [Min(0f)]
         [SerializeField] private float _normalPush = 0.04f;
 
-        [Tooltip("µğÁ¹ºê °æ°è°¡ À§·Î Èğ¾îÁö´Â Á¤µµ.")]
+        [Tooltip("ë””ì¡¸ë¸Œ ê²½ê³„ê°€ ìœ„ë¡œ í©ì–´ì§€ëŠ” ì •ë„.")]
         [Min(0f)]
         [SerializeField] private float _upPush = 0.08f;
 

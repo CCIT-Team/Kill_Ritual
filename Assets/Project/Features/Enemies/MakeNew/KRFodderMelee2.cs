@@ -8,8 +8,7 @@ namespace KillRitual.Enemies
     public sealed class KRFodderMelee2 : KREnemyBase
     {
         [Header("근접 공격")]
-        [Tooltip("이 거리 안에 플레이어가 있으면 공격을 시작합니다(공격 사거리). " +
-                 "감지 범위(_detectRange)보다 훨씬 작아야 합니다. 예: 1.5~2.5.")]
+        [Tooltip("이 거리 안에 플레이어가 있으면 공격을 시작하며, 감지 범위보다 훨씬 작아야 합니다(예: 1.5~2.5).")]
         [Min(0.1f)]
         [SerializeField] private float _attackRange = 2f;
 
@@ -21,19 +20,15 @@ namespace KillRitual.Enemies
         [Min(0f)]
         [SerializeField] private float _attackDamage = 10f;
 
-        [Tooltip("공격 사거리보다 플레이어가 살짝 더 안쪽에 있어도 때릴 수 있도록 주는 여유값(오차 보정). " +
-                 "0으로 두어도 무방합니다.")]
+        [Tooltip("공격 사거리 오차를 보정하는 여유값으로, 0으로 두어도 무방합니다.")]
         [Min(0f)]
         [SerializeField] private float _attackRangeBuffer = 0.2f;
 
         [Header("애니메이션")]
-        [Tooltip("이 몬스터의 애니메이션을 재생하는 Animator 컴포넌트입니다. " +
-                 "보통 자식 오브젝트(모델)에 붙어있는 Animator를 여기로 드래그해서 연결하세요. " +
-                 "비워두면 애니메이션 없이도 정상 동작합니다(에러 안 남).")]
+        [Tooltip("이 몬스터의 애니메이션을 재생하는 Animator로, 비워두면 애니메이션 없이도 정상 동작합니다.")]
         [SerializeField] private Animator _animator;
 
-        [Tooltip("공격 애니메이션 이벤트가 누락됐을 때 공격 대기 상태를 강제로 해제하는 시간입니다. " +
-                 "이 값이 없으면 Animation Event를 빼먹었을 때 몬스터가 공격 대기 상태에 갇힐 수 있습니다.")]
+        [Tooltip("공격 애니메이션 이벤트가 누락됐을 때 공격 대기 상태를 강제로 해제하는 시간입니다.")]
         [Min(0.1f)]
         [SerializeField] private float _attackEventTimeout = 1.5f;
 
@@ -42,9 +37,7 @@ namespace KillRitual.Enemies
         private static readonly int AnimParamIsDead = Animator.StringToHash("IsDead");
 
         [Header("공격 판정 위치 보정")]
-        [Tooltip("공격 판정 구(Gizmo)와 데미지가 발생하는 지점의 높이를 위로 올리는 보정값입니다. " +
-                 "몬스터 발밑(원점) 기준이 아니라 몸통/가슴 높이쯤에서 공격이 나가는 것처럼 보이게 하고 싶을 때 조절하세요. " +
-                 "0으로 두면 기존과 동일하게 발밑 기준입니다.")]
+        [Tooltip("공격 판정과 데미지 발생 지점의 높이를 발밑 기준에서 위로 올리는 보정값입니다(0이면 발밑 기준).")]
         [SerializeField] private float _attackHeightOffset = 1f;
 
         private Vector3 AttackOrigin => transform.position + Vector3.up * _attackHeightOffset;
@@ -66,9 +59,7 @@ namespace KillRitual.Enemies
 
             if (_isWaitingForAttackEvent && Time.time >= _attackEventExpireTime)
             {
-                // 이벤트가 누락된 경우, 다음 공격이 다시 가능하도록 대기 상태만 해제합니다.
-                // 여기서 데미지를 넣지 않는 이유:
-                // 데미지 타이밍을 Animation Event로 통제하려는 목적과 충돌하기 때문입니다.
+                // 데미지 타이밍은 Animation Event가 통제하므로, 이벤트 누락 시 여기서는 대기 상태만 해제합니다.
                 _isWaitingForAttackEvent = false;
             }
         }
@@ -145,8 +136,7 @@ namespace KillRitual.Enemies
             StopMoving();
             SetAnimatorMoving(false);
 
-            // 이미 공격 애니메이션 이벤트를 기다리는 중이면 새 공격을 시작하지 않습니다.
-            // 이걸 막지 않으면 Attack Trigger가 겹치고, 데미지 이벤트도 꼬일 수 있습니다.
+            // 이미 공격 애니메이션 이벤트를 기다리는 중이면 Trigger가 겹치지 않도록 새 공격을 시작하지 않습니다.
             if (_isWaitingForAttackEvent)
             {
                 return;

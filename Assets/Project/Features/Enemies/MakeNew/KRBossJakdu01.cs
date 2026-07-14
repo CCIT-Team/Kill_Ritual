@@ -80,9 +80,7 @@ namespace KillRitual.Enemies
         [Range(1f, 3f)]
         [SerializeField] private float _sprintSpeedMultiplier = 1.6f;
 
-        [Tooltip("[2026-07-08 신규] '근거리 살살 접근' — 기준거리(_preferredDistance) 바로 바깥쪽, " +
-                 "이 폭(m)만큼의 구간에서는 뛰지 않고 걸어서 다가옵니다. 예: 기준거리 9, 이 값 3이면 " +
-                 "9~12m 구간에서만 Walk를 씁니다. 그보다 멀면 평소처럼 Run(또는 전력 질주)입니다.")]
+        [Tooltip("기준거리(_preferredDistance) 바로 바깥쪽 이 폭(m)만큼의 구간에서는 뛰지 않고 걸어서 다가옵니다.")]
         [Min(0f)]
         [SerializeField] private float _walkZoneWidth = 3f;
 
@@ -108,36 +106,16 @@ namespace KillRitual.Enemies
         [Min(0f)][SerializeField] private float _shardDamage = 15f;
         [SerializeField] private LayerMask _shardHitLayerMask = ~0;
         [SerializeField] private LayerMask _shardDamageableLayerMask = ~0;
-        [Tooltip("[2026-07-08 신규] '모션이랑 투사체 발사랑 싱크 안 맞아' 문제 수정 — Attack " +
-                 "트리거를 건 시점부터 실제로 철갑을 던지는(발사하는) 순간까지의 지연 시간입니다. " +
-                 "[2026-07-08 최종 수정] '모션과 동시에' 요청에 따라 0으로 맞췄습니다 — 트리거를 " +
-                 "건 바로 그 프레임(모션 시작과 동시)에 곧바로 발사됩니다.")]
+        [Tooltip("Attack 트리거를 건 시점부터 실제로 철갑을 발사하는 순간까지의 지연 시간입니다.")]
         [Min(0f)][SerializeField] private float _shardLaunchDelay = 0f;
-        [Tooltip("[2026-07-08 신규] '걷기 모션이 다시 빠졌다' 버그 수정 — 철갑을 던진 뒤 코루틴이 " +
-                 "끝날 때까지 추가로 기다리는 시간입니다. " +
-                 "[2026-07-08 수정 — '애니메이션이 캔슬되는거 같아서' 버그 재수정] 클립 실제 " +
-                 "프레임레이트가 30fps가 아니라 25fps(PAL, FBX에서 직접 확인)였습니다 — 그동안 " +
-                 "재생시간을 20% 짧게 계산해서, 공격1(2배속) 실제 종료(약 3.6초)보다 다음 패턴이 " +
-                 "먼저 잡혀서 애니메이션이 끝까지 재생되지 못하고 캔슬됐습니다. 1.3초로 늘려서 " +
-                 "(텔레그래프 0.35초 + 발사 0초 + 이 값 + 쿨다운 2.5초 = 약 4.15초) 실제 종료 " +
-                 "시점보다 확실히 뒤로 맞췄습니다.")]
+        [Tooltip("철갑을 던진 뒤 코루틴이 끝날 때까지 추가로 기다리는 시간으로, 공격 애니메이션이 캔슬되지 않도록 넉넉히 잡습니다.")]
         [Min(0f)][SerializeField] private float _shardRecoveryDelay = 1.3f;
         [Tooltip("2페이즈: 바닥에 꽂힌 철갑이 터지기까지의 지연 시간(초).")]
         [Min(0.1f)][SerializeField] private float _shardExplodeDelay = 1.5f;
         [Min(0.1f)][SerializeField] private float _shardExplosionRadius = 2.5f;
 
         [Header("패턴2 - 물기")]
-        [Tooltip("[2026-07-08 변경] 컨셉을 다시 '물기'로 확정했습니다(꼬리 휘두르기 → 물기). " +
-                 "판정 기준점도 '물기'에 맞게 머리(_head) 콜라이더 위치로 바꿨습니다(꼬리 기준이면 " +
-                 "'무는' 공격과 안 맞아서). 필드 이름(_trunk*)은 예전 그대로 남아있습니다.\n" +
-                 "[2026-07-07 각도 제한 삭제] 처음엔 몸 뒤쪽(-transform.forward)만 맞도록 각도까지 " +
-                 "제한했는데, 이러면 보통 정면에서 쫓아오다 이 패턴에 걸린 플레이어는 범위 안에 " +
-                 "있어도 거의 항상 안 맞는 버그가 됐습니다. 지금은 각도 제한 없이 꼬리 위치 기준 " +
-                 "원형 범위로 단순화되어 있습니다.\n" +
-                 "[2026-07-08 변경] '원거리공격은 10m 이상, 물기는 10m 미만' 요청 반영 — 이 값이 " +
-                 "이제 물기의 실제 타격 사거리일 뿐 아니라, 원거리(철갑발사)/물기/돌진 패턴 선택을 " +
-                 "가르는 근접·원거리 경계값 역할도 겸합니다(IsPatternViableAtDistance() 참고). " +
-                 "기본값을 6→10으로 올린 이유도 이것 하나입니다.")]
+        [Tooltip("머리 위치 기준 원형 범위로 판정하는 물기 사거리이며, 근접·원거리 패턴 선택 경계값도 겸합니다.")]
         [Min(0.05f)][SerializeField] private float _trunkWindup = 0.6f;
         [Min(0.5f)][SerializeField] private float _trunkStrikeRange = 10f;
         [Min(0f)][SerializeField] private float _trunkDamage = 25f;
@@ -147,7 +125,7 @@ namespace KillRitual.Enemies
         [Header("패턴3 - 돌진")]
         [Min(0.1f)][SerializeField] private float _chargeWindup = 1f;
         [Min(1f)][SerializeField] private float _chargeSpeed = 22f;
-        [Tooltip("[2026-07-08 수정] '돌진거리 두배까지 이동하게 해줘' 요청으로 20m → 40m로 늘렸습니다.")]
+        [Tooltip("돌진이 최대로 이동할 수 있는 거리입니다.")]
         [Min(1f)][SerializeField] private float _chargeMaxDistance = 40f;
         [Min(0f)][SerializeField] private float _chargeDamage = 30f;
         [Tooltip("벽 감지용 레이어 — 플레이어/적 레이어는 반드시 제외하세요. 지형/벽 레이어만 포함.")]
@@ -156,14 +134,9 @@ namespace KillRitual.Enemies
                  "정확한 Trigger 판정을 합니다.")]
         [SerializeField] private KRBossChargeHitbox _chargeHitbox;
         [Min(0.1f)][SerializeField] private float _wallStunDuration = 1.5f;
-        [Tooltip("[2026-07-07 신규] 돌진 중 벽에 부딪혔을 때 그 충격으로 앞다리(_frontLegs) 자신에게 " +
-                 "들어가는 자해 피해. 무리한 돌진을 반복하면 스스로 다리가 부러질 수 있게 하는 " +
-                 "리스크/리워드 장치입니다 — '돌진도 부위 파괴와 연동'해 달라는 요청 반영.")]
+        [Tooltip("돌진 중 벽에 부딪혔을 때 앞다리에 들어가는 자해 피해로, 무리한 돌진을 반복하면 다리가 부러질 수 있는 리스크 장치입니다.")]
         [Min(0f)][SerializeField] private float _chargeSelfDamageOnWallHit = 35f;
-        [Tooltip("[2026-07-07 신규] 돌진(및 벽 충돌 시 경직/2연속 돌진까지) 끝난 뒤, 플레이어 쪽으로 " +
-                 "다시 몸을 돌리는 데 걸리는 시간(초). 패턴 진행 중엔 FacePlayer가 멈춰 있으므로, " +
-                 "돌진 직후 남은 각도와 상관없이 항상 이 시간만큼 걸려서 천천히 재조준하도록 " +
-                 "코루틴으로 별도 처리합니다 — '뒤도는데 한 2초는 걸리면 좋겠다'는 요청 반영.")]
+        [Tooltip("돌진이 끝난 뒤 플레이어 쪽으로 다시 몸을 돌리는 데 걸리는 시간(초)입니다.")]
         [Min(0.1f)][SerializeField] private float _chargeTurnBackDuration = 2f;
 
         [Header("신규 패턴(2페이즈 전용) - 철갑 폭우")]
@@ -177,10 +150,8 @@ namespace KillRitual.Enemies
         [Tooltip("모든 패턴 예고(윈드업) 구간 동안 표시할 경고색.")]
         [SerializeField] private Color _telegraphColor = new Color(1f, 0.5f, 0f, 1f);
 
-        [Header("공격 범위 시각화 (2026-07-08 신규)")]
-        [Tooltip("'공격 범위를 시각적으로 보여달라'는 요청 반영 — 물기/철갑 폭우는 바닥에 원, " +
-                 "돌진은 바닥에 직선으로 실제 판정 범위를 예고~실행 구간 동안 표시합니다. " +
-                 "별도 머티리얼/프리팹 준비 없이 런타임에 LineRenderer를 자동 생성해서 씁니다.")]
+        [Header("공격 범위 시각화")]
+        [Tooltip("물기/철갑 폭우는 바닥에 원, 돌진은 직선으로 실제 판정 범위를 예고~실행 구간 동안 표시합니다.")]
         [SerializeField] private bool _showAttackRangeIndicator = true;
         [SerializeField] private Color _rangeIndicatorColor = new Color(1f, 0.15f, 0.1f, 0.9f);
         [Min(3)][SerializeField] private int _rangeCircleSegments = 48;
@@ -189,11 +160,7 @@ namespace KillRitual.Enemies
         [Min(0f)][SerializeField] private float _rangeIndicatorYOffset = 0.05f;
 
         [Header("애니메이션")]
-        [Tooltip("모델에 붙일 Animator. 비워두면 자식에서 자동으로 찾습니다. " +
-                 "[2026-07-07 신규] 새 모델(Four Legged Predator.fbx)에 실제로 들어있는 클립 7종 " +
-                 "(Idle/walk/Run/attack/Powerfull_attack/Roar/Sleeping) 중 Sleeping을 제외한 " +
-                 "6종을 아래 파라미터로 씁니다. KRBossMastodon.controller에 각 상태를 만들고 " +
-                 "이 클립들을 Motion으로 드래그해서 연결하세요.")]
+        [Tooltip("모델에 붙일 Animator로, 비워두면 자식에서 자동으로 찾습니다.")]
         [SerializeField] private Animator _visualAnimator;
         private static readonly int kSpeedParam = Animator.StringToHash("Speed");
         private static readonly int kAttackTrigger = Animator.StringToHash("Attack");
@@ -202,9 +169,7 @@ namespace KillRitual.Enemies
         private static readonly int kRunTrigger = Animator.StringToHash("Run");
 
         [Header("공격 모션 (프로시저럴)")]
-        [Tooltip("실제 스켈레탈 공격 애니메이션 클립 대신, 몸통 전체를 스케일/위치로 움찔거리게 " +
-                 "만들어 '준비 동작 → 타격 순간'의 느낌을 코드로 흉내냅니다(스쿼시-스트레치). " +
-                 "회전(Rotation)은 안 건드립니다 — FacePlayer()와 충돌하기 때문입니다.")]
+        [Tooltip("실제 애니메이션 클립 대신 몸통을 스케일/위치로 움찔거리게 해 준비 동작~타격 느낌을 코드로 흉내냅니다.")]
         [SerializeField] private bool _enableProceduralAttackMotion = true;
         private Vector3 _bodyBaseScale = Vector3.one;
 
@@ -223,8 +188,7 @@ namespace KillRitual.Enemies
         private LineRenderer _circleIndicator;
         private LineRenderer _chargeLineIndicator;
 
-        [Tooltip("'패턴진행중=True'가 이 시간(초)보다 오래 지속되면 강제로 초기화합니다. " +
-                 "플레이 모드 중 스크립트 수정으로 코루틴이 죽는 경우의 안전장치입니다.")]
+        [Tooltip("패턴 진행 중 상태가 이 시간(초)보다 오래 지속되면 강제로 초기화하는 안전장치입니다.")]
         [Min(3f)]
         [SerializeField] private float _patternStuckTimeoutSeconds = 12f;
 

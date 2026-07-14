@@ -15,13 +15,11 @@ namespace KillRitual.Weapons
         }
 
         [Header("산탄/탄퍼짐")]
-        [Tooltip("1회 발사당 생성되는 펠릿(레이) 개수. 1이면 일반 단발 무기, 2 이상이면 샷건류입니다. " +
-                 "KRRampingHitscanWeapon에서는 가속 시작 시점(최저 가속)의 펠릿 수로 사용됩니다.")]
+        [Tooltip("1회 발사당 생성되는 펠릿(레이) 개수로, 1이면 단발 무기이고 2 이상이면 샷건류이며 KRRampingHitscanWeapon에서는 가속 시작 시점의 펠릿 수로 쓰입니다.")]
         [Min(1)]
         [SerializeField] protected int _pelletCount = 1;
 
-        [Tooltip("탄퍼짐 콘(원뿔)의 전체 각도(도). 0이면 완전한 직사입니다. " +
-                 "KRRampingHitscanWeapon에서는 가속 시작 시점(최저 가속)의 탄퍼짐 각도로 사용됩니다.")]
+        [Tooltip("탄퍼짐 콘의 전체 각도(도)로, 0이면 완전한 직사이며 KRRampingHitscanWeapon에서는 가속 시작 시점의 탄퍼짐 각도로 쓰입니다.")]
         [Range(0f, 90f)]
         [SerializeField] protected float _spreadAngleDegrees = 0f;
 
@@ -33,8 +31,7 @@ namespace KillRitual.Weapons
         [Tooltip("발사 시 생성되는 총알 꼬리 프리팹. LineRenderer + KRHitscanTracer 컴포넌트가 필요합니다. 비워두면 시각효과 없이 발사만 처리됩니다.")]
         [SerializeField] private GameObject _tracerPrefab;
 
-        [Tooltip("트레이서가 화면에서 이동하는 속도(미터/초). 클수록 빨리 지나가서 짧게 보입니다. " +
-                 "충돌 지점에 도달하는 즉시 잔상 없이 사라집니다.")]
+        [Tooltip("트레이서가 화면에서 이동하는 속도(미터/초)로, 클수록 빨리 지나가서 짧게 보이며 충돌 지점 도달 즉시 잔상 없이 사라집니다.")]
         [Min(1f)]
         [SerializeField] private float _tracerVisualSpeed = 250f;
 
@@ -46,8 +43,7 @@ namespace KillRitual.Weapons
         [SerializeField] private Color _tracerColor = Color.white;
 
         [Header("오디오")]
-        [Tooltip("이 KRHitscanWeapon 인스턴스가 공격 유형 I인지, 공격 유형 II인지 지정합니다. " +
-                 "좌클릭용 무기 프리팹이면 AttackType1, 우클릭용 무기 프리팹이면 AttackType2로 설정합니다.")]
+        [Tooltip("이 인스턴스가 공격 유형 I/II 중 무엇인지 지정하며, 좌클릭용 무기는 AttackType1, 우클릭용 무기는 AttackType2로 설정합니다.")]
         [SerializeField] private KRFireAudioSlot _fireAudioSlot = KRFireAudioSlot.AttackType1;
 
         [Tooltip("공격 유형 I 발사음. 예: 화(火) 샷건, 목(木) 정밀소총, 토(土) 기본 연사.")]
@@ -63,13 +59,10 @@ namespace KillRitual.Weapons
         [Tooltip("발사음 피치 랜덤 범위. 반복 사격 시 완전히 같은 소리로 들리는 것을 줄입니다.")]
         [SerializeField] private Vector2 _fireAudioPitchRange = new Vector2(0.98f, 1.02f);
 
-        [Tooltip("체크하면 1인칭 무기처럼 화면 중앙에서 나는 2D 사운드로 출력합니다. " +
-                 "체크 해제하면 FirePoint 위치에서 나는 3D 사운드로 출력합니다.")]
+        [Tooltip("체크하면 화면 중앙에서 나는 2D 사운드로, 해제하면 FirePoint 위치에서 나는 3D 사운드로 출력합니다.")]
         [SerializeField] private bool _playFireAudioAs2D = true;
 
-        // 인스턴스 버퍼로 선언합니다. KRRampingHitscanWeapon처럼 코루틴으로 펠릿을 순차 발사할 때,
-        // yield 사이 프레임에 다른 무기 인스턴스가 static 버퍼를 덮어써서 결과가 오염되는 문제를
-        // 방지합니다. 단일 무기는 한 번에 하나의 레이캐스트만 수행하므로 인스턴스 버퍼로도 충분합니다.
+        // KRRampingHitscanWeapon처럼 코루틴으로 펠릿을 순차 발사할 때 다른 무기 인스턴스가 static 버퍼를 덮어쓰는 문제를 막기 위해 인스턴스 버퍼로 선언합니다.
         private readonly RaycastHit[] _hitscanBuffer = new RaycastHit[16];
 
         protected override void DoFire(float damagePerPellet)
@@ -105,8 +98,7 @@ namespace KillRitual.Weapons
                 return;
             }
 
-            // 전역 매니저가 아직 씬에 없을 때도 프로토타입 단계에서 최소한 소리가 나도록 하는 폴백입니다.
-            // 단, 이 방식은 AudioMixer를 거치지 않고 pitch도 적용되지 않습니다.
+            // 전역 매니저가 아직 씬에 없을 때 최소한 소리가 나도록 하는 폴백이며, AudioMixer와 pitch는 적용되지 않습니다.
             AudioSource.PlayClipAtPoint(clip, worldPosition, _fireAudioVolume);
         }
 

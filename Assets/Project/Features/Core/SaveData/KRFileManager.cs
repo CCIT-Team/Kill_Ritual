@@ -6,8 +6,7 @@ namespace KillRitual.Core.SaveData
 {
     public sealed class KRFileManager
     {
-        // 모든 세이브 파일은 플랫폼별 영구 저장 경로(Application.persistentDataPath) 하위의
-        // "SaveData" 폴더에 모아 관리합니다. (에디터/PC/콘솔/모바일에서 모두 쓰기 가능한 표준 경로)
+        // 모든 세이브 파일은 Application.persistentDataPath 하위 "SaveData" 폴더에 모아 관리합니다.
         private readonly string _saveDirectory;
 
         public KRFileManager()

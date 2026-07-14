@@ -6,11 +6,11 @@ namespace KillRitual
     public sealed class KRDashChargeUI : MonoBehaviour
     {
         [Header("Slot Fill Images")]
-        [Tooltip("´ë½Ã ½½·Ô Fill ImageµéÀÔ´Ï´Ù. ÃÖ´ë ´ë½Ã ¼ö¸¸Å­ ³ÖÀ¸¼¼¿ä.")]
+        [Tooltip("ëŒ€ì‹œ ìŠ¬ë¡¯ Fill Imageë“¤ì…ë‹ˆë‹¤. ìµœëŒ€ ëŒ€ì‹œ ìˆ˜ë§Œí¼ ë„£ìœ¼ì„¸ìš”.")]
         [SerializeField] private Image[] slotFills;
 
         [Header("Slot Size")]
-        [Tooltip("½½·Ô ÇÏ³ª°¡ °¡µæ Ã¡À» ¶§ÀÇ ³ÊºñÀÔ´Ï´Ù. 0ÀÌ¸é ½ÃÀÛ ½Ã °¢ FillÀÇ ÇöÀç ³Êºñ¸¦ »ç¿ëÇÕ´Ï´Ù.")]
+        [Tooltip("ìŠ¬ë¡¯ í•˜ë‚˜ê°€ ê°€ë“ ì°¼ì„ ë•Œì˜ ë„ˆë¹„ì…ë‹ˆë‹¤. 0ì´ë©´ ì‹œì‘ ì‹œ ê° Fillì˜ í˜„ì¬ ë„ˆë¹„ë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤.")]
         [Min(0f)]
         [SerializeField] private float slotMaxWidth = 0f;
 
@@ -64,12 +64,12 @@ namespace KillRitual
                 if (width <= 0.01f)
                 {
                     width = 32f;
-                    Debug.LogWarning("[KRDashChargeUI] ½½·Ô ³Êºñ¸¦ °¡Á®¿ÀÁö ¸øÇß½À´Ï´Ù. slotMaxWidth¸¦ Á÷Á¢ ÀÔ·ÂÇÏ¼¼¿ä.");
+                    Debug.LogWarning("[KRDashChargeUI] ìŠ¬ë¡¯ ë„ˆë¹„ë¥¼ ê°€ì ¸ì˜¤ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. slotMaxWidthë¥¼ ì§ì ‘ ì…ë ¥í•˜ì„¸ìš”.");
                 }
 
                 slotBaseWidths[i] = width;
 
-                // ½ÃÀÛ ½Ã¿¡´Â ¿ÏÃæ »óÅÂ·Î ¸ÂÃçµÒ.
+                // ì‹œì‘ ì‹œì—ëŠ” ì™„ì¶© ìƒíƒœë¡œ ë§ì¶°ë‘ .
                 SetSlotWidthRightToLeft(i, width);
             }
         }
@@ -121,9 +121,9 @@ namespace KillRitual
             Vector2 basePos = slotBasePositions[index];
             Vector2 pos = basePos;
 
-            // ¿À¸¥ÂÊ ³¡ °íÁ¤ °ø½Ä:
+            // ì˜¤ë¥¸ìª½ ë ê³ ì • ê³µì‹:
             // right = positionX + (1 - pivotX) * width
-            // ½ÃÀÛ ½Ã ¿À¸¥ÂÊ ³¡À» À¯ÁöÇÏ±â À§ÇØ positionX¸¦ º¸Á¤ÇÔ.
+            // ì‹œì‘ ì‹œ ì˜¤ë¥¸ìª½ ëì„ ìœ ì§€í•˜ê¸° ìœ„í•´ positionXë¥¼ ë³´ì •í•¨.
             pos.x = basePos.x + (1f - pivotX) * (baseWidth - width);
 
             rect.anchoredPosition = pos;

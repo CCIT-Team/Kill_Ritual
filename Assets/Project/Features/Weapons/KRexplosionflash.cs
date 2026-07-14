@@ -29,8 +29,7 @@ namespace KillRitual.Weapons
         {
             _renderer = GetComponent<Renderer>();
 
-            // Built-in 렌더 파이프라인 기준으로 Standard 셰이더만 탐색합니다.
-            // URP 셰이더는 Built-in에서 충돌을 일으킬 수 있으므로 제외합니다.
+            // Built-in 렌더 파이프라인 기준으로 Standard 셰이더만 탐색하며, 충돌을 일으킬 수 있는 URP 셰이더는 제외합니다.
             Shader shader = Shader.Find("Standard")
                          ?? Shader.Find("Sprites/Default");
 
@@ -50,8 +49,7 @@ namespace KillRitual.Weapons
 
         private static void ConfigureTransparency(Material mat)
         {
-            // Built-in Standard 셰이더 투명 모드
-            // 0=Opaque, 1=Cutout, 2=Fade, 3=Transparent
+            // Built-in Standard 셰이더 투명 모드(0=Opaque, 1=Cutout, 2=Fade, 3=Transparent)입니다.
             if (mat.HasProperty("_Mode"))
                 mat.SetFloat("_Mode", 3f);
 

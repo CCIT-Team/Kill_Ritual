@@ -40,10 +40,7 @@ namespace KillRitual.Weapons
             CacheDefaultFov();
             if (!_defaultFovCached || _combatSystem == null || _combatSystem.PlayerCamera == null) return;
 
-            // [버그 수정] 이 컴포넌트는 다른 무기가 장착된 동안에도 GameObject가 활성 상태로
-            // 남아있을 수 있어, 장착 여부와 무관하게 매 프레임 Update()가 계속 실행되고
-            // Mouse2 입력을 읽어버려 "어떤 무기를 들고 있어도 줌이 걸리는" 버그가 있었습니다.
-            // 미장착 상태에서는 입력을 완전히 무시하고, 줌 중이었다면 즉시 기본 FOV로 되돌립니다.
+            // 다른 무기가 장착된 동안에도 GameObject가 활성 상태라 Update()가 계속 돌아 Mouse2를 읽어버리는 버그를 막기 위해, 미장착 상태에서는 입력을 무시하고 즉시 기본 FOV로 되돌립니다.
             if (!IsEquipped)
             {
                 if (_isZooming)

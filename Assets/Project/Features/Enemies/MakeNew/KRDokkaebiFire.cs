@@ -5,50 +5,50 @@ namespace KillRitual.Enemies
 {
     public sealed class KRDokkaebiFire : KREnemyBase
     {
-        [Header("µµ±úºñºÒ °ø°İ")]
-        [Tooltip("ÀÌ °Å¸® ¾È¿¡ ÇÃ·¹ÀÌ¾î°¡ ÀÖÀ¸¸é °ø°İÀ» ½ÃÀÛÇÕ´Ï´Ù.")]
+        [Header("ë„ê¹¨ë¹„ë¶ˆ ê³µê²©")]
+        [Tooltip("ì´ ê±°ë¦¬ ì•ˆì— í”Œë ˆì´ì–´ê°€ ìˆìœ¼ë©´ ê³µê²©ì„ ì‹œì‘í•©ë‹ˆë‹¤.")]
         [Min(1f)]
         [SerializeField] private float _attackRange = 15f;
 
-        [Tooltip("°ø°İ °£°İ(ÃÊ). ÀÌ ½Ã°£¸¶´Ù ÇÑ ¹ø¾¿ Attack ¾Ö´Ï¸ŞÀÌ¼ÇÀ» ½ÃÀÛÇÕ´Ï´Ù.")]
+        [Tooltip("ê³µê²© ê°„ê²©(ì´ˆ). ì´ ì‹œê°„ë§ˆë‹¤ í•œ ë²ˆì”© Attack ì• ë‹ˆë©”ì´ì…˜ì„ ì‹œì‘í•©ë‹ˆë‹¤.")]
         [Min(0.1f)]
         [SerializeField] private float _fireCooldown = 1.5f;
 
-        [Tooltip("Attack ¾Ö´Ï¸ŞÀÌ¼Ç ÀÌº¥Æ®°¡ ´©¶ôµÆÀ» ¶§ °ø°İ ´ë±â »óÅÂ¸¦ °­Á¦·Î ÇØÁ¦ÇÏ´Â ½Ã°£ÀÔ´Ï´Ù.")]
+        [Tooltip("Attack ì• ë‹ˆë©”ì´ì…˜ ì´ë²¤íŠ¸ê°€ ëˆ„ë½ëì„ ë•Œ ê³µê²© ëŒ€ê¸° ìƒíƒœë¥¼ ê°•ì œë¡œ í•´ì œí•˜ëŠ” ì‹œê°„ì…ë‹ˆë‹¤.")]
         [Min(0.1f)]
         [SerializeField] private float _attackEventTimeout = 1.5f;
 
-        [Tooltip("¹ß»çÃ¼ 1¹ßÀÇ µ¥¹ÌÁö.")]
+        [Tooltip("ë°œì‚¬ì²´ 1ë°œì˜ ë°ë¯¸ì§€.")]
         [Min(0f)]
         [SerializeField] private float _projectileDamage = 6f;
 
-        [Tooltip("¹ß»çÃ¼ÀÇ ºñÇà ¼Óµµ.")]
+        [Tooltip("ë°œì‚¬ì²´ì˜ ë¹„í–‰ ì†ë„.")]
         [Min(1f)]
         [SerializeField] private float _projectileSpeed = 12f;
 
-        [Header("¹ß»çÃ¼ ÇÁ¸®ÆÕ")]
-        [Tooltip("ºñ¿öµÎ¸é ÄÚµå°¡ ÀÚµ¿À¸·Î ÀÛÀº ±¸¸¦ ¸¸µé¾î ¹ß»çÇÕ´Ï´Ù.")]
+        [Header("ë°œì‚¬ì²´ í”„ë¦¬íŒ¹")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ ì½”ë“œê°€ ìë™ìœ¼ë¡œ ì‘ì€ êµ¬ë¥¼ ë§Œë“¤ì–´ ë°œì‚¬í•©ë‹ˆë‹¤.")]
         [SerializeField] private GameObject _projectilePrefab;
 
-        [Tooltip("¸ÓÁñ Æ÷ÀÎÆ®°¡ ¾øÀ» ¶§, transform.position ±âÁØÀ¸·Î ¹ß»ç À§Ä¡¸¦ À§·Î ¿Ã¸®´Â °ªÀÔ´Ï´Ù.")]
+        [Tooltip("ë¨¸ì¦ í¬ì¸íŠ¸ê°€ ì—†ì„ ë•Œ, transform.position ê¸°ì¤€ìœ¼ë¡œ ë°œì‚¬ ìœ„ì¹˜ë¥¼ ìœ„ë¡œ ì˜¬ë¦¬ëŠ” ê°’ì…ë‹ˆë‹¤.")]
         [SerializeField] private float _muzzleHeightOffset = 0.8f;
 
-        [Header("¹ß»ç À§Ä¡/°¢µµ º¸Á¤")]
-        [Tooltip("ÁöÁ¤ÇÏ¸é ÀÌ TransformÀÇ À§Ä¡¸¦ ¹ß»ç ±âÁØÁ¡À¸·Î »ç¿ëÇÕ´Ï´Ù. µµ±úºñºÒ Áß½ÉÀÌ³ª ÀÔ/´«/ºÒ²É Áß½É¿¡ µÎ¸é µË´Ï´Ù.")]
+        [Header("ë°œì‚¬ ìœ„ì¹˜/ê°ë„ ë³´ì •")]
+        [Tooltip("ì§€ì •í•˜ë©´ ì´ Transformì˜ ìœ„ì¹˜ë¥¼ ë°œì‚¬ ê¸°ì¤€ì ìœ¼ë¡œ ì‚¬ìš©í•©ë‹ˆë‹¤. ë„ê¹¨ë¹„ë¶ˆ ì¤‘ì‹¬ì´ë‚˜ ì…/ëˆˆ/ë¶ˆê½ƒ ì¤‘ì‹¬ì— ë‘ë©´ ë©ë‹ˆë‹¤.")]
         [SerializeField] private Transform _muzzlePoint;
 
-        [Tooltip("¹ß»çÃ¼ ÇÁ¸®ÆÕÀÇ ÃàÀÌ ÁøÇà ¹æÇâ°ú ¸ÂÁö ¾ÊÀ» ¶§ º¸Á¤ÇÏ´Â Ãß°¡ È¸Àü°ªÀÔ´Ï´Ù.")]
+        [Tooltip("ë°œì‚¬ì²´ í”„ë¦¬íŒ¹ì˜ ì¶•ì´ ì§„í–‰ ë°©í–¥ê³¼ ë§ì§€ ì•Šì„ ë•Œ ë³´ì •í•˜ëŠ” ì¶”ê°€ íšŒì „ê°’ì…ë‹ˆë‹¤.")]
         [SerializeField] private Vector3 _projectileRotationOffset = Vector3.zero;
 
-        [Tooltip("¹ß»çÃ¼ ½ºÆù À§Ä¡¸¦ ¹Ì¼¼ Á¶Á¤ÇÏ´Â Ãß°¡ ¿ÀÇÁ¼ÂÀÔ´Ï´Ù. ¹ß»ç ¹æÇâ ±âÁØ ·ÎÄÃ ÁÂÇ¥ÀÔ´Ï´Ù.")]
+        [Tooltip("ë°œì‚¬ì²´ ìŠ¤í° ìœ„ì¹˜ë¥¼ ë¯¸ì„¸ ì¡°ì •í•˜ëŠ” ì¶”ê°€ ì˜¤í”„ì…‹ì…ë‹ˆë‹¤. ë°œì‚¬ ë°©í–¥ ê¸°ì¤€ ë¡œì»¬ ì¢Œí‘œì…ë‹ˆë‹¤.")]
         [SerializeField] private Vector3 _projectilePositionOffset = Vector3.zero;
 
-        [Tooltip("Ä¿½ºÅÒ ÇÁ¸®ÆÕ¿¡ Collider°¡ ¾øÀ» ¶§ ÀÚµ¿À¸·Î ºÙ¿©ÁÙ SphereCollider ¹İÁö¸§ÀÔ´Ï´Ù.")]
+        [Tooltip("ì»¤ìŠ¤í…€ í”„ë¦¬íŒ¹ì— Colliderê°€ ì—†ì„ ë•Œ ìë™ìœ¼ë¡œ ë¶™ì—¬ì¤„ SphereCollider ë°˜ì§€ë¦„ì…ë‹ˆë‹¤.")]
         [Min(0.01f)]
         [SerializeField] private float _projectileColliderRadius = 0.3f;
 
-        [Header("¾Ö´Ï¸ŞÀÌ¼Ç")]
-        [Tooltip("ºñ¿öµÎ¸é ÀÚ½Ä ¿ÀºêÁ§Æ®¿¡¼­ ÀÚµ¿À¸·Î Animator¸¦ Ã£½À´Ï´Ù.")]
+        [Header("ì• ë‹ˆë©”ì´ì…˜")]
+        [Tooltip("ë¹„ì›Œë‘ë©´ ìì‹ ì˜¤ë¸Œì íŠ¸ì—ì„œ ìë™ìœ¼ë¡œ Animatorë¥¼ ì°¾ìŠµë‹ˆë‹¤.")]
         [SerializeField] private Animator _animator;
 
         private static readonly int WalkHash = Animator.StringToHash("Walk");
@@ -68,9 +68,7 @@ namespace KillRitual.Enemies
 
             if (_isWaitingForAttackEvent && Time.time >= _attackEventExpireTime)
             {
-                // Animation Event¸¦ »©¸Ô¾úÀ» ¶§ ¿µ±¸ ´ë±â »óÅÂ¿¡ ºüÁö´Â °ÍÀ» ¹æÁöÇÕ´Ï´Ù.
-                // ¿©±â¼­ °­Á¦·Î ¹ß»çÇÏÁö´Â ¾Ê½À´Ï´Ù.
-                // ¹ß»ç Å¸ÀÌ¹ÖÀº Attack ¾Ö´Ï¸ŞÀÌ¼Ç ÀÌº¥Æ®°¡ ´ã´çÇØ¾ß ÇÏ±â ¶§¹®ÀÔ´Ï´Ù.
+                // ë°œì‚¬ íƒ€ì´ë°ì€ Attack ì• ë‹ˆë©”ì´ì…˜ ì´ë²¤íŠ¸ê°€ ë‹´ë‹¹í•˜ë¯€ë¡œ, ì´ë²¤íŠ¸ ëˆ„ë½ ì‹œ ì˜êµ¬ ëŒ€ê¸° ìƒíƒœì— ë¹ ì§€ì§€ ì•Šë„ë¡ ì—¬ê¸°ì„œ ëŒ€ê¸°ë§Œ ê°•ì œ í•´ì œí•©ë‹ˆë‹¤.
                 _isWaitingForAttackEvent = false;
             }
         }
@@ -246,7 +244,7 @@ namespace KillRitual.Enemies
 
             if (!attackAnimationStarted)
             {
-                // Animator³ª Attack Trigger°¡ ¾øÀ» ¶§µµ ±â´É ÀÚÃ¼´Â Á×Áö ¾Ê°Ô fallback Ã³¸®ÇÕ´Ï´Ù.
+                // Animatorë‚˜ Attack Triggerê°€ ì—†ì„ ë•Œë„ ê¸°ëŠ¥ ìì²´ëŠ” ì£½ì§€ ì•Šê²Œ fallback ì²˜ë¦¬í•©ë‹ˆë‹¤.
                 _isWaitingForAttackEvent = false;
                 FireProjectile();
             }

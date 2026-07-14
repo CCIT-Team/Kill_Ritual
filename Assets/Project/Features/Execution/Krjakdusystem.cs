@@ -1,5 +1,4 @@
-﻿// Assets/Project/Features/Player/KRJakduSystem.cs
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using KillRitual.Core.Damage;
 using KillRitual.Core.Interfaces;
@@ -20,24 +19,13 @@ namespace KillRitual.Player.Combat
         [SerializeField] private Camera _playerCamera;
 
         [Header("작두 애니메이션 (샤먼소드)")]
-        [Tooltip("작두 발동 시 잠깐 나타나는 샤먼소드 손 오브젝트입니다. ShamanSword.controller에는 " +
-                 "Swing 모션 하나만 있고 별도 Idle(대기) 애니메이션이 없기 때문에, 평소엔 이 오브젝트 " +
-                 "자체를 꺼둔 채로 있다가 작두를 쓸 때만 켜고, 스윙이 끝나면 다시 끕니다. " +
-                 "비워두면 애니메이션 연출 없이 판정만 그대로 동작합니다(필수 아님).")]
+        [Tooltip("작두 발동 시 잠깐 나타나는 샤먼소드 손 오브젝트로, 평소엔 꺼두었다가 작두를 쓸 때만 켜고 스윙이 끝나면 다시 끄며, 비워두면 연출 없이 판정만 동작합니다.")]
         [SerializeField] private GameObject _shamanSwordVisualRoot;
 
         [Tooltip("샤먼소드의 Animator. 비워두면 _shamanSwordVisualRoot의 자식에서 자동 탐색합니다.")]
         [SerializeField] private Animator _shamanSwordAnimator;
 
-        [Tooltip("Swing.anim 클립 길이(초)입니다. 이 시간이 지나면 샤먼소드 손을 자동으로 다시 숨깁니다. " +
-                 "이동 감속(①감속 단계)도 이 값만큼 지속됩니다 — 감속이 \"애니메이션 시전 시간 동안\" " +
-                 "유지되도록 요청받아, 별도의 _slowDuration 대신 이 값을 그대로 재사용합니다. " +
-                 "Swing.anim을 다른 클립으로 바꾸면 이 값도 그 클립 길이에 맞춰 같이 바꿔주세요 " +
-                 "(감속 지속시간 + 적 판정 타이밍이 자동으로 같이 바뀝니다). " +
-                 "[2026-07-06 재정정] Swing.anim의 실제 m_StopTime을 다시 확인해보니 1.1666666초가 " +
-                 "아니라 0.55초였습니다(적 반응이 스윙 동작이 끝난 뒤에도 한참 있다가 나오는 버그의 " +
-                 "원인 — 애니메이션은 0.55초에 끝났는데 코드는 1.17초까지 기다렸다가 판정했었음). " +
-                 "0.55초로 정정했습니다.")]
+        [Tooltip("Swing.anim 클립 길이(초)로, 이 시간이 지나면 샤먼소드 손을 숨기고 이동 감속도 이 값만큼 지속되므로 클립을 바꾸면 이 값도 함께 맞춰야 합니다.")]
         [Min(0.01f)]
         [SerializeField] private float _shamanSwordSwingClipLength = 0.55f;
 
@@ -77,22 +65,11 @@ namespace KillRitual.Player.Combat
         [Tooltip("[0]=화 [1]=수 [2]=목 [3]=토 [4]=금 순서.")]
         [SerializeField] private GameObject[] _ammoOrbPrefabs = new GameObject[5];
 
-        [Tooltip("[2026-07-08 신규] '탄약오브 등록에 비활성화도 할수있게해줘' 요청으로 추가 — 위 " +
-                 "프리팹 배열과 같은 순서(화/수/목/토/금)입니다. 여기서 체크를 끄면 프리팹을 " +
-                 "지우지 않고도 해당 속성의 드롭을 완전히 끌 수 있습니다(즉시 흡수까지 포함해서 " +
-                 "SpawnAmmoOrb() 맨 앞에서 걸러냅니다). 슬롯이 잠겨 무기가 없는 속성(예: 토/금)을 " +
-                 "굳이 드롭하지 않게 할 때 사용하세요.")]
+        [Tooltip("프리팹 배열과 같은 순서(화/수/목/토/금)로, 체크를 끄면 프리팹을 지우지 않고도 해당 속성의 드롭을 완전히 끌 수 있어 슬롯이 잠긴 속성에 사용하세요.")]
         [SerializeField] private bool[] _ammoOrbEnabled = { true, true, true, true, true };
 
-        [Header("탄약 오브 흩뿌리기 (2026-07-08 신규)")]
-        [Tooltip("[2026-07-08 신규] '둠 이터널 전기톱처럼 여러 파츠로' 요청 반영 — 기획서(3-5/4-4, " +
-                 "'대표 오브젝트 하나') 대신, 초과 자원(remaining)을 오브 하나가 아니라 이 개수만큼 " +
-                 "쪼개서 사방으로 흩뿌립니다. 몇 개를 줍든 합계는 항상 remaining과 같도록 개수로 " +
-                 "나눠서 각 조각의 회복량을 정합니다. " +
-                 "[2026-07-08 수정 — '그냥 나오는 방향 4개로 설정해서 퍼트리면 안됨?'] 방향을 " +
-                 "완전 랜덤(Random.insideUnitCircle)으로 뽑던 걸, 이 개수만큼 균등하게 나눈 고정 " +
-                 "각도로 바꿨습니다 — 물리 힘/착지 타이밍에 기대지 않고 항상 확실하게 사방으로 " +
-                 "갈라지는 걸 보장합니다.")]
+        [Header("탄약 오브 흩뿌리기")]
+        [Tooltip("초과 자원(remaining)을 오브 하나가 아니라 이 개수만큼 쪼개 균등 고정 각도로 사방에 흩뿌리며, 합계는 항상 remaining과 같습니다.")]
         [Min(1)] [SerializeField] private int _ammoOrbSplitCount = 4;
 
         [Tooltip("각 조각이 옆으로 튀는 힘의 크기.")]
@@ -101,10 +78,7 @@ namespace KillRitual.Player.Combat
         [Tooltip("각 조각이 위로 튀어오르는 힘의 크기.")]
         [Min(0f)] [SerializeField] private float _ammoOrbUpForce = 4f;
 
-        [Tooltip("[2026-07-08 신규] '적 머리쯤에서 떨어져서 바닥과 충돌한뒤에 고정되도록 해줘' 요청으로 " +
-                 "추가 — 스폰 기준 높이를 적 발밑(0m) 기준이 아니라 적 머리 정도 높이로 올려서, 위에서 " +
-                 "떨어지는 낙하 궤적이 눈에 잘 보이도록 했습니다. 실제 적 콜라이더 높이를 재지 않고 " +
-                 "평균적인 적 머리 높이를 고정값으로 씁니다.")]
+        [Tooltip("낙하 궤적이 잘 보이도록 스폰 기준 높이를 적 발밑이 아닌 적 머리 정도 높이(평균 고정값)로 올립니다.")]
         [Min(0.1f)] [SerializeField] private float _ammoOrbSpawnHeight = 2f;
 
         [Header("이동 처리")]

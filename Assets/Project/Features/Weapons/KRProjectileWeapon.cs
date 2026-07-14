@@ -29,8 +29,7 @@ namespace KillRitual.Weapons
         [Min(0f)]
         [SerializeField] private float _explosionRadius = 0f;
 
-        [Tooltip("폭발 시 실제로 화면에 보이는 시각효과(파티클 등) 프리팹. " +
-                 "ExplodesOnImpact가 true일 때만 사용되며, 비워두면 시각효과 없이 데미지만 적용됩니다.")]
+        [Tooltip("폭발 시 실제로 보이는 시각효과 프리팹으로, ExplodesOnImpact가 true일 때만 사용되며 비워두면 데미지만 적용됩니다.")]
         [SerializeField] private GameObject _explosionVfxPrefab;
 
         protected KRPhysicsProjectile _lastFiredProjectile;
@@ -53,8 +52,7 @@ namespace KillRitual.Weapons
 
             Transform fp = ResolveFirePoint();
 
-            // [조준점 보정] 총구가 화면 중앙이 아니어도, 투사체는 크로스헤어가 가리키는
-            // 지점으로 수렴하도록 fp.rotation 대신 GetAimDirection으로 보정된 방향을 사용합니다.
+            // 총구가 화면 중앙이 아니어도 크로스헤어가 가리키는 지점으로 수렴하도록 fp.rotation 대신 GetAimDirection으로 보정된 방향을 사용합니다.
             Vector3 aimDirection = _combatSystem.GetAimDirection(fp.position, _range);
             Quaternion aimRotation = Quaternion.LookRotation(aimDirection, Vector3.up);
 
@@ -89,9 +87,7 @@ namespace KillRitual.Weapons
             }
         }
 
-        // ------------------------------------------------------------------
         // 에디터 기즈모: 사거리는 직선 레이로, 폭발형이면 사거리 끝에 폭발 반경 구를 함께 표시합니다.
-        // ------------------------------------------------------------------
         protected virtual void OnDrawGizmosSelected()
         {
             Transform fp = ResolveFirePoint();
