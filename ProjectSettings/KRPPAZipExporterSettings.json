@@ -1,0 +1,24 @@
+{
+    "includeBuildSettingsScenes": true,
+    "includeCurrentSelectionAsRoots": true,
+    "includeAllCodeAndPlugins": true,
+    "includeDynamicResourceFolders": true,
+    "alwaysIncludeFolders": [
+        "Assets/External/SystemSettings/TextMesh Pro",
+        "Assets/External/VolumetricLightBeam",
+        "Assets/External/VolumetricLightBeamPackage",
+        "Assets/Project/Prefabs",
+        "Assets/Project/Prefabs/Monster",
+        "Assets/Project/Prefabs/Monster/Boss",
+        "Assets/Project/Prefabs/Monster/ETC",
+        "Assets/Project/Prefabs/Resource",
+        "Assets/Project/Prefabs/UI",
+        "Assets/Project/Prefabs/Weapon",
+        "Assets/Project/Scenes",
+        "Assets/Project/Scenes/Bake",
+        "Assets/Project/Scenes/Bake/GameOver",
+        "Assets/Project/Scenes/Bake/Level01",
+        "Assets/Project/Scenes/Bake/MainMenu",
+        "Assets/Project/Scenes/Bake/Temple"
+    ]
+}
